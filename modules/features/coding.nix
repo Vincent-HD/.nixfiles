@@ -25,6 +25,7 @@ in
         neovim
         vim
         uv
+        nixd
         docker-compose
       ];
 
@@ -36,8 +37,10 @@ in
 
       programs.git = {
         enable = true;
-        userName = "Vincent-HD";
-        userEmail = "vincenthoudan@gmail.com";
+        settings = {
+          user.name = "Vincent-HD";
+          user.email = "vincenthoudan@gmail.com";
+        };
       };
     };
 }
