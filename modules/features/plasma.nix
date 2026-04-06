@@ -6,6 +6,8 @@
     {
       services.xserver.enable = true;
       services.displayManager.sddm.enable = true;
+      services.displayManager.sddm.wayland.enable = true; # fixes TTY mismatch after login on NVIDIA
+      services.displayManager.sddm.autoNumlock = true; # seems broken @see https://github.com/NixOS/nixpkgs/issues/403259
       services.desktopManager.plasma6.enable = true;
     };
 

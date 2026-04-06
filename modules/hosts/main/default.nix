@@ -14,6 +14,7 @@ in
       nixos.sound
       nixos.coding
       nixos.printing
+      nixos.gparted
 
       # ── Home Manager integration ─────────────────────────
       inputs.home-manager.nixosModules.home-manager

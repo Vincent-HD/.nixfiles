@@ -17,6 +17,7 @@
         opencode
         neovim
         vim
+        uv
       ];
 
       programs.bash.enable = true;
