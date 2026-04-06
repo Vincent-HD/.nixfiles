@@ -1,15 +1,22 @@
-{ inputs, ... }:
+{ inputs, config, ... }:
+let
+  username = config.flake.username;
+in
 {
   # NixOS side: system-level dev tooling (add nix-ld, compilers, etc. here)
   flake.modules.nixos.coding =
     { ... }:
     {
       programs.nix-ld.enable = true;
+
+      virtualisation.docker.enable = true;
+
+      users.users.${username}.extraGroups = [ "docker" ];
     };
 
   # Home Manager side: editors and dev tools
   flake.modules.homeManager.coding =
-    { pkgs, ... }:
+    { pkgs, config, ... }:
     {
       home.packages = with pkgs; [
         vscode
@@ -18,9 +25,14 @@
         neovim
         vim
         uv
+        docker-compose
       ];
 
       programs.bash.enable = true;
+      programs.bash.shellAliases = {
+        nixos-switch =
+          "sudo nixos-rebuild switch --flake ${config.home.homeDirectory}/.nixfiles#main";
+      };
 
       programs.git = {
         enable = true;
