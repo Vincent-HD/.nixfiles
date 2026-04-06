@@ -30,6 +30,7 @@ in
             hm.discord
             hm.spotify
             hm.bitwarden
+            hm.curseforge
           ];
 
           home.username = username;
