@@ -120,6 +120,9 @@ nix flake show
   All HM config goes through `home-manager.users.${username}` in the host composition root.
 - **The `flake.modules.*` namespaces** are enabled by importing `flake-parts.flakeModules.modules`
   and `home-manager.flakeModules.home-manager` in `modules/flake-modules.nix`.
+- **Use `custom.*` for user-defined option trees** that do not belong under a standard NixOS/Home
+  Manager namespace such as `services.*`, `programs.*`, `users.*`, or `hardware.*`. Example:
+  `options.custom.windowsMounts` and `config.custom.windowsMounts`.
 - When adding a new external flake input, add `inputs.<name>.follows = "nixpkgs"` when the input
   supports it, to avoid duplicate nixpkgs evaluations.
 - Keep `system.stateVersion` and `home.stateVersion` stable unless intentionally migrating state.

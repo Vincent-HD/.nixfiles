@@ -12,11 +12,11 @@
   #    unit, no kernel module loaded at boot — nbd is modprobed inside the script when you run it.
   #    NEVER mount the VHDX while Windows/WSL is using it — risk of corruption.
   #
-  # Enable and fill values in modules/hosts/main/configuration.nix (nixfiles.windowsMounts).
+  # Enable and fill values in modules/hosts/main/configuration.nix (custom.windowsMounts).
   flake.modules.nixos.windowsMounts =
     { config, lib, pkgs, ... }:
     let
-      cfg = config.nixfiles.windowsMounts;
+      cfg = config.custom.windowsMounts;
       ntfsOpts = [
         "rw"
         "uid=1000"
@@ -27,7 +27,7 @@
       ];
     in
     {
-      options.nixfiles.windowsMounts = {
+      options.custom.windowsMounts = {
         enable = lib.mkEnableOption ''
           Mount Windows NTFS partition(s) for dual-boot. Set UUIDs from `sudo blkid`.
         '';
