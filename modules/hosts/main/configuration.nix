@@ -51,6 +51,17 @@ in
         "flakes"
       ];
 
+      # Mounting Windows + WSL (see modules/features/windows-mounts.nix).
+      # NTFS uses kernel ntfs3 (not FUSE) so nixos-rebuild can reload mounts cleanly.
+      # If mnt-windows.mount / mnt-data.mount still fail on switch: sudo umount /mnt/windows /mnt/data; sudo nixos-rebuild switch
+      # UUIDs: nvme0n1p3 = Windows, sda1 = second disk — verify: sudo blkid | grep -i ntfs
+      nixfiles.windowsMounts = {
+        enable = true;
+        windowsPartitionUuid = "720853E50853A73F";
+        sharedDataDrivePartitionUuid = "E29095BC9095981D";
+        wslVhdxPath = "/mnt/windows/WSL2-Distros/welii/ext4.vhdx";
+      };
+
       system.stateVersion = "25.11";
     };
 }
