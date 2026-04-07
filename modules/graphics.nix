@@ -1,7 +1,7 @@
 { ... }:
 {
   # NixOS side: NVIDIA GPU
-  flake.modules.nixos.graphics =
+  config.flake.modules.nixos.graphics =
     { ... }:
     {
       hardware.graphics.enable = true;

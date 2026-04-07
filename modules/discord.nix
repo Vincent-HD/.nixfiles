@@ -2,7 +2,7 @@
 {
   # Home Manager side: Discord via Nixcord (Vencord)
   # The nixcord shared module is loaded in the composition root (hosts/main/default.nix)
-  flake.modules.homeManager.discord =
+  config.flake.modules.homeManager.discord =
     { ... }:
     {
       programs.nixcord = {

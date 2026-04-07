@@ -1,7 +1,7 @@
 { ... }:
 {
   # NixOS side: KDE Plasma 6 desktop environment
-  flake.modules.nixos.plasma =
+  config.flake.modules.nixos.plasma =
     { ... }:
     {
       services.xserver.enable = true;
@@ -12,11 +12,11 @@
     };
 
   # Home Manager side: KDE user packages
-  flake.modules.homeManager.plasma =
+  config.flake.modules.homeManager.plasma =
     { pkgs, ... }:
     {
-      home.packages = with pkgs; [
-        kdePackages.kate
+      home.packages = [
+        pkgs.kdePackages.kate
       ];
     };
 }

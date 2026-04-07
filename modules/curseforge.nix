@@ -1,7 +1,7 @@
 { ... }:
 {
   # Home Manager: CurseForge desktop client (upstream AppImage wrapped for NixOS)
-  flake.modules.homeManager.curseforge =
+  config.flake.modules.homeManager.curseforge =
     { pkgs, ... }:
     let
       version = "1.300.0";
@@ -12,11 +12,13 @@
       };
       extracted = pkgs.appimageTools.extractType2 {
         pname = "curseforge";
-        inherit version src;
+        version = version;
+        src = src;
       };
       curseforge = pkgs.appimageTools.wrapType2 {
         pname = "curseforge";
-        inherit version src;
+        version = version;
+        src = src;
       };
     in
     {

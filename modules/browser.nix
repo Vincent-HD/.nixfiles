@@ -1,11 +1,11 @@
 { ... }:
 {
   # Home Manager side: web browser
-  flake.modules.homeManager.browser =
+  config.flake.modules.homeManager.browser =
     { pkgs, ... }:
     {
-      home.packages = with pkgs; [
-        brave
+      home.packages = [
+        pkgs.brave
       ];
 
       # Default browser for xdg-open (editors, Cursor links, etc.): use Brave from nixpkgs

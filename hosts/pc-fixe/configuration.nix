@@ -1,9 +1,8 @@
 { inputs, config, ... }:
-let
-  username = config.flake.username;
-in
 {
-  flake.modules.nixos.pcFixeConfiguration =
+  config.flake.username = "vincent"; # Define the username shared across all modules
+
+  config.flake.modules.nixos.pcFixeConfiguration =
     { ... }:
     {
       imports = [
@@ -38,10 +37,13 @@ in
 
       console.keyMap = "fr";
 
-      users.users.${username} = {
+      users.users.${config.flake.username} = {
         isNormalUser = true;
         description = "Vincent";
-        extraGroups = [ "networkmanager" "wheel" ];
+        extraGroups = [
+          "networkmanager"
+          "wheel"
+        ];
       };
 
       nixpkgs.config.allowUnfree = true;

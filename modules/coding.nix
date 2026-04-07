@@ -4,7 +4,7 @@ let
 in
 {
   # NixOS side: system-level dev tooling (add nix-ld, compilers, etc. here)
-  flake.modules.nixos.coding =
+  config.flake.modules.nixos.coding =
     { ... }:
     {
       programs.nix-ld.enable = true;
@@ -15,24 +15,22 @@ in
     };
 
   # Home Manager side: editors and dev tools
-  flake.modules.homeManager.coding =
+  config.flake.modules.homeManager.coding =
     { pkgs, config, ... }:
     {
-      home.packages = with pkgs; [
-        vscode
+      home.packages = [
+        pkgs.vscode
         inputs.code-cursor-nix.packages.${pkgs.system}.cursor
-        opencode
-        neovim
-        vim
-        uv
-        nixd
-        docker-compose
+        pkgs.opencode
+        pkgs.neovim
+        pkgs.vim
+        pkgs.uv
+        pkgs.nixd
       ];
 
       programs.bash.enable = true;
       programs.bash.shellAliases = {
-        nixos-switch =
-          "sudo nixos-rebuild switch --flake ${config.home.homeDirectory}/.nixfiles#pc-fixe";
+        nixos-switch = "sudo nixos-rebuild switch --flake ${config.home.homeDirectory}/.nixfiles#pc-fixe";
       };
 
       programs.git = {

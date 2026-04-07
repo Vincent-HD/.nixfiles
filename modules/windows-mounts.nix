@@ -13,8 +13,13 @@
   #    NEVER mount the VHDX while Windows/WSL is using it — risk of corruption.
   #
   # Enable and fill values in modules/hosts/main/configuration.nix (custom.windowsMounts).
-  flake.modules.nixos.windowsMounts =
-    { config, lib, pkgs, ... }:
+  config.flake.modules.nixos.windowsMounts =
+    {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
     let
       cfg = config.custom.windowsMounts;
       ntfsOpts = [

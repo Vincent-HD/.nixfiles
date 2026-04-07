@@ -1,7 +1,7 @@
 { ... }:
 {
   # NixOS side: PipeWire audio
-  flake.modules.nixos.sound =
+  config.flake.modules.nixos.sound =
     { ... }:
     {
       services.pulseaudio.enable = false;

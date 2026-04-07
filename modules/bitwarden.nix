@@ -4,11 +4,11 @@ let
 in
 {
   # Home Manager side: Bitwarden password manager + SSH agent
-  flake.modules.homeManager.bitwarden =
+  config.flake.modules.homeManager.bitwarden =
     { pkgs, ... }:
     {
-      home.packages = with pkgs; [
-        bitwarden-desktop
+      home.packages = [
+        pkgs.bitwarden-desktop
       ];
 
       home.sessionVariables = {
