@@ -35,6 +35,7 @@ in
             hm.spotify
             hm.bitwarden
             hm.curseforge
+            hm.work
           ];
 
           home.username = username;
