@@ -14,10 +14,10 @@
       },
       "options": {
         "nixos": {
-          "expr": "(builtins.getFlake \"${workspaceFolder}\").nixosConfigurations.main.options"
+          "expr": "(builtins.getFlake \"${workspaceFolder}\").nixosConfigurations.\"pc-fixe\".options"
         },
         "home-manager": {
-          "expr": "(builtins.getFlake \"${workspaceFolder}\").nixosConfigurations.main.options.home-manager.users.type.getSubOptions []"
+          "expr": "(builtins.getFlake \"${workspaceFolder}\").nixosConfigurations.\"pc-fixe\".options.home-manager.users.type.getSubOptions []"
         }
       }
     }

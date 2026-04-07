@@ -3,17 +3,17 @@ let
   username = config.flake.username;
 in
 {
-  flake.modules.nixos.mainConfiguration =
+  flake.modules.nixos.pcFixeConfiguration =
     { ... }:
     {
       imports = [
-        inputs.self.nixosModules.mainHardware
+        inputs.self.nixosModules.pcFixeHardware
       ];
 
       boot.loader.systemd-boot.enable = true;
       boot.loader.efi.canTouchEfiVariables = true;
 
-      networking.hostName = "main";
+      networking.hostName = "pc-fixe";
       networking.networkmanager.enable = true;
 
       time.timeZone = "Europe/Paris";

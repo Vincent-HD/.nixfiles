@@ -1,6 +1,6 @@
 { ... }:
 {
-  flake.nixosModules.mainHardware =
+  flake.nixosModules.pcFixeHardware =
     { config, lib, modulesPath, ... }:
     {
       imports = [

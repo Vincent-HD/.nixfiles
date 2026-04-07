@@ -32,7 +32,7 @@ in
       programs.bash.enable = true;
       programs.bash.shellAliases = {
         nixos-switch =
-          "sudo nixos-rebuild switch --flake ${config.home.homeDirectory}/.nixfiles#main";
+          "sudo nixos-rebuild switch --flake ${config.home.homeDirectory}/.nixfiles#pc-fixe";
       };
 
       programs.git = {

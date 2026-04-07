@@ -1,7 +1,7 @@
 # nixfiles — Agent Guidelines
 
 This is a NixOS configuration repository for a single user (`vincent`) running on a single host
-(`main`). The entire config is written in Nix using the **dendritic pattern**: every `.nix` file
+(`pc-fixe`). The entire config is written in Nix using the **dendritic pattern**: every `.nix` file
 under `modules/` is a flake-parts module, auto-imported by `import-tree`. The system runs
 **KDE Plasma 6** on **NVIDIA** hardware.
 
@@ -18,7 +18,7 @@ modules/
   flake-modules.nix                    # Imports flake-parts modules + home-manager flake module
   hosts/
     main/
-      default.nix                      # Composition root: assembles nixosConfigurations.main
+      default.nix                      # Composition root: assembles nixosConfigurations."pc-fixe"
       configuration.nix                # Base NixOS config (boot, networking, locale, user, nix)
       hardware-configuration.nix       # Hardware-specific config (disks, CPU, kernel modules)
   features/
@@ -56,7 +56,7 @@ modules/
    Not every feature needs both -- omit the namespace that doesn't apply.
 
 3. **Composition root.** The host file (`modules/hosts/main/default.nix`) is where features are
-   cherry-picked. It creates `flake.nixosConfigurations.main` by listing which `nixos.*` and `hm.*`
+   cherry-picked. It creates `flake.nixosConfigurations."pc-fixe"` by listing which `nixos.*` and `hm.*`
    modules to include. To add or remove a feature from a host, edit only this file.
 
 4. **Shared values via `config.flake.*`.** The username is accessed as `config.flake.username`
@@ -92,9 +92,9 @@ duplicate evaluations.
 ### Apply the configuration
 
 ```bash
-sudo nixos-rebuild switch --flake .#main
+sudo nixos-rebuild switch --flake .#pc-fixe
 # or
-sudo nixos-rebuild test --flake .#main
+sudo nixos-rebuild test --flake .#pc-fixe
 ```
 
 ### Update flake inputs

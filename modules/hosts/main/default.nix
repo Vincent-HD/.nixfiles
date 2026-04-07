@@ -5,10 +5,10 @@ let
   username = config.flake.username;
 in
 {
-  flake.nixosConfigurations.main = inputs.nixpkgs.lib.nixosSystem {
+  flake.nixosConfigurations."pc-fixe" = inputs.nixpkgs.lib.nixosSystem {
     modules = [
       # ── System-level modules ──────────────────────────────
-      nixos.mainConfiguration
+      nixos.pcFixeConfiguration
       nixos.plasma
       nixos.graphics
       nixos.sound
