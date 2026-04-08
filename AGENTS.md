@@ -16,6 +16,8 @@ AGENTS.md                              # This file
 modules/
   global-options.nix                   # Shared flake-parts options: systems, flake.username
   plasma.nix                           # KDE Plasma 6 + SDDM + Kate (NixOS + HM)
+  niri.nix                             # Niri compositor + greetd + Kitty (NixOS + HM); see hosts/pc-fixe/default.nix `desktopSession`
+  noctalia.nix                         # Noctalia shell + upower / power-profiles-daemon (NixOS + HM)
   graphics.nix                         # NVIDIA GPU (NixOS)
   sound.nix                            # PipeWire audio (NixOS)
   coding.nix                           # VSCode, Cursor, OpenCode, Neovim, Vim, Git (NixOS + HM)
@@ -84,6 +86,8 @@ hosts/
 | `home-manager`   | `github:nix-community/home-manager`   | User-level config management         |
 | `code-cursor-nix`| `github:jacopone/code-cursor-nix`     | Cursor editor package                |
 | `nixcord`        | `github:FlameFlag/nixcord`            | Discord + Vencord (HM module)        |
+| `niri`           | `github:sodiboo/niri-flake`           | Niri compositor (optional session)   |
+| `noctalia`       | `github:noctalia-dev/noctalia-shell`  | Noctalia shell + HM module           |
 
 All inputs except `flake-parts`, `import-tree`, and `code-cursor-nix` follow `nixpkgs` to avoid
 duplicate evaluations.

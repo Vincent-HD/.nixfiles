@@ -9,7 +9,8 @@ in
     modules = [
       # ── System-level modules ──────────────────────────────
       nixos.pcFixeConfiguration
-      nixos.plasma
+      nixos.niri
+      nixos.noctalia
       nixos.graphics
       nixos.sound
       nixos.coding
@@ -28,7 +29,10 @@ in
         home-manager.sharedModules = [ inputs.nixcord.homeModules.nixcord ];
         home-manager.users.${username} = {
           imports = [
-            hm.plasma
+            #hm.plasma
+            hm.cursorPointer
+            hm.niri
+            hm.noctalia
             hm.coding
             hm.browser
             hm.discord
