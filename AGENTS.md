@@ -7,6 +7,13 @@ under `modules/` and `hosts/` is a flake-parts module, auto-imported by `import-
 
 ---
 
+## Agent References
+
+- `INVESTIGATION_COMMANDS.md` — reusable shell, eval, validation, and debugging command patterns
+- `.cursor/skills/update-investigation-commands/SKILL.md` — project skill for maintaining the investigation command reference
+
+---
+
 ## Repository Layout
 
 ```
