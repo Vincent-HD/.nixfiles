@@ -38,12 +38,16 @@ in
         pkgs.vim
         pkgs.uv
         pkgs.nixd
+        pkgs.fnm
       ];
 
       programs.bash.enable = true;
       programs.bash.shellAliases = {
         nixos-switch = "sudo nixos-rebuild switch --flake ${config.home.homeDirectory}/.nixfiles#pc-fixe";
       };
+      programs.bash.initExtra = ''
+        eval "$(${pkgs.lib.getExe pkgs.fnm} env --use-on-cd --shell bash)"
+      '';
 
       # Git: use Home Manager options (see `programs.git.settings` → ~/.config/git/config).
       # `lib.generators.toGitINI` cannot express both `[color] branch = auto` and `[color "branch"]`

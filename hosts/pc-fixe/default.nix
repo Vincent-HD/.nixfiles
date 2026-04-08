@@ -36,6 +36,7 @@ in
             hm.bitwarden
             hm.curseforge
             hm.work
+            hm.kdeConnect
           ];
 
           home.username = username;

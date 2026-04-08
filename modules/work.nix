@@ -6,6 +6,8 @@
     {
       home.packages = [
         pkgs.slack
+        pkgs.doppler
+        pkgs.jetbrains.datagrip
       ];
     };
 }
