@@ -127,6 +127,11 @@
         };
 
         input = {
+          mouse = {
+            accel-speed = 0.4;
+            accel-profile = "flat";
+          };
+
           keyboard.xkb = {
             layout = lib.mkDefault "fr";
             variant = lib.mkDefault "azerty";
