@@ -52,44 +52,101 @@
       ...
     }:
     let
+      audioCfg = config.custom.niri.audioBinds;
+      mediaCfg = config.custom.niri.mediaBinds;
       niriExe = lib.getExe config.programs.niri.package;
       runNiriActions =
         actions: lib.concatStringsSep "\n" (map (action: "${niriExe} msg action ${action}") actions);
     in
     {
-      programs.kitty = {
-        enable = true;
-        settings = {
-          font_size = lib.mkDefault 12;
-          enable_audio_bell = lib.mkDefault false;
-          confirm_os_window_close = lib.mkDefault 0;
-          window_padding_width = lib.mkDefault 4;
+      options.custom.niri.audioBinds = {
+        volumeUpKey = lib.mkOption {
+          type = lib.types.nullOr lib.types.str;
+          default = null;
+          description = "XKB key name used by niri for volume up.";
+        };
+
+        volumeDownKey = lib.mkOption {
+          type = lib.types.nullOr lib.types.str;
+          default = null;
+          description = "XKB key name used by niri for volume down.";
+        };
+
+        muteKey = lib.mkOption {
+          type = lib.types.nullOr lib.types.str;
+          default = null;
+          description = "XKB key name used by niri for mute toggle.";
+        };
+
+        volumeStep = lib.mkOption {
+          type = lib.types.str;
+          default = "0.05";
+          description = "Volume step passed to wpctl, without the trailing + or -.";
         };
       };
 
-      # Not in niri-flake's programs.niri.settings schema yet; merged via `include` (requires niri-unstable).
-      xdg.configFile."niri/recent-windows.kdl".text = ''
-        recent-windows {
-            debounce-ms 400
-            binds {
-                Alt+Tab { next-window; }
-                Alt+Shift+Tab { previous-window; }
-            }
-        }
-      '';
+      options.custom.niri.mediaBinds = {
+        playPauseKey = lib.mkOption {
+          type = lib.types.nullOr lib.types.str;
+          default = null;
+          description = "XKB key name used by niri for play/pause.";
+        };
 
-      # Let Home Manager own the final config directly instead of patching a managed file in-place.
-      xdg.configFile.niri-config.enable = lib.mkForce false;
-      xdg.configFile."niri/config.kdl" = {
-        force = true;
-        text = ''
-          include "recent-windows.kdl"
+        stopKey = lib.mkOption {
+          type = lib.types.nullOr lib.types.str;
+          default = null;
+          description = "XKB key name used by niri for stop.";
+        };
 
-          ${config.programs.niri.finalConfig}
-        '';
+        previousKey = lib.mkOption {
+          type = lib.types.nullOr lib.types.str;
+          default = null;
+          description = "XKB key name used by niri for previous track.";
+        };
+
+        nextKey = lib.mkOption {
+          type = lib.types.nullOr lib.types.str;
+          default = null;
+          description = "XKB key name used by niri for next track.";
+        };
       };
 
-      programs.niri.settings = {
+      config = {
+        home.packages = [ pkgs.playerctl ];
+
+        programs.kitty = {
+          enable = true;
+          settings = {
+            font_size = lib.mkDefault 12;
+            enable_audio_bell = lib.mkDefault false;
+            confirm_os_window_close = lib.mkDefault 0;
+            window_padding_width = lib.mkDefault 4;
+          };
+        };
+
+        # Not in niri-flake's programs.niri.settings schema yet; merged via `include` (requires niri-unstable).
+        xdg.configFile."niri/recent-windows.kdl".text = ''
+          recent-windows {
+              debounce-ms 400
+              binds {
+                  Alt+Tab { next-window; }
+                  Alt+Shift+Tab { previous-window; }
+              }
+          }
+        '';
+
+        # Let Home Manager own the final config directly instead of patching a managed file in-place.
+        xdg.configFile.niri-config.enable = lib.mkForce false;
+        xdg.configFile."niri/config.kdl" = {
+          force = true;
+          text = ''
+            include "recent-windows.kdl"
+
+            ${config.programs.niri.finalConfig}
+          '';
+        };
+
+        programs.niri.settings = {
         window-rules = [
           {
             matches = [
@@ -208,114 +265,167 @@
           };
         };
 
-        binds = {
-          "Mod+T".action.spawn = "kitty";
-          "Mod+Space".action.spawn = [
-            "noctalia-shell"
-            "ipc"
-            "call"
-            "launcher"
-            "toggle"
-          ];
+        binds = lib.mkMerge [
+          {
+            "Mod+T".action.spawn = "kitty";
+            "Mod+Space".action.spawn = [
+              "noctalia-shell"
+              "ipc"
+              "call"
+              "launcher"
+              "toggle"
+            ];
 
-          "Mod+Q".action.close-window = [ ];
+            "Mod+Q".action.close-window = [ ];
 
-          # Match the Windows-style gesture cheat sheet from windows-app-gestures.md.
-          "Mod+Left".action.move-column-left = [ ];
-          "Mod+Right".action.move-column-right = [ ];
-          "Mod+Alt+Left".action.spawn-sh = runNiriActions [
-            "set-column-width 33.333%"
-            "move-column-left"
-          ];
-          "Mod+Alt+Right".action.spawn-sh = runNiriActions [
-            "set-column-width 33.333%"
-            "move-column-right"
-          ];
-          # Toggle a horizontal split by consuming/expelling the window to the right.
-          "Mod+Alt+Up".action.consume-or-expel-window-right = [ ];
-          "Mod+Alt+Down".action.consume-or-expel-window-left = [ ];
-          "Mod+Up".action.move-window-to-workspace-up = [ ];
-          "Mod+Down".action.move-window-to-workspace-down = [ ];
-          "Mod+Ctrl+Up".action.focus-workspace-up = [ ];
-          "Mod+Ctrl+Down".action.focus-workspace-down = [ ];
-          "Mod+Tab".action.open-overview = [ ];
+            # Match the Windows-style gesture cheat sheet from windows-app-gestures.md.
+            "Mod+Left".action.move-column-left = [ ];
+            "Mod+Right".action.move-column-right = [ ];
+            "Mod+Alt+Left".action.spawn-sh = runNiriActions [
+              "set-column-width 33.333%"
+              "move-column-left"
+            ];
+            "Mod+Alt+Right".action.spawn-sh = runNiriActions [
+              "set-column-width 33.333%"
+              "move-column-right"
+            ];
+            # Toggle a horizontal split by consuming/expelling the window to the right.
+            "Mod+Alt+Up".action.consume-or-expel-window-right = [ ];
+            "Mod+Alt+Down".action.consume-or-expel-window-left = [ ];
+            "Mod+Up".action.move-window-to-workspace-up = [ ];
+            "Mod+Down".action.move-window-to-workspace-down = [ ];
+            "Mod+Ctrl+Up".action.focus-workspace-up = [ ];
+            "Mod+Ctrl+Down".action.focus-workspace-down = [ ];
+            "Mod+Tab".action.open-overview = [ ];
 
-          # Keep direct keyboard navigation on layout-friendly letter binds.
-          "Mod+H".action.focus-column-left = [ ];
-          "Mod+L".action.focus-column-right = [ ];
-          "Mod+K".action.focus-window-up = [ ];
-          "Mod+J".action.focus-window-down = [ ];
+            # Keep direct keyboard navigation on layout-friendly letter binds.
+            "Mod+H".action.focus-column-left = [ ];
+            "Mod+L".action.focus-column-right = [ ];
+            "Mod+K".action.focus-window-up = [ ];
+            "Mod+J".action.focus-window-down = [ ];
 
-          # Scroll (same as Mod+Left / Mod+Right; cooldown avoids rapid stepping).
-          "Mod+WheelScrollUp" = {
-            cooldown-ms = 150;
-            action.focus-column-right = [ ];
-          };
-          "Mod+WheelScrollDown" = {
-            cooldown-ms = 150;
-            action.focus-column-left = [ ];
-          };
+            # Scroll (same as Mod+Left / Mod+Right; cooldown avoids rapid stepping).
+            "Mod+WheelScrollUp" = {
+              cooldown-ms = 150;
+              action.focus-column-right = [ ];
+            };
+            "Mod+WheelScrollDown" = {
+              cooldown-ms = 150;
+              action.focus-column-left = [ ];
+            };
 
-          "Mod+Shift+Left".action.move-window-to-monitor-left = [ ];
-          "Mod+Shift+Right".action.move-window-to-monitor-right = [ ];
-          "Mod+Ctrl+H".action.move-column-left = [ ];
-          "Mod+Ctrl+L".action.move-column-right = [ ];
-          "Mod+Ctrl+K".action.move-window-up = [ ];
-          "Mod+Ctrl+J".action.move-window-down = [ ];
+            "Mod+Shift+Left".action.move-window-to-monitor-left = [ ];
+            "Mod+Shift+Right".action.move-window-to-monitor-right = [ ];
+            "Mod+Ctrl+H".action.move-column-left = [ ];
+            "Mod+Ctrl+L".action.move-column-right = [ ];
+            "Mod+Ctrl+K".action.move-window-up = [ ];
+            "Mod+Ctrl+J".action.move-window-down = [ ];
 
-          # Keep numeric binds, and add AZERTY top-row aliases.
-          "Mod+1".action.focus-workspace = 1;
-          "Mod+2".action.focus-workspace = 2;
-          "Mod+3".action.focus-workspace = 3;
-          "Mod+4".action.focus-workspace = 4;
-          "Mod+5".action.focus-workspace = 5;
-          "Mod+ampersand".action.focus-workspace = 1;
-          "Mod+eacute".action.focus-workspace = 2;
-          "Mod+quotedbl".action.focus-workspace = 3;
-          "Mod+apostrophe".action.focus-workspace = 4;
-          "Mod+parenleft".action.focus-workspace = 5;
+            # Keep numeric binds, and add AZERTY top-row aliases.
+            "Mod+1".action.focus-workspace = 1;
+            "Mod+2".action.focus-workspace = 2;
+            "Mod+3".action.focus-workspace = 3;
+            "Mod+4".action.focus-workspace = 4;
+            "Mod+5".action.focus-workspace = 5;
+            "Mod+ampersand".action.focus-workspace = 1;
+            "Mod+eacute".action.focus-workspace = 2;
+            "Mod+quotedbl".action.focus-workspace = 3;
+            "Mod+apostrophe".action.focus-workspace = 4;
+            "Mod+parenleft".action.focus-workspace = 5;
 
-          "Mod+Shift+1".action.move-window-to-workspace = 1;
-          "Mod+Shift+2".action.move-window-to-workspace = 2;
-          "Mod+Shift+3".action.move-window-to-workspace = 3;
-          "Mod+Shift+4".action.move-window-to-workspace = 4;
-          "Mod+Shift+5".action.move-window-to-workspace = 5;
-          "Mod+Shift+ampersand".action.move-window-to-workspace = 1;
-          "Mod+Shift+eacute".action.move-window-to-workspace = 2;
-          "Mod+Shift+quotedbl".action.move-window-to-workspace = 3;
-          "Mod+Shift+apostrophe".action.move-window-to-workspace = 4;
-          "Mod+Shift+parenleft".action.move-window-to-workspace = 5;
+            "Mod+Shift+1".action.move-window-to-workspace = 1;
+            "Mod+Shift+2".action.move-window-to-workspace = 2;
+            "Mod+Shift+3".action.move-window-to-workspace = 3;
+            "Mod+Shift+4".action.move-window-to-workspace = 4;
+            "Mod+Shift+5".action.move-window-to-workspace = 5;
+            "Mod+Shift+ampersand".action.move-window-to-workspace = 1;
+            "Mod+Shift+eacute".action.move-window-to-workspace = 2;
+            "Mod+Shift+quotedbl".action.move-window-to-workspace = 3;
+            "Mod+Shift+apostrophe".action.move-window-to-workspace = 4;
+            "Mod+Shift+parenleft".action.move-window-to-workspace = 5;
 
-          "Mod+R".action.switch-preset-column-width = [ ];
-          "Mod+F".action.maximize-column = [ ];
-          "Mod+Shift+F".action.fullscreen-window = [ ];
+            "Mod+R".action.switch-preset-column-width = [ ];
+            "Mod+F".action.maximize-column = [ ];
+            "Mod+Shift+F".action.fullscreen-window = [ ];
 
-          "Mod+Alt+F".action.toggle-window-floating = [ ];
-          "Mod+Alt+Shift+F".action.switch-focus-between-floating-and-tiling = [ ];
+            "Mod+Alt+F".action.toggle-window-floating = [ ];
+            "Mod+Alt+Shift+F".action.switch-focus-between-floating-and-tiling = [ ];
 
-          "XF86AudioRaiseVolume".action.spawn = [
-            "wpctl"
-            "set-volume"
-            "@DEFAULT_AUDIO_SINK@"
-            "0.05+"
-          ];
-          "XF86AudioLowerVolume".action.spawn = [
-            "wpctl"
-            "set-volume"
-            "@DEFAULT_AUDIO_SINK@"
-            "0.05-"
-          ];
-          "XF86AudioMute".action.spawn = [
-            "wpctl"
-            "set-mute"
-            "@DEFAULT_AUDIO_SINK@"
-            "toggle"
-          ];
+            "Print".action.screenshot = [ ];
+            "Mod+Print".action.screenshot-screen = [ ];
 
-          "Print".action.screenshot = [ ];
-          "Mod+Print".action.screenshot-screen = [ ];
-
-          "Mod+Ctrl+Q".action.quit = { };
+            "Mod+Ctrl+Q".action.quit = { };
+          }
+          (lib.mkIf (audioCfg.volumeUpKey != null) {
+            "${audioCfg.volumeUpKey}" = {
+              allow-when-locked = true;
+              action.spawn = [
+                "wpctl"
+                "set-volume"
+                "@DEFAULT_AUDIO_SINK@"
+                "${audioCfg.volumeStep}+"
+              ];
+            };
+          })
+          (lib.mkIf (audioCfg.volumeDownKey != null) {
+            "${audioCfg.volumeDownKey}" = {
+              allow-when-locked = true;
+              action.spawn = [
+                "wpctl"
+                "set-volume"
+                "@DEFAULT_AUDIO_SINK@"
+                "${audioCfg.volumeStep}-"
+              ];
+            };
+          })
+          (lib.mkIf (audioCfg.muteKey != null) {
+            "${audioCfg.muteKey}" = {
+              allow-when-locked = true;
+              action.spawn = [
+                "wpctl"
+                "set-mute"
+                "@DEFAULT_AUDIO_SINK@"
+                "toggle"
+              ];
+            };
+          })
+          (lib.mkIf (mediaCfg.playPauseKey != null) {
+            "${mediaCfg.playPauseKey}" = {
+              allow-when-locked = true;
+              action.spawn = [
+                "playerctl"
+                "play-pause"
+              ];
+            };
+          })
+          (lib.mkIf (mediaCfg.stopKey != null) {
+            "${mediaCfg.stopKey}" = {
+              allow-when-locked = true;
+              action.spawn = [
+                "playerctl"
+                "stop"
+              ];
+            };
+          })
+          (lib.mkIf (mediaCfg.previousKey != null) {
+            "${mediaCfg.previousKey}" = {
+              allow-when-locked = true;
+              action.spawn = [
+                "playerctl"
+                "previous"
+              ];
+            };
+          })
+          (lib.mkIf (mediaCfg.nextKey != null) {
+            "${mediaCfg.nextKey}" = {
+              allow-when-locked = true;
+              action.spawn = [
+                "playerctl"
+                "next"
+              ];
+            };
+          })
+        ];
         };
       };
 

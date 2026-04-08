@@ -43,6 +43,19 @@ in
             hm.kdeConnect
           ];
 
+          custom.niri.audioBinds = {
+            volumeUpKey = "XF86AudioRaiseVolume";
+            volumeDownKey = "XF86AudioLowerVolume";
+            muteKey = "XF86AudioMute";
+          };
+
+          custom.niri.mediaBinds = {
+            playPauseKey = "XF86AudioPlay";
+            stopKey = "XF86AudioStop";
+            previousKey = "XF86AudioPrev";
+            nextKey = "XF86AudioNext";
+          };
+
           home.username = username;
           home.homeDirectory = "/home/${username}";
           home.stateVersion = "25.11";
