@@ -28,8 +28,6 @@
         "org.freedesktop.impl.portal.Secret" = [ "gnome-keyring" ];
       };
 
-      environment.sessionVariables.NIXOS_OZONE_WL = "1";
-
       services.greetd = {
         enable = true;
         settings = {
@@ -215,6 +213,8 @@
         ];
 
         environment = {
+          # NixOS Chromium/Electron: prefer Ozone Wayland over XWayland. Niri applies this only to processes
+          # it spawns; it does not propagate to systemd’s global env (see niri “Miscellaneous” → environment).
           "NIXOS_OZONE_WL" = "1";
         };
 
