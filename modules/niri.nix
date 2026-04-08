@@ -10,6 +10,9 @@
 
       nixpkgs.overlays = [ inputs.niri.overlays.niri ];
 
+      # Use niri-unstable so config can use `include` and `recent-windows` (need niri ≥25.11; stable is 25.08).
+      programs.niri.package = pkgs.niri-unstable;
+
       programs.niri.enable = true;
 
       xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
@@ -42,7 +45,17 @@
 
   # Home Manager: niri config, kitty (Mod+T), spawn noctalia-shell at startup.
   config.flake.modules.homeManager.niri =
-    { pkgs, lib, ... }:
+    {
+      pkgs,
+      lib,
+      config,
+      ...
+    }:
+    let
+      niriExe = lib.getExe config.programs.niri.package;
+      runNiriActions =
+        actions: lib.concatStringsSep "\n" (map (action: "${niriExe} msg action ${action}") actions);
+    in
     {
       programs.kitty = {
         enable = true;
@@ -52,6 +65,28 @@
           confirm_os_window_close = lib.mkDefault 0;
           window_padding_width = lib.mkDefault 4;
         };
+      };
+
+      # Not in niri-flake's programs.niri.settings schema yet; merged via `include` (requires niri-unstable).
+      xdg.configFile."niri/recent-windows.kdl".text = ''
+        recent-windows {
+            debounce-ms 400
+            binds {
+                Alt+Tab { next-window; }
+                Alt+Shift+Tab { previous-window; }
+            }
+        }
+      '';
+
+      # Let Home Manager own the final config directly instead of patching a managed file in-place.
+      xdg.configFile.niri-config.enable = lib.mkForce false;
+      xdg.configFile."niri/config.kdl" = {
+        force = true;
+        text = ''
+          include "recent-windows.kdl"
+
+          ${config.programs.niri.finalConfig}
+        '';
       };
 
       programs.niri.settings = {
@@ -136,8 +171,17 @@
             layout = lib.mkDefault "fr";
             variant = lib.mkDefault "azerty";
           };
-          focus-follows-mouse.enable = lib.mkDefault false;
+          # Windows-like hover focus, but never scroll the workspace just to satisfy pointer focus.
+          focus-follows-mouse.enable = lib.mkDefault true;
+          focus-follows-mouse.max-scroll-amount = lib.mkDefault "0%";
           warp-mouse-to-focus.enable = lib.mkDefault false;
+        };
+
+        gestures = {
+          # Dragging a titlebar against the left/right screen edge should not scroll the workspace.
+          dnd-edge-view-scroll.max-speed = 0;
+          # Use Mod+Tab for overview instead of edge-triggered hot corners.
+          hot-corners.enable = false;
         };
 
         layout = {
@@ -176,27 +220,71 @@
 
           "Mod+Q".action.close-window = [ ];
 
-          "Mod+Left".action.focus-column-left = [ ];
-          "Mod+Right".action.focus-column-right = [ ];
-          "Mod+Up".action.focus-window-up = [ ];
-          "Mod+Down".action.focus-window-down = [ ];
+          # Match the Windows-style gesture cheat sheet from windows-app-gestures.md.
+          "Mod+Left".action.move-column-left = [ ];
+          "Mod+Right".action.move-column-right = [ ];
+          "Mod+Alt+Left".action.spawn-sh = runNiriActions [
+            "set-column-width 33.333%"
+            "move-column-left"
+          ];
+          "Mod+Alt+Right".action.spawn-sh = runNiriActions [
+            "set-column-width 33.333%"
+            "move-column-right"
+          ];
+          # Toggle a horizontal split by consuming/expelling the window to the right.
+          "Mod+Alt+Up".action.consume-or-expel-window-right = [ ];
+          "Mod+Alt+Down".action.consume-or-expel-window-left = [ ];
+          "Mod+Up".action.move-window-to-workspace-up = [ ];
+          "Mod+Down".action.move-window-to-workspace-down = [ ];
+          "Mod+Ctrl+Up".action.focus-workspace-up = [ ];
+          "Mod+Ctrl+Down".action.focus-workspace-down = [ ];
+          "Mod+Tab".action.open-overview = [ ];
 
-          "Mod+Shift+Left".action.move-column-left = [ ];
-          "Mod+Shift+Right".action.move-column-right = [ ];
-          "Mod+Shift+Up".action.move-window-up = [ ];
-          "Mod+Shift+Down".action.move-window-down = [ ];
+          # Keep direct keyboard navigation on layout-friendly letter binds.
+          "Mod+H".action.focus-column-left = [ ];
+          "Mod+L".action.focus-column-right = [ ];
+          "Mod+K".action.focus-window-up = [ ];
+          "Mod+J".action.focus-window-down = [ ];
 
+          # Scroll (same as Mod+Left / Mod+Right; cooldown avoids rapid stepping).
+          "Mod+WheelScrollUp" = {
+            cooldown-ms = 150;
+            action.focus-column-right = [ ];
+          };
+          "Mod+WheelScrollDown" = {
+            cooldown-ms = 150;
+            action.focus-column-left = [ ];
+          };
+
+          "Mod+Shift+Left".action.move-window-to-monitor-left = [ ];
+          "Mod+Shift+Right".action.move-window-to-monitor-right = [ ];
+          "Mod+Ctrl+H".action.move-column-left = [ ];
+          "Mod+Ctrl+L".action.move-column-right = [ ];
+          "Mod+Ctrl+K".action.move-window-up = [ ];
+          "Mod+Ctrl+J".action.move-window-down = [ ];
+
+          # Keep numeric binds, and add AZERTY top-row aliases.
           "Mod+1".action.focus-workspace = 1;
           "Mod+2".action.focus-workspace = 2;
           "Mod+3".action.focus-workspace = 3;
           "Mod+4".action.focus-workspace = 4;
           "Mod+5".action.focus-workspace = 5;
+          "Mod+ampersand".action.focus-workspace = 1;
+          "Mod+eacute".action.focus-workspace = 2;
+          "Mod+quotedbl".action.focus-workspace = 3;
+          "Mod+apostrophe".action.focus-workspace = 4;
+          "Mod+parenleft".action.focus-workspace = 5;
 
           "Mod+Shift+1".action.move-window-to-workspace = 1;
           "Mod+Shift+2".action.move-window-to-workspace = 2;
           "Mod+Shift+3".action.move-window-to-workspace = 3;
           "Mod+Shift+4".action.move-window-to-workspace = 4;
           "Mod+Shift+5".action.move-window-to-workspace = 5;
+          "Mod+Shift+ampersand".action.move-window-to-workspace = 1;
+          "Mod+Shift+eacute".action.move-window-to-workspace = 2;
+          "Mod+Shift+quotedbl".action.move-window-to-workspace = 3;
+          "Mod+Shift+apostrophe".action.move-window-to-workspace = 4;
+          "Mod+Shift+parenleft".action.move-window-to-workspace = 5;
 
           "Mod+R".action.switch-preset-column-width = [ ];
           "Mod+F".action.maximize-column = [ ];
@@ -230,5 +318,6 @@
           "Mod+Ctrl+Q".action.quit = { };
         };
       };
+
     };
 }
