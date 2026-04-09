@@ -14,5 +14,7 @@
       };
 
       gtk.enable = true;
+      # Prefer dark GTK variants for legacy GTK2/3/4 apps that respect settings.ini / dconf.
+      gtk.colorScheme = "dark";
     };
 }
