@@ -145,287 +145,328 @@
         };
 
         programs.niri.settings = {
-        window-rules = [
-          {
-            matches = [
-              { title = "^Picture in Picture$"; }
-            ];
-            open-floating = true;
-          }
-          {
-            matches = [
-              {
-                app-id = "firefox$";
-                title = "^Picture-in-Picture$";
-              }
-            ];
-            open-floating = true;
-          }
-          # Brave extension pop-outs (e.g. Bitwarden) use app-id brave-<extension-id>-Default,
-          # not brave-browser.
-          {
-            matches = [
-              { app-id = "^brave-.+-Default$"; }
-            ];
-            open-floating = true;
-          }
-        ];
-
-        # Must stay in sync with home.pointerCursor in modules/cursor-pointer.nix (see references/neoelectron-nixfiles).
-        cursor = {
-          theme = lib.mkDefault "Adwaita";
-          size = lib.mkDefault 24;
-        };
-
-        xwayland-satellite.path = lib.getExe pkgs.xwayland-satellite;
-
-        # Niri defaults to each monitor's EDID "preferred" mode, which is often 60 Hz even when
-        # the panel supports 144/165 Hz. Plasma may have been using the high-refresh modes instead.
-        # Refresh values must match `niri msg outputs` exactly (see Available modes).
-        # Match by connector so renaming in niri msg is stable.
-        outputs = {
-          "DP-2" = {
-            mode = {
-              width = 3440;
-              height = 1440;
-              refresh = 164.900;
-            };
-            position = {
-              x = 0;
-              y = 0;
-            };
-          };
-          "DP-3" = {
-            mode = {
-              width = 2560;
-              height = 1440;
-              refresh = 143.856;
-            };
-            position = {
-              x = 3440;
-              y = 0;
-            };
-          };
-        };
-
-        spawn-at-startup = [
-          { command = [ "noctalia-shell" ]; }
-        ];
-
-        environment = {
-          # NixOS Chromium/Electron: prefer Ozone Wayland over XWayland. Niri applies this only to processes
-          # it spawns; it does not propagate to systemd’s global env (see niri “Miscellaneous” → environment).
-          "NIXOS_OZONE_WL" = "1";
-        };
-
-        input = {
-          mouse = {
-            accel-speed = 0.4;
-            accel-profile = "flat";
-          };
-
-          keyboard.xkb = {
-            layout = lib.mkDefault "fr";
-            variant = lib.mkDefault "azerty";
-          };
-          # Windows-like hover focus, but never scroll the workspace just to satisfy pointer focus.
-          focus-follows-mouse.enable = lib.mkDefault true;
-          focus-follows-mouse.max-scroll-amount = lib.mkDefault "0%";
-          warp-mouse-to-focus.enable = lib.mkDefault false;
-        };
-
-        gestures = {
-          # Dragging a titlebar against the left/right screen edge should not scroll the workspace.
-          dnd-edge-view-scroll.max-speed = 0;
-          # Use Mod+Tab for overview instead of edge-triggered hot corners.
-          hot-corners.enable = false;
-        };
-
-        layout = {
-          gaps = lib.mkDefault 8;
-          center-focused-column = lib.mkDefault "on-overflow";
-
-          border = {
-            enable = lib.mkDefault true;
-            width = lib.mkDefault 2;
-            active.color = lib.mkDefault "#89b4fa";
-            inactive.color = lib.mkDefault "#313244";
-          };
-
-          focus-ring.enable = lib.mkDefault false;
-
-          preset-column-widths = [
-            { proportion = 1.0 / 3.0; }
-            { proportion = 1.0 / 2.0; }
-            { proportion = 2.0 / 3.0; }
+          window-rules = [
+            {
+              matches = [
+                { title = "^Picture in Picture$"; }
+              ];
+              open-floating = true;
+            }
+            {
+              matches = [
+                {
+                  app-id = "firefox$";
+                  title = "^Picture-in-Picture$";
+                }
+              ];
+              open-floating = true;
+            }
+            # Brave extension pop-outs (e.g. Bitwarden) use app-id brave-<extension-id>-Default,
+            # not brave-browser.
+            {
+              matches = [
+                { app-id = "^brave-.+-Default$"; }
+              ];
+              open-floating = true;
+            }
           ];
 
-          default-column-width = {
-            proportion = lib.mkDefault (1.0 / 2.0);
+          # Must stay in sync with home.pointerCursor in modules/cursor-pointer.nix (see references/neoelectron-nixfiles).
+          cursor = {
+            theme = lib.mkDefault "Adwaita";
+            size = lib.mkDefault 24;
           };
-        };
 
-        binds = lib.mkMerge [
-          {
-            "Mod+T".action.spawn = "kitty";
-            "Mod+Space".action.spawn = [
-              "noctalia-shell"
-              "ipc"
-              "call"
-              "launcher"
-              "toggle"
+          xwayland-satellite.path = lib.getExe pkgs.xwayland-satellite;
+
+          # Niri defaults to each monitor's EDID "preferred" mode, which is often 60 Hz even when
+          # the panel supports 144/165 Hz. Plasma may have been using the high-refresh modes instead.
+          # Refresh values must match `niri msg outputs` exactly (see Available modes).
+          # Match by connector so renaming in niri msg is stable.
+          outputs = {
+            "DP-2" = {
+              mode = {
+                width = 3440;
+                height = 1440;
+                refresh = 164.900;
+              };
+              position = {
+                x = 0;
+                y = 0;
+              };
+            };
+            "DP-3" = {
+              mode = {
+                width = 2560;
+                height = 1440;
+                refresh = 143.856;
+              };
+              position = {
+                x = 3440;
+                y = 0;
+              };
+            };
+          };
+
+          spawn-at-startup = [
+            { command = [ "noctalia-shell" ]; }
+          ];
+
+          environment = {
+            # NixOS Chromium/Electron: prefer Ozone Wayland over XWayland. Niri applies this only to processes
+            # it spawns; it does not propagate to systemd’s global env (see niri “Miscellaneous” → environment).
+            "NIXOS_OZONE_WL" = "1";
+          };
+
+          input = {
+            mouse = {
+              accel-speed = 0.4;
+              accel-profile = "flat";
+            };
+
+            keyboard.xkb = {
+              layout = lib.mkDefault "fr";
+              variant = lib.mkDefault "azerty";
+            };
+            # Windows-like hover focus, but never scroll the workspace just to satisfy pointer focus.
+            focus-follows-mouse.enable = lib.mkDefault true;
+            focus-follows-mouse.max-scroll-amount = lib.mkDefault "10%";
+            warp-mouse-to-focus.enable = lib.mkDefault false;
+          };
+
+          gestures = {
+            # Dragging a titlebar against the left/right screen edge should not scroll the workspace.
+            dnd-edge-view-scroll.max-speed = 0;
+            # Use Mod+Tab for overview instead of edge-triggered hot corners.
+            hot-corners.enable = false;
+          };
+
+          layout = {
+            gaps = lib.mkDefault 8;
+            center-focused-column = lib.mkDefault "on-overflow";
+            # If there is only one column, center it.
+            always-center-single-column = true;
+
+            border = {
+              enable = lib.mkDefault true;
+              width = lib.mkDefault 2;
+              active.color = lib.mkDefault "#89b4fa";
+              inactive.color = lib.mkDefault "#313244";
+            };
+
+            focus-ring.enable = lib.mkDefault false;
+
+            preset-column-widths = [
+              { proportion = 1.0 / 3.0; }
+              { proportion = 1.0 / 2.0; }
+              { proportion = 2.0 / 3.0; }
             ];
 
-            "Mod+Q".action.close-window = [ ];
-
-            # Match the Windows-style gesture cheat sheet from windows-app-gestures.md.
-            "Mod+Left".action.move-column-left = [ ];
-            "Mod+Right".action.move-column-right = [ ];
-            "Mod+Alt+Left".action.spawn-sh = runNiriActions [
-              "set-column-width 33.333%"
-              "move-column-left"
-            ];
-            "Mod+Alt+Right".action.spawn-sh = runNiriActions [
-              "set-column-width 33.333%"
-              "move-column-right"
-            ];
-            # Toggle a horizontal split by consuming/expelling the window to the right.
-            "Mod+Alt+Up".action.consume-or-expel-window-right = [ ];
-            "Mod+Alt+Down".action.consume-or-expel-window-left = [ ];
-            "Mod+Up".action.move-window-to-workspace-up = [ ];
-            "Mod+Down".action.move-window-to-workspace-down = [ ];
-            "Mod+Ctrl+Up".action.focus-workspace-up = [ ];
-            "Mod+Ctrl+Down".action.focus-workspace-down = [ ];
-            "Mod+Tab".action.open-overview = [ ];
-
-            # Keep direct keyboard navigation on layout-friendly letter binds.
-            "Mod+H".action.focus-column-left = [ ];
-            "Mod+L".action.focus-column-right = [ ];
-            "Mod+K".action.focus-window-up = [ ];
-            "Mod+J".action.focus-window-down = [ ];
-
-            # Scroll (same as Mod+Left / Mod+Right; cooldown avoids rapid stepping).
-            "Mod+WheelScrollUp" = {
-              cooldown-ms = 150;
-              action.focus-column-right = [ ];
+            default-column-width = {
+              proportion = lib.mkDefault (1.0 / 2.0);
             };
-            "Mod+WheelScrollDown" = {
-              cooldown-ms = 150;
-              action.focus-column-left = [ ];
-            };
+          };
 
-            "Mod+Shift+Left".action.move-window-to-monitor-left = [ ];
-            "Mod+Shift+Right".action.move-window-to-monitor-right = [ ];
-            "Mod+Ctrl+H".action.move-column-left = [ ];
-            "Mod+Ctrl+L".action.move-column-right = [ ];
-            "Mod+Ctrl+K".action.move-window-up = [ ];
-            "Mod+Ctrl+J".action.move-window-down = [ ];
-
-            # Keep numeric binds, and add AZERTY top-row aliases.
-            "Mod+1".action.focus-workspace = 1;
-            "Mod+2".action.focus-workspace = 2;
-            "Mod+3".action.focus-workspace = 3;
-            "Mod+4".action.focus-workspace = 4;
-            "Mod+5".action.focus-workspace = 5;
-            "Mod+ampersand".action.focus-workspace = 1;
-            "Mod+eacute".action.focus-workspace = 2;
-            "Mod+quotedbl".action.focus-workspace = 3;
-            "Mod+apostrophe".action.focus-workspace = 4;
-            "Mod+parenleft".action.focus-workspace = 5;
-
-            "Mod+Shift+1".action.move-window-to-workspace = 1;
-            "Mod+Shift+2".action.move-window-to-workspace = 2;
-            "Mod+Shift+3".action.move-window-to-workspace = 3;
-            "Mod+Shift+4".action.move-window-to-workspace = 4;
-            "Mod+Shift+5".action.move-window-to-workspace = 5;
-            "Mod+Shift+ampersand".action.move-window-to-workspace = 1;
-            "Mod+Shift+eacute".action.move-window-to-workspace = 2;
-            "Mod+Shift+quotedbl".action.move-window-to-workspace = 3;
-            "Mod+Shift+apostrophe".action.move-window-to-workspace = 4;
-            "Mod+Shift+parenleft".action.move-window-to-workspace = 5;
-
-            "Mod+R".action.switch-preset-column-width = [ ];
-            "Mod+F".action.maximize-column = [ ];
-            "Mod+Shift+F".action.fullscreen-window = [ ];
-
-            "Mod+Alt+F".action.toggle-window-floating = [ ];
-            "Mod+Alt+Shift+F".action.switch-focus-between-floating-and-tiling = [ ];
-
-            "Print".action.screenshot = [ ];
-            "Mod+Print".action.screenshot-screen = [ ];
-
-            "Mod+Ctrl+Q".action.quit = { };
-          }
-          (lib.mkIf (audioCfg.volumeUpKey != null) {
-            "${audioCfg.volumeUpKey}" = {
-              allow-when-locked = true;
-              action.spawn = [
-                "wpctl"
-                "set-volume"
-                "@DEFAULT_AUDIO_SINK@"
-                "${audioCfg.volumeStep}+"
-              ];
-            };
-          })
-          (lib.mkIf (audioCfg.volumeDownKey != null) {
-            "${audioCfg.volumeDownKey}" = {
-              allow-when-locked = true;
-              action.spawn = [
-                "wpctl"
-                "set-volume"
-                "@DEFAULT_AUDIO_SINK@"
-                "${audioCfg.volumeStep}-"
-              ];
-            };
-          })
-          (lib.mkIf (audioCfg.muteKey != null) {
-            "${audioCfg.muteKey}" = {
-              allow-when-locked = true;
-              action.spawn = [
-                "wpctl"
-                "set-mute"
-                "@DEFAULT_AUDIO_SINK@"
+          binds = lib.mkMerge [
+            {
+              # Launchers and core actions.
+              "Mod+Space".action.spawn = [
+                "noctalia-shell"
+                "ipc"
+                "call"
+                "launcher"
                 "toggle"
               ];
-            };
-          })
-          (lib.mkIf (mediaCfg.playPauseKey != null) {
-            "${mediaCfg.playPauseKey}" = {
-              allow-when-locked = true;
-              action.spawn = [
-                "playerctl"
-                "play-pause"
+              "Mod+Tab".action.open-overview = [ ];
+              "Mod+T".action.spawn = "kitty";
+              "Mod+Q".action.close-window = [ ];
+
+              # Focus movement on arrows.
+              "Mod+Left".action.focus-column-left = [ ];
+              "Mod+Right".action.focus-column-right = [ ];
+              "Mod+Up".action.focus-window-or-workspace-up = [ ];
+              "Mod+Down".action.focus-window-or-workspace-down = [ ];
+
+              # Focus movement on home-row keys.
+              "Mod+H".action.focus-column-left = [ ];
+              "Mod+L".action.focus-column-right = [ ];
+              "Mod+K".action.focus-window-or-workspace-up = [ ];
+              "Mod+J".action.focus-window-or-workspace-down = [ ];
+
+              # Vertical wheel moves through windows/workspaces.
+              "Mod+WheelScrollUp" = {
+                cooldown-ms = 150;
+                action.focus-window-or-workspace-up = [ ];
+              };
+              "Mod+WheelScrollDown" = {
+                cooldown-ms = 150;
+                action.focus-window-or-workspace-down = [ ];
+              };
+
+              # Horizontal wheel moves horizontal focus.
+              "Mod+WheelScrollLeft" = {
+                cooldown-ms = 150;
+                action.focus-column-left = [ ];
+              };
+              "Mod+WheelScrollRight" = {
+                cooldown-ms = 150;
+                action.focus-column-right = [ ];
+              };
+
+              # Move columns/windows on arrows.
+              "Mod+Ctrl+Left".action.move-column-left = [ ];
+              "Mod+Ctrl+Right".action.move-column-right = [ ];
+              "Mod+Ctrl+Up".action.move-window-up-or-to-workspace-up = [ ];
+              "Mod+Ctrl+Down".action.move-window-down-or-to-workspace-down = [ ];
+
+              # Move columns/windows on home-row keys.
+              "Mod+Ctrl+H".action.move-column-left = [ ];
+              "Mod+Ctrl+L".action.move-column-right = [ ];
+              "Mod+Ctrl+K".action.move-window-up = [ ];
+              "Mod+Ctrl+J".action.move-window-down = [ ];
+
+              # Move focused window to adjacent monitor.
+              "Mod+Shift+Left".action.move-window-to-monitor-left = [ ];
+              "Mod+Shift+Right".action.move-window-to-monitor-right = [ ];
+
+              # Windows-style sizing / split helpers.
+              "Mod+Alt+Left".action.spawn-sh = runNiriActions [
+                "set-column-width 33.333%"
+                "move-column-left"
               ];
-            };
-          })
-          (lib.mkIf (mediaCfg.stopKey != null) {
-            "${mediaCfg.stopKey}" = {
-              allow-when-locked = true;
-              action.spawn = [
-                "playerctl"
-                "stop"
+              "Mod+Alt+Right".action.spawn-sh = runNiriActions [
+                "set-column-width 33.333%"
+                "move-column-right"
               ];
-            };
-          })
-          (lib.mkIf (mediaCfg.previousKey != null) {
-            "${mediaCfg.previousKey}" = {
-              allow-when-locked = true;
-              action.spawn = [
-                "playerctl"
-                "previous"
-              ];
-            };
-          })
-          (lib.mkIf (mediaCfg.nextKey != null) {
-            "${mediaCfg.nextKey}" = {
-              allow-when-locked = true;
-              action.spawn = [
-                "playerctl"
-                "next"
-              ];
-            };
-          })
-        ];
+              "Mod+Alt+Up".action.consume-or-expel-window-right = [ ];
+              "Mod+Alt+Down".action.consume-or-expel-window-left = [ ];
+
+              # Overview navigation on the wheel.
+              "Mod+Shift+WheelScrollUp" = {
+                cooldown-ms = 150;
+                action.spawn-sh = ''
+                  ${niriExe} msg action open-overview
+                  ${niriExe} msg action focus-window-up
+                '';
+              };
+              "Mod+Shift+WheelScrollDown" = {
+                cooldown-ms = 150;
+                action.spawn-sh = runNiriActions [
+                  "open-overview"
+                  "focus-window-down"
+                ];
+              };
+
+              # Workspaces by number.
+              "Mod+1".action.focus-workspace = 1;
+              "Mod+2".action.focus-workspace = 2;
+              "Mod+3".action.focus-workspace = 3;
+              "Mod+4".action.focus-workspace = 4;
+              "Mod+5".action.focus-workspace = 5;
+
+              # Workspaces by number on AZERTY top row.
+              "Mod+ampersand".action.focus-workspace = 1;
+              "Mod+eacute".action.focus-workspace = 2;
+              "Mod+quotedbl".action.focus-workspace = 3;
+              "Mod+apostrophe".action.focus-workspace = 4;
+              "Mod+parenleft".action.focus-workspace = 5;
+
+              # Move window to numbered workspace.
+              "Mod+Shift+1".action.move-window-to-workspace = 1;
+              "Mod+Shift+2".action.move-window-to-workspace = 2;
+              "Mod+Shift+3".action.move-window-to-workspace = 3;
+              "Mod+Shift+4".action.move-window-to-workspace = 4;
+              "Mod+Shift+5".action.move-window-to-workspace = 5;
+
+              # Move window to numbered workspace on AZERTY top row.
+              "Mod+Shift+ampersand".action.move-window-to-workspace = 1;
+              "Mod+Shift+eacute".action.move-window-to-workspace = 2;
+              "Mod+Shift+quotedbl".action.move-window-to-workspace = 3;
+              "Mod+Shift+apostrophe".action.move-window-to-workspace = 4;
+              "Mod+Shift+parenleft".action.move-window-to-workspace = 5;
+
+              # Window state and layout helpers.
+              "Mod+R".action.switch-preset-column-width = [ ];
+              "Mod+F".action.maximize-column = [ ];
+              "Mod+Shift+F".action.fullscreen-window = [ ];
+              "Mod+Alt+F".action.toggle-window-floating = [ ];
+              "Mod+Alt+Shift+F".action.switch-focus-between-floating-and-tiling = [ ];
+
+              # Screenshots and quit.
+              "Print".action.screenshot = [ ];
+              "Mod+Print".action.screenshot-screen = [ ];
+              "Mod+Ctrl+Q".action.quit = { };
+            }
+            (lib.mkIf (audioCfg.volumeUpKey != null) {
+              "${audioCfg.volumeUpKey}" = {
+                allow-when-locked = true;
+                action.spawn = [
+                  "wpctl"
+                  "set-volume"
+                  "@DEFAULT_AUDIO_SINK@"
+                  "${audioCfg.volumeStep}+"
+                ];
+              };
+            })
+            (lib.mkIf (audioCfg.volumeDownKey != null) {
+              "${audioCfg.volumeDownKey}" = {
+                allow-when-locked = true;
+                action.spawn = [
+                  "wpctl"
+                  "set-volume"
+                  "@DEFAULT_AUDIO_SINK@"
+                  "${audioCfg.volumeStep}-"
+                ];
+              };
+            })
+            (lib.mkIf (audioCfg.muteKey != null) {
+              "${audioCfg.muteKey}" = {
+                allow-when-locked = true;
+                action.spawn = [
+                  "wpctl"
+                  "set-mute"
+                  "@DEFAULT_AUDIO_SINK@"
+                  "toggle"
+                ];
+              };
+            })
+            (lib.mkIf (mediaCfg.playPauseKey != null) {
+              "${mediaCfg.playPauseKey}" = {
+                allow-when-locked = true;
+                action.spawn = [
+                  "playerctl"
+                  "play-pause"
+                ];
+              };
+            })
+            (lib.mkIf (mediaCfg.stopKey != null) {
+              "${mediaCfg.stopKey}" = {
+                allow-when-locked = true;
+                action.spawn = [
+                  "playerctl"
+                  "stop"
+                ];
+              };
+            })
+            (lib.mkIf (mediaCfg.previousKey != null) {
+              "${mediaCfg.previousKey}" = {
+                allow-when-locked = true;
+                action.spawn = [
+                  "playerctl"
+                  "previous"
+                ];
+              };
+            })
+            (lib.mkIf (mediaCfg.nextKey != null) {
+              "${mediaCfg.nextKey}" = {
+                allow-when-locked = true;
+                action.spawn = [
+                  "playerctl"
+                  "next"
+                ];
+              };
+            })
+          ];
         };
       };
 
