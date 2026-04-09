@@ -39,6 +39,7 @@ in
         pkgs.uv
         pkgs.nixd
         pkgs.fnm
+        pkgs.jujutsu
       ];
 
       programs.bash.enable = true;
