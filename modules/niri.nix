@@ -220,7 +220,7 @@
 
           input = {
             mouse = {
-              accel-speed = 0.4;
+              accel-speed = lib.mkDefault 0;
               accel-profile = "flat";
             };
 

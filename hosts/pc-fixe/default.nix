@@ -17,6 +17,7 @@ in
       nixos.printing
       nixos.gparted
       nixos.windowsMounts
+      nixos.sunshine
 
       # ── Home Manager integration ─────────────────────────
       inputs.home-manager.nixosModules.home-manager
