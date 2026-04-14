@@ -165,7 +165,19 @@
             # not brave-browser.
             {
               matches = [
-                { app-id = "^brave-.+-Default$"; }
+                {
+                  app-id = "^brave-.+";
+                  title = "^Bitwarden$";
+                }
+              ];
+              open-floating = true;
+            }
+            {
+              matches = [
+                {
+                  app-id = "^steam$";
+                  title = "^(Steam|Sign in to Steam|Settings|Properties|Friends List|Screenshot Uploader)"; # specific windows
+                }
               ];
               open-floating = true;
             }
