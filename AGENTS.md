@@ -150,3 +150,39 @@ nix flake show
 - When adding a new external flake input, add `inputs.<name>.follows = "nixpkgs"` when the input
   supports it, to avoid duplicate nixpkgs evaluations.
 - Keep `system.stateVersion` and `home.stateVersion` stable unless intentionally migrating state.
+
+---
+
+## Agent Learnings
+
+### import-tree requires git-tracked files
+
+When creating new module directories (e.g., moving `coding.nix` to `coding/default.nix`),
+**the files must be tracked by git** before `import-tree` will discover them. If you see
+`attribute 'coding' missing` errors during `nix flake check`, run:
+
+```bash
+git add modules/coding/
+```
+
+This is because `import-tree` operates on the git tree, not the working directory.
+
+### Module organization with assets
+
+When a module needs to include static files (configs, scripts, etc.), organize them in a
+subdirectory:
+
+```
+modules/coding/
+├── default.nix              # Main module
+└── assets/
+    └── opencode.jsonc       # Static config file
+```
+
+Reference assets using relative paths:
+
+```nix
+xdg.configFile."opencode/opencode.jsonc".source = ./assets/opencode.jsonc;
+```
+
+This keeps related files together and avoids cluttering the top-level `modules/` directory.

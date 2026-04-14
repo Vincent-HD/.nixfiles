@@ -3,7 +3,9 @@ let
   username = config.flake.username;
 in
 {
-  # NixOS side: system-level dev tooling (add nix-ld, compilers, etc. here)
+  # ============================================================================
+  # NixOS System Configuration
+  # ============================================================================
   config.flake.modules.nixos.coding =
     { ... }:
     {
@@ -14,26 +16,46 @@ in
       users.users.${username}.extraGroups = [ "docker" ];
     };
 
-  # Home Manager side: editors and dev tools
+  # ============================================================================
+  # Home Manager Configuration
+  # ============================================================================
   config.flake.modules.homeManager.coding =
     { pkgs, config, ... }:
     let
+      # ------------------------------------------------------------------------
+      # Package definitions
+      # ------------------------------------------------------------------------
       cursorPkg = inputs.code-cursor-nix.packages.${pkgs.system}.cursor;
+
       # `pkgs.vscode` also installs `bin/code`. A higher-priority wrapper makes every
       # `code` invocation (shell, git, scripts) run Cursor instead, similar to installing
-      # the editor’s CLI on PATH without relying on shell aliases.
+      # the editor's CLI on PATH without relying on shell aliases.
       codeCliWrapsCursor = pkgs.lib.hiPrio (
         pkgs.writeShellScriptBin "code" ''
           exec ${pkgs.lib.getExe cursorPkg} "$@"
         ''
       );
+
+      opencode-bin = "${pkgs.opencode}/bin/opencode";
+
+      # Wrapper: bare `opencode` attaches to the running service with the current directory.
+      # Any subcommand (run, serve, auth, …) is passed through to the real binary unchanged.
+      opencode-wrapper = pkgs.writeShellScriptBin "opencode" ''
+        if [ $# -gt 0 ]; then
+          exec ${opencode-bin} "$@"
+        fi
+        exec ${opencode-bin} attach http://localhost:4096 --dir "$PWD"
+      '';
     in
     {
+      # ------------------------------------------------------------------------
+      # Packages
+      # ------------------------------------------------------------------------
       home.packages = [
         codeCliWrapsCursor
         (pkgs.lib.lowPrio pkgs.vscode)
         cursorPkg
-        pkgs.opencode
+        opencode-wrapper
         pkgs.neovim
         pkgs.vim
         pkgs.uv
@@ -42,6 +64,37 @@ in
         pkgs.jujutsu
       ];
 
+      # ------------------------------------------------------------------------
+      # OpenCode Service
+      # ------------------------------------------------------------------------
+      # OpenCode headless server — always running, reachable at http://localhost:4096
+      # Starts after graphical-session.target so plasma-session has already run
+      # `systemctl --user import-environment`, giving us the full NixOS PATH.
+      systemd.user.services.opencode-web = {
+        Unit = {
+          Description = "Shared OpenCode backend";
+          After = [ "graphical-session.target" ];
+        };
+        Service = {
+          Type = "simple";
+          ExecStart = "${opencode-bin} serve";
+          Restart = "always";
+          RestartSec = "2";
+          WorkingDirectory = "%h";
+        };
+        Install = {
+          WantedBy = [ "graphical-session.target" ];
+        };
+      };
+
+      # ------------------------------------------------------------------------
+      # OpenCode Config
+      # ------------------------------------------------------------------------
+      xdg.configFile."opencode/opencode.jsonc".source = ./assets/opencode.jsonc;
+
+      # ------------------------------------------------------------------------
+      # Shell Configuration
+      # ------------------------------------------------------------------------
       programs.bash.enable = true;
       programs.bash.shellAliases = {
         nixos-switch = "sudo nixos-rebuild switch --flake ${config.home.homeDirectory}/.nixfiles#pc-fixe";
@@ -50,7 +103,9 @@ in
         eval "$(${pkgs.lib.getExe pkgs.fnm} env --use-on-cd --shell bash)"
       '';
 
-      # Git: use Home Manager options (see `programs.git.settings` → ~/.config/git/config).
+      # ------------------------------------------------------------------------
+      # Git Configuration
+      # ------------------------------------------------------------------------
       # `lib.generators.toGitINI` cannot express both `[color] branch = auto` and `[color "branch"]`
       # in one attrset, so the three `[color "..."]` blocks live in `includes` (raw snippet).
       programs.git = {
