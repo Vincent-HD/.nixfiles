@@ -60,6 +60,7 @@ in
         pkgs.vim
         pkgs.uv
         pkgs.nixd
+        pkgs.nixfmt
         pkgs.fnm
         pkgs.jujutsu
       ];
