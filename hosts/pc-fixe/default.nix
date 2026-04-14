@@ -18,6 +18,7 @@ in
       nixos.gparted
       nixos.windowsMounts
       nixos.sunshine
+      nixos.gaming
 
       # ── Home Manager integration ─────────────────────────
       inputs.home-manager.nixosModules.home-manager
