@@ -63,6 +63,7 @@ in
         pkgs.nixfmt
         pkgs.fnm
         pkgs.jujutsu
+        pkgs.mcp-nixos
       ];
 
       # ------------------------------------------------------------------------
