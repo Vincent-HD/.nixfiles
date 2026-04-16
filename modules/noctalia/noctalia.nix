@@ -11,10 +11,19 @@
   # Home Manager: Noctalia shell (from upstream flake homeModules.default).
   config.flake.modules.homeManager.noctalia =
     { lib, config, ... }:
+    let
+      pkgs = inputs.nixpkgs.legacyPackages.x86_64-linux;
+    in
     {
       imports = [
         inputs.noctalia.homeModules.default
       ];
+
+      programs.noctalia-shell.package = pkgs.noctalia-shell.overrideAttrs (oldAttrs: {
+        postInstall = (oldAttrs.postInstall or "") + ''
+          cp ${./patches/NiriService.qml} $out/share/noctalia-shell/Services/Compositor/NiriService.qml
+        '';
+      });
 
       programs.noctalia-shell = {
         enable = true;
