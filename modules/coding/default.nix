@@ -66,6 +66,31 @@ in
         pkgs.mcp-nixos
       ];
 
+      # Cursor's upstream desktop file uses an icon name that KDE does not resolve here.
+      # Install an explicit desktop file with a direct icon path, like the CurseForge fix.
+      home.file.".local/share/applications/cursor.desktop".source = pkgs.writeText "cursor.desktop" ''
+        [Desktop Entry]
+        Name=Cursor
+        Comment=The AI Code Editor.
+        GenericName=Text Editor
+        Exec=${pkgs.lib.getExe cursorPkg} %F
+        Icon=${cursorPkg}/share/icons/hicolor/512x512/apps/cursor.png
+        Type=Application
+        StartupNotify=false
+        StartupWMClass=Cursor
+        Categories=TextEditor;Development;IDE;
+        MimeType=application/x-cursor-workspace;
+        Actions=new-empty-window;
+        Keywords=cursor;
+
+        X-AppImage-Version=${cursorPkg.version}
+
+        [Desktop Action new-empty-window]
+        Name=New Empty Window
+        Exec=${pkgs.lib.getExe cursorPkg} --new-window %F
+        Icon=${cursorPkg}/share/icons/hicolor/512x512/apps/cursor.png
+      '';
+
       # ------------------------------------------------------------------------
       # OpenCode Service
       # ------------------------------------------------------------------------
