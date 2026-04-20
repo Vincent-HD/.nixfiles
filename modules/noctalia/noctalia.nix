@@ -21,7 +21,8 @@
 
       programs.noctalia-shell.package = pkgs.noctalia-shell.overrideAttrs (oldAttrs: {
         postInstall = (oldAttrs.postInstall or "") + ''
-          cp ${./patches/NiriService.qml} $out/share/noctalia-shell/Services/Compositor/NiriService.qml
+          ${pkgs.python3}/bin/python3 ${./patches/rewrite-notificationservice.py} "$out/share/noctalia-shell/Services/System/NotificationService.qml"
+          cp ${./patches/NiriService.qml} "$out/share/noctalia-shell/Services/Compositor/NiriService.qml"
         '';
       });
 
