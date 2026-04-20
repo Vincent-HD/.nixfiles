@@ -6,6 +6,7 @@
     {
       home.packages = [
         pkgs.doppler
+        pkgs.awscli
         pkgs.jetbrains.datagrip
       ];
     };
