@@ -10,7 +10,7 @@
 
   # Home Manager: Noctalia shell (from upstream flake homeModules.default).
   config.flake.modules.homeManager.noctalia =
-    { lib, config, ... }:
+    { config, ... }:
     let
       pkgs = inputs.nixpkgs.legacyPackages.x86_64-linux;
     in
@@ -29,9 +29,11 @@
       programs.noctalia-shell = {
         enable = true;
         settings = {
+          settingsVersion = 59;
+
           bar = {
-            density = lib.mkDefault "comfortable";
-            position = lib.mkDefault "left";
+            barType = "floating";
+            density = "comfortable";
             widgets = {
               left = [
                 {
@@ -39,17 +41,23 @@
                   useDistroLogo = true;
                 }
                 {
-                  id = "Network";
+                  id = "Workspace";
+                  labelMode = "none";
+                  showApplications = true;
                 }
               ];
               center = [
                 {
-                  id = "Workspace";
-                  hideUnoccupied = false;
-                  labelMode = "none";
+                  id = "ActiveWindow";
+                  maxWidth = 250;
                 }
               ];
               right = [
+                {
+                  id = "SystemMonitor";
+                  compactMode = false;
+                  showNetworkStats = true;
+                }
                 {
                   id = "Volume";
                 }
@@ -57,11 +65,12 @@
                   id = "Microphone";
                 }
                 {
+                  id = "Network";
+                }
+                {
                   id = "Clock";
                   formatHorizontal = "HH:mm";
                   formatVertical = "HH mm";
-                  useMonospacedFont = true;
-                  usePrimaryColor = true;
                 }
                 {
                   id = "Tray";
@@ -69,11 +78,29 @@
               ];
             };
           };
-          dock.enable = lib.mkDefault false;
-          wallpaper.enabled = lib.mkDefault false;
+
           general = {
             avatarImage = "/home/${config.home.username}/.face";
-            radiusRatio = lib.mkDefault 0.2;
+            radiusRatio = 0.4;
+            iRadiusRatio = 0.4;
+            clockFormat = "ddd dd MMM HH:mm:ss ";
+          };
+
+          ui = {
+            fontDefault = "Sans Serif";
+            fontFixed = "monospace";
+            boxBorderEnabled = true;
+          };
+
+          location.autoLocate = false;
+
+          wallpaper = {
+            enabled = false;
+            directory = "/home/${config.home.username}/Pictures/Wallpapers";
+          };
+
+          colorSchemes = {
+            predefinedScheme = "Gruvbox";
           };
         };
       };
