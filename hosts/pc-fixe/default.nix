@@ -39,6 +39,7 @@ in
             hm.browser
             hm.discord
             hm.spotify
+            hm.vicinae
             hm.bitwarden
             hm.curseforge
             hm.work
