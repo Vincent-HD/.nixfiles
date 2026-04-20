@@ -282,11 +282,9 @@
           binds = lib.mkMerge [
             {
               # Launchers and core actions.
+              # Vicinae replaces the old Noctalia launcher on the same shortcut.
               "Mod+Space".action.spawn = [
-                "noctalia-shell"
-                "ipc"
-                "call"
-                "launcher"
+                "vicinae"
                 "toggle"
               ];
               "Mod+Tab".action.open-overview = [ ];

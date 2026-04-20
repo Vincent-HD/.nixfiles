@@ -4,8 +4,11 @@
   config.flake.modules.homeManager.vicinae =
     { pkgs, ... }:
     {
-      home.packages = [
-        pkgs.vicinae
-      ];
+      programs.vicinae = {
+        enable = true;
+        package = pkgs.vicinae;
+        systemd.enable = true;
+        systemd.autoStart = true;
+      };
     };
 }

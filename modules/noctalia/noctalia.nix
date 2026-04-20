@@ -75,11 +75,6 @@
             avatarImage = "/home/${config.home.username}/.face";
             radiusRatio = lib.mkDefault 0.2;
           };
-          appLauncher = {
-            position = lib.mkDefault "center";
-            viewMode = lib.mkDefault "list";
-            terminalCommand = lib.mkDefault "kitty -e";
-          };
         };
       };
     };
