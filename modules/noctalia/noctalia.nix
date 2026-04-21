@@ -54,6 +54,21 @@
               ];
               right = [
                 {
+                  colorizeSystemIcon = "primary";
+                  generalTooltipText = "Duck music when someone talks";
+                  icon = "music-down";
+                  id = "CustomButton";
+                  leftClickExec = ''[ "$(easyeffects -a output)" = "Music Ducking" ] && easyeffects -l "Without Music Ducking" || easyeffects -l "Music Ducking"'';
+                  leftClickUpdateText = true;
+                  parseJson = true;
+                  rightClickExec = ''easyeffects -l "Without Music Ducking"'';
+                  rightClickUpdateText = true;
+                  showExecTooltip = false;
+                  showTextTooltip = false;
+                  textCommand = ''if [ "$(easyeffects -a output)" = "Music Ducking" ]; then printf '{"icon":"music-up"}'; else printf '{"icon":"music-down"}'; fi'';
+                  textIntervalMs = 600000;
+                }
+                {
                   id = "SystemMonitor";
                   compactMode = false;
                   showNetworkStats = true;
@@ -84,6 +99,10 @@
             radiusRatio = 0.4;
             iRadiusRatio = 0.4;
             clockFormat = "ddd dd MMM HH:mm:ss ";
+            lockScreenAnimations = true;
+            enableLockScreenMediaControls = true;
+            telemetryEnabled = true;
+            passwordChars = true;
           };
 
           ui = {
@@ -101,6 +120,13 @@
 
           colorSchemes = {
             predefinedScheme = "Gruvbox";
+          };
+
+          idle = {
+            enabled = true;
+            screenOffTimeout = 120;
+            suspendCommand = "echo \"\" > /dev/null";
+            resumeSuspendCommand = "echo \"\" > /dev/null";
           };
         };
       };
