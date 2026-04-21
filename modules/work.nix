@@ -7,6 +7,7 @@
       home.packages = [
         pkgs.doppler
         pkgs.awscli
+        pkgs.ssm-session-manager-plugin
         pkgs.jetbrains.datagrip
       ];
     };
