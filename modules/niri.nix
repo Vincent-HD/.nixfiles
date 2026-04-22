@@ -196,7 +196,8 @@
           # Refresh values must match `niri msg outputs` exactly (see Available modes).
           # Match by connector so renaming in niri msg is stable.
           outputs = {
-            "DP-2" = {
+            # DP-3 = DELL Inc. AW3423DWF JW542S3, 3440x1440 @ 164.9 Hz primary.
+            "DP-3" = {
               mode = {
                 width = 3440;
                 height = 1440;
@@ -207,7 +208,9 @@
                 y = 0;
               };
             };
-            "DP-3" = {
+            # DP-2 = HP Inc. HP 27xq CNK9182GLP, 2560x1440 @ 143.856 Hz.
+            # Keep it directly next to the DELL so the KVM can stay 200 px beyond it.
+            "DP-2" = {
               mode = {
                 width = 2560;
                 height = 1440;
@@ -215,6 +218,20 @@
               };
               position = {
                 x = 3440;
+                y = 0;
+              };
+            };
+            # HDMI-A-1 = Philips Consumer Electronics Company NanoKVM-Pro 0x0000003F,
+            # 3440x1440 @ 59.973 Hz support display for remote access.
+            # Keep it 200 px away from the HP.
+            "HDMI-A-1" = {
+              mode = {
+                width = 3440;
+                height = 1440;
+                refresh = 59.973;
+              };
+              position = {
+                x = 6200;
                 y = 0;
               };
             };
