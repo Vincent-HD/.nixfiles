@@ -40,6 +40,7 @@ in
             hm.discord
             hm.spotify
             hm.vicinae
+            hm.comma
             hm.bitwarden
             hm.curseforge
             hm.work
