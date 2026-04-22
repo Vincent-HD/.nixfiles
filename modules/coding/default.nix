@@ -25,6 +25,37 @@ in
       # ------------------------------------------------------------------------
       # Package definitions
       # ------------------------------------------------------------------------
+      # `jj-ryu` ships a Linux x64 prebuilt binary on npm. On this single-host
+      # setup, install that artifact directly instead of reproducing npm's wrapper.
+      # Update with:
+      #   nix run github:Mic92/nix-update -- --file modules/coding/default.nix --version <new> jj-ryu
+      jjRyu = pkgs.stdenvNoCC.mkDerivation (finalAttrs: {
+        pname = "jj-ryu";
+        version = "0.0.1-alpha.11";
+
+        src = pkgs.fetchurl {
+          url = "https://registry.npmjs.org/jj-ryu-linux-x64/-/jj-ryu-linux-x64-${finalAttrs.version}.tgz";
+          hash = "sha256-kTSS7XzS67OoVL9hGToDxHD4JUaf98i3U2H4K1i4+Qk=";
+        };
+
+        nativeBuildInputs = [ pkgs.gnutar ];
+        dontUnpack = true;
+        dontBuild = true;
+
+        installPhase = ''
+          tar -xzf "$src" --strip-components=1 package/ryu
+          install -Dm755 ryu "$out/bin/ryu"
+        '';
+
+        meta = {
+          description = "Stacked PRs for Jujutsu with GitHub/GitLab support";
+          homepage = "https://github.com/dmmulroy/jj-ryu";
+          license = pkgs.lib.licenses.mit;
+          platforms = [ "x86_64-linux" ];
+          mainProgram = "ryu";
+        };
+      });
+
       cursorPkg = inputs.code-cursor-nix.packages.${pkgs.system}.cursor;
 
       # `pkgs.vscode` also installs `bin/code`. A higher-priority wrapper makes every
@@ -52,6 +83,7 @@ in
       # Packages
       # ------------------------------------------------------------------------
       home.packages = [
+        jjRyu
         codeCliWrapsCursor
         (pkgs.lib.lowPrio pkgs.vscode)
         cursorPkg

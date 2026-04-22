@@ -147,6 +147,10 @@ nix flake show
 - **Use `custom.*` for user-defined option trees** that do not belong under a standard NixOS/Home
   Manager namespace such as `services.*`, `programs.*`, `users.*`, or `hardware.*`. Example:
   `options.custom.windowsMounts` and `config.custom.windowsMounts`.
+- When adding or bumping pinned packages backed by fixed-output sources (`fetchurl`,
+  `fetchFromGitHub`, `buildNpmPackage`, etc.), prefer `nix-update` over hand-editing hashes or
+  writing one-off update scripts. Example:
+  `nix run github:Mic92/nix-update -- --file modules/coding/default.nix --version 0.0.1-alpha.12 jj-ryu`
 - When adding a new external flake input, add `inputs.<name>.follows = "nixpkgs"` when the input
   supports it, to avoid duplicate nixpkgs evaluations.
 - Keep `system.stateVersion` and `home.stateVersion` stable unless intentionally migrating state.
