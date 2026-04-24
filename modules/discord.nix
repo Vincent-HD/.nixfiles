@@ -1,14 +1,26 @@
 { ... }:
 {
-  # Home Manager side: Discord via Nixcord (Vencord)
-  # The nixcord shared module is loaded in the composition root (hosts/main/default.nix)
+  # Home Manager side: Vesktop with Vencord
   config.flake.modules.homeManager.discord =
-    { ... }:
+    { pkgs, ... }:
     {
-      programs.nixcord = {
+      programs.vesktop = {
         enable = true;
-        discord.vencord.enable = true;
-        config.plugins.fakeNitro.enable = true;
+        package = pkgs.vesktop.overrideAttrs (previousAttrs: {
+          postFixup = previousAttrs.postFixup + ''
+            wrapProgram $out/bin/vesktop \
+              --add-flags "--enable-features=AcceleratedVideoEncoder"
+          '';
+        });
+
+        settings = {
+          hardwareAcceleration = true;
+          hardwareVideoAcceleration = true;
+        };
+
+        vencord.settings.plugins.FakeNitro = {
+          enabled = true;
+        };
       };
     };
 }
