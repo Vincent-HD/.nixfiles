@@ -1,6 +1,6 @@
 ---
 name: update-investigation-commands
-description: Maintains `INVESTIGATION_COMMANDS.md` for this nixfiles repo by collecting reusable shell command patterns from the current session, merging duplicates, normalizing commands into reusable templates, and keeping `README.md` linked to the reference. Use when a session in this repo involves meaningful shell-based investigation, debugging, evaluation, validation, or runtime inspection.
+description: Maintains `INVESTIGATION_COMMANDS.md` for this nixfiles repo by collecting reusable Nix-centric shell command patterns from the current session, merging duplicates, normalizing commands into reusable templates, and keeping `README.md` linked to the reference. Use when a session in this repo involves meaningful Nix investigation, evaluation, validation, or runtime checks that can recur across multiple tasks.
 ---
 
 # Update Investigation Commands
@@ -10,6 +10,12 @@ description: Maintains `INVESTIGATION_COMMANDS.md` for this nixfiles repo by col
 Keep `INVESTIGATION_COMMANDS.md` useful across sessions instead of letting it turn into a raw transcript of one-off commands.
 
 This is a project skill for this repo. It should be applied when shell commands used during the session reveal reusable investigation patterns.
+
+## Scope
+
+This reference is for reusable commands that help investigate Nix flakes, `nix eval`, Home Manager rendering, build and activation validation, and runtime checks of Nix-managed services or sessions.
+
+Do not add commands that only apply to one app, plugin, or setting unless they can be generalized with placeholders and are likely to recur in future Nix investigations.
 
 ## Files
 
@@ -38,7 +44,7 @@ Skip updates when the session had no meaningful new command patterns.
    - merge near-duplicates
    - replace overly specific paths or values with reusable placeholders when appropriate
    - keep concise explanations of purpose and when to use each command
-4. Put low-reuse or one-off commands in the session-specific / low-reuse section instead of mixing them into the main reference.
+4. Put low-reuse or one-off commands in the session-specific / low-reuse section instead of mixing them into the main reference, or skip them entirely if they are too app-specific to be worth keeping.
 5. If an existing entry already covers the same pattern, improve that entry rather than duplicating it.
 6. Remove or rewrite stale entries if the current session found a better or more correct pattern.
 7. Ensure `README.md` links to `INVESTIGATION_COMMANDS.md`; add the link only if it is missing.
@@ -48,6 +54,7 @@ Skip updates when the session had no meaningful new command patterns.
 - Do not dump raw shell history into the file.
 - Do not add tiny one-line variants mechanically if a single normalized pattern covers them.
 - Prefer grouped command families over repeated isolated commands.
+- Prefer placeholder-based commands over hardcoded app names when the pattern is meant to recur.
 - Preserve readability: short explanations, consistent formatting, practical examples.
 - Keep repo-specific knowledge that matters, such as common placeholders or required `NIX_CONFIG` flags.
 

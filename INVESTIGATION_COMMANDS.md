@@ -110,7 +110,7 @@ noctalia-shell ipc call cb --help
 
 Purpose: inspect argument shape for a specific handler before trying to call it.
 
-## Home Manager / Niri Config Evaluation
+## Home Manager / Config Evaluation
 
 ### Evaluate the generated Niri config
 
@@ -230,6 +230,23 @@ command -v nixfmt-rfc-style nixfmt alejandra 2>/dev/null
 ```
 
 Purpose: quickly see which formatter binaries are already on the machine.
+
+## Git State Inspection
+
+### Separate staged and unstaged changes for specific paths
+
+```bash
+git status --short
+git diff --cached -- path/to/file.nix
+git diff -- path/to/file.nix
+```
+
+Purpose: inspect a dirty worktree without losing track of what is already staged versus what is still only in the working tree.
+
+Use when:
+- the repo already contains unrelated changes
+- you need to avoid staging someone else’s work
+- a new tracked file must be added for import-tree to discover it
 
 ## Runtime / Environment Checks
 
