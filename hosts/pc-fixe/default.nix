@@ -43,6 +43,7 @@ in
             hm.bitwarden
             hm.curseforge
             hm.bottles
+            hm.onlyoffice
             hm.work
             hm.kdeConnect
           ];
