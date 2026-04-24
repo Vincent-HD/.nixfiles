@@ -42,6 +42,7 @@ in
             hm.vicinae
             hm.bitwarden
             hm.curseforge
+            hm.bottles
             hm.work
             hm.kdeConnect
           ];
