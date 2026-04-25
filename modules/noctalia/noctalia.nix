@@ -88,6 +88,7 @@
                   formatVertical = "HH mm";
                 }
                 {
+                  drawerEnabled = false;
                   id = "Tray";
                 }
               ];

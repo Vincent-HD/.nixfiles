@@ -37,6 +37,7 @@ in
             hm.cursorPointer
             hm.niri
             hm.noctalia
+            hm.noctalia-plugins-dependencies
             hm.coding
             hm.browser
             hm.discord
