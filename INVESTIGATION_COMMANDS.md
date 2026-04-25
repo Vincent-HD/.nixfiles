@@ -149,6 +149,17 @@ Purpose:
 - confirm that an upstream managed file entry is disabled
 - confirm a NixOS option evaluates to the intended value
 
+## NixOS Host Evaluation
+
+### Evaluate the host toplevel derivation
+
+```bash
+cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" \
+nix eval '.#nixosConfigurations.'"$HOST"'.config.system.build.toplevel.drvPath' --raw
+```
+
+Purpose: confirm the full NixOS host still evaluates end-to-end after a module or input change.
+
 ## Niri Config Validation
 
 ### Validate generated config piped from eval
@@ -249,6 +260,15 @@ Use when:
 - a new tracked file must be added for import-tree to discover it
 
 ## Runtime / Environment Checks
+
+### Check NVIDIA video engine usage
+
+```bash
+nvidia-smi pmon -c 1
+nvidia-smi dmon -s u -c 1
+```
+
+Purpose: see which processes are using the GPU and whether encoder / decoder engines are active.
 
 ### Inspect the currently deployed Niri config
 

@@ -3,9 +3,18 @@
   # Home Manager side: web browser
   config.flake.modules.homeManager.browser =
     { pkgs, ... }:
+    let
+      # Match the Chromium flag reported in the forum post.
+      braveVideoArgs = "--enable-global-vaapi-lock";
+
+      braveWithVaapi = pkgs.brave.override {
+        enableVideoAcceleration = false;
+        commandLineArgs = braveVideoArgs;
+      };
+    in
     {
       home.packages = [
-        pkgs.brave
+        braveWithVaapi
       ];
 
       # Default browser for xdg-open (editors, Cursor links, etc.): use Brave from nixpkgs

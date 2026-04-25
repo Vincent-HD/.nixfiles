@@ -8,6 +8,8 @@ in
   config.flake.nixosConfigurations."pc-fixe" = inputs.nixpkgs.lib.nixosSystem {
     modules = [
       # ── System-level modules ──────────────────────────────
+      nixos.secrets
+      inputs.sops-nix.nixosModules.sops
       nixos.pcFixeConfiguration
       nixos.niri
       nixos.noctalia
@@ -46,6 +48,7 @@ in
             hm.onlyoffice
             hm.work
             hm.kdeConnect
+            hm.xerahs
           ];
 
           custom.niri.audioBinds = {

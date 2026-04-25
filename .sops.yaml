@@ -1,0 +1,8 @@
+keys:
+  - &vincent age1akgvdeuyg9r0rf92dgmu72uavwwtdxnc3ehatvqh4rr5u9gufv9srqekdw
+
+creation_rules:
+  - path_regex: secrets/.*\.yaml$
+    key_groups:
+      - age:
+          - *vincent

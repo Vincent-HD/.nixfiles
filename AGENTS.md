@@ -151,6 +151,11 @@ nix flake show
   `fetchFromGitHub`, `buildNpmPackage`, etc.), prefer `nix-update` over hand-editing hashes or
   writing one-off update scripts. Example:
   `nix run github:Mic92/nix-update -- --file modules/coding/default.nix --version 0.0.1-alpha.12 jj-ryu`
+- **Custom packages must be `nix-update` compatible.** When adding a new package that is not in
+  nixpkgs, create it as a standalone derivation under `packages/<name>/default.nix` using the
+  `finalAttrs` pattern. The module should then import it via `pkgs.callPackage`. This structure lets
+  `nix-update` locate and bump the version/hash automatically. See `packages/xerahs/default.nix`
+  for the reference pattern.
 - When adding a new external flake input, add `inputs.<name>.follows = "nixpkgs"` when the input
   supports it, to avoid duplicate nixpkgs evaluations.
 - Keep `system.stateVersion` and `home.stateVersion` stable unless intentionally migrating state.

@@ -77,6 +77,16 @@ in
         fi
         exec ${opencode-bin} attach http://localhost:4096 --dir "$PWD"
       '';
+
+      checkGpuVideo = pkgs.writeShellScriptBin "check-gpu-video" ''
+        echo "=== GPU Video Encoder/Decoder Monitor ==="
+        echo ""
+        echo "=== Per-process GPU usage ==="
+        nvidia-smi pmon -c 1 2>/dev/null
+        echo ""
+        echo "=== Encoder/decoder utilization ==="
+        nvidia-smi dmon -s u -c 1 2>/dev/null
+      '';
     in
     {
       # ------------------------------------------------------------------------
@@ -88,6 +98,7 @@ in
         (pkgs.lib.lowPrio pkgs.vscode)
         cursorPkg
         opencode-wrapper
+        checkGpuVideo
         pkgs.neovim
         pkgs.vim
         pkgs.uv
