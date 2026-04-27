@@ -356,14 +356,12 @@
               "Mod+Shift+Left".action.move-window-to-monitor-left = [ ];
               "Mod+Shift+Right".action.move-window-to-monitor-right = [ ];
 
-              # Windows-style sizing / split helpers.
+              # Focus the adjacent monitor.
               "Mod+Alt+Left".action.spawn-sh = runNiriActions [
-                "set-column-width 33.333%"
-                "move-column-left"
+                "focus-monitor-left"
               ];
               "Mod+Alt+Right".action.spawn-sh = runNiriActions [
-                "set-column-width 33.333%"
-                "move-column-right"
+                "focus-monitor-right"
               ];
               "Mod+Alt+Up".action.consume-or-expel-window-right = [ ];
               "Mod+Alt+Down".action.consume-or-expel-window-left = [ ];
