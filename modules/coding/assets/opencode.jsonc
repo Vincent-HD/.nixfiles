@@ -6,6 +6,11 @@
       "command": ["mcp-nixos"],
       "enabled": true
     },
+    "arch-ops": {
+      "type": "local",
+      "command": ["uvx", "arch-ops-server"],
+      "enabled": true
+    },
     "context7": {
       "type": "remote",
       "url": "https://mcp.context7.com/mcp",

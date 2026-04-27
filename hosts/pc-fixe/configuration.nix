@@ -14,6 +14,7 @@
       boot.loader.systemd-boot.configurationLimit = 10;
 
       networking.hostName = "pc-fixe";
+      networking.enableIPv6 = false;
       networking.networkmanager.enable = true;
 
       time.timeZone = "Europe/Paris";

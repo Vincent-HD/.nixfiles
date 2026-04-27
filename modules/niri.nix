@@ -176,7 +176,7 @@
               matches = [
                 {
                   app-id = "^steam$";
-                  title = "^(Steam|Sign in to Steam|Settings|Properties|Friends List|Screenshot Uploader)"; # specific windows
+                  title = "^(Sign in to Steam|Steam Settings|Settings|Properties|Friends List|Screenshot Uploader)$"; # specific windows
                 }
               ];
               open-floating = true;
