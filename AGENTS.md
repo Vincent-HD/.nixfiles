@@ -168,11 +168,15 @@ nix flake show
 
 When the user pastes a Noctalia settings export, compare it against the upstream defaults before writing anything into `modules/noctalia/noctalia.nix`.
 
+- Local snapshots to check first:
+  - `modules/noctalia/assets/settings-default.json`
+  - `modules/noctalia/assets/settings-widgets-default.json`
 - Check `https://raw.githubusercontent.com/noctalia-dev/noctalia-shell/main/Commons/Settings.qml` for the real default values.
 - Check `https://raw.githubusercontent.com/noctalia-dev/noctalia-shell/main/Assets/settings-default.json` for the generated top-level defaults.
 - Check `https://raw.githubusercontent.com/noctalia-dev/noctalia-shell/main/Assets/settings-widgets-default.json` for widget defaults.
 - Use `nix eval .#nixosConfigurations.pc-fixe.config.home-manager.users.vincent.programs.noctalia-shell.settings --json` to confirm the rendered Nix matches only the non-default values.
 - Prefer omitting values that match upstream defaults, even if they appear in the export JSON.
+- The `noctalia` skill in `.opencode/skills/noctalia/SKILL.md` captures this workflow.
 
 ### import-tree requires git-tracked files
 

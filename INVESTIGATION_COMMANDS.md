@@ -36,6 +36,46 @@ nix eval --impure --expr '(builtins.getFlake "git+file:///home/vincent/.nixfiles
 nix eval --impure --expr '(builtins.getFlake "git+file:///home/vincent/.nixfiles").inputs.home-manager.outPath' --raw
 ```
 
+## Package / Derivation Inspection
+
+### Read a package version and source position from the evaluated package set
+
+```bash
+nix eval '.#nixosConfigurations.'"$HOST"'.pkgs.<pkg>.version' --raw
+nix eval '.#nixosConfigurations.'"$HOST"'.pkgs.<pkg>.meta.position' --raw
+```
+
+Purpose: identify the exact nixpkgs package version and source file before overriding or pinning it.
+
+### Inspect the rendered Home Manager package list
+
+```bash
+nix eval --json '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$USER"'.home.packages'
+```
+
+Purpose: confirm which packages are attached to the user profile and spot overrides by name.
+
+### Build one package selected from the Home Manager list
+
+```bash
+nix build --impure --no-link --expr '
+let
+  flake = builtins.getFlake "git+file:///home/vincent/.nixfiles";
+  pkg = builtins.head (builtins.filter (p: (p.pname or "") == "<pkg-name>") flake.nixosConfigurations.pc-fixe.config.home-manager.users.vincent.home.packages);
+in pkg
+'
+```
+
+Purpose: force a specific HM-managed package to build even when it has no dedicated flake output.
+
+### Prefetch a fixed-output release artifact
+
+```bash
+nix store prefetch-file --json https://example.com/artifact.ext
+```
+
+Purpose: get the SRI hash for release tarballs, debs, zip files, or AppImages before wiring them into an override.
+
 ### Check which package from an overlay is actually selected
 
 ```bash
@@ -109,6 +149,28 @@ noctalia-shell ipc call cb --help
 ```
 
 Purpose: inspect argument shape for a specific handler before trying to call it.
+
+## Noctalia Settings Defaults
+
+### Evaluate the rendered Noctalia settings snapshot
+
+```bash
+cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" \
+nix eval '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$USER"'.programs.noctalia-shell.settings' --json
+```
+
+Purpose: inspect the effective Noctalia settings after merging the module and filtering defaults.
+
+Use when comparing a pasted export against the local default snapshots in `modules/noctalia/assets/settings-default.json` and `modules/noctalia/assets/settings-widgets-default.json`.
+
+### Evaluate the rendered Noctalia widget settings
+
+```bash
+cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" \
+nix eval '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$USER"'.programs.noctalia-shell.settings.bar.widgets' --json
+```
+
+Purpose: inspect the effective bar widget settings as Nix renders them, especially when comparing widget-level defaults.
 
 ## Home Manager / Config Evaluation
 
