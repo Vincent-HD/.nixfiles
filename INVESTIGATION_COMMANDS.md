@@ -213,6 +213,15 @@ Purpose:
 
 ## NixOS Host Evaluation
 
+### Evaluate a specific NixOS option subtree
+
+```bash
+cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" \
+nix eval '.#nixosConfigurations.'"$HOST"'.config.<option.path>' --json
+```
+
+Purpose: inspect the rendered value of a single NixOS option or nested attrset, such as `services.pipewire` or `home-manager.users.<user>`.
+
 ### Evaluate the host toplevel derivation
 
 ```bash
@@ -221,6 +230,14 @@ nix eval '.#nixosConfigurations.'"$HOST"'.config.system.build.toplevel.drvPath' 
 ```
 
 Purpose: confirm the full NixOS host still evaluates end-to-end after a module or input change.
+
+### Run full flake validation
+
+```bash
+cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" nix flake check
+```
+
+Purpose: validate the whole flake and host module graph after a configuration change.
 
 ## Niri Config Validation
 
