@@ -163,6 +163,18 @@ in
       xdg.configFile."opencode/opencode.jsonc".source = ./assets/opencode.jsonc;
 
       # ------------------------------------------------------------------------
+      # Jujutsu Config
+      # ------------------------------------------------------------------------
+      xdg.configFile."jj/config.toml".source = pkgs.writeText "jj-config.toml" ''
+        [user]
+        name = "Vincent-HD"
+        email = "vincenthoudan@gmail.com"
+
+        [ui]
+        conflict-marker-style = "git"
+      '';
+
+      # ------------------------------------------------------------------------
       # Shell Configuration
       # ------------------------------------------------------------------------
       programs.bash.enable = true;
