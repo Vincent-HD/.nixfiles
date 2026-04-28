@@ -102,6 +102,7 @@ in
         pkgs.neovim
         pkgs.vim
         pkgs.uv
+        pkgs.gh
         pkgs.nixd
         pkgs.nixfmt
         pkgs.fnm
