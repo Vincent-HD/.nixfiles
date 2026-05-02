@@ -114,6 +114,48 @@ The main inputs are:
 
 Most inputs follow `nixpkgs` to avoid duplicate evaluations.
 
+## Secrets Management
+
+This repository uses [sops-nix](https://github.com/Mic92/sops-nix) for secret management.
+Secrets are stored encrypted in `secrets/` and decrypted at activation time.
+
+### Age Key Derivation from SSH
+
+The age private key used by sops-nix is **derived from the SSH private key** (Ed25519)
+rather than being a standalone age key. This allows recreating the same age key on any
+machine where the SSH private key is available.
+
+The SSH private key is managed by **Bitwarden SSH Agent**. When needed, export the
+private key from Bitwarden and run:
+
+```bash
+# Derive age key from SSH private key
+nix-shell -p ssh-to-age --run "ssh-to-age -private-key -i ~/.ssh/id_ed25519 > ~/.config/sops/age/keys.txt"
+```
+
+### Recreating the Age Key on a New Machine
+
+1. Export your SSH private key from Bitwarden
+2. Derive the age key (command above)
+3. Verify the public key matches `.sops.yaml`:
+   ```bash
+   age-keygen -y ~/.config/sops/age/keys.txt
+   ```
+4. The secret files (e.g., `secrets/github-token.yaml`) can now be decrypted
+
+### Updating Secrets After Key Changes
+
+If the age key changes (e.g., new SSH key), update the encrypted files:
+
+```bash
+# Update .sops.yaml with the new public key first
+sops updatekeys secrets/github-token.yaml
+```
+
+### Current Secrets
+
+- `secrets/github-token.yaml` — GitHub personal access token for MCP integration
+
 ## Common Commands
 
 Apply the configuration:

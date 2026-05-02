@@ -1,5 +1,5 @@
 keys:
-  - &vincent age1akgvdeuyg9r0rf92dgmu72uavwwtdxnc3ehatvqh4rr5u9gufv9srqekdw
+  - &vincent age1rz5pfmewwqst28fpff756yuxpuvd85k9gpdydnmxdxw4hxhykvlqg0hszp
 
 creation_rules:
   - path_regex: secrets/.*\.yaml$
