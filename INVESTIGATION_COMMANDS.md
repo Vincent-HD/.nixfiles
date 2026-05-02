@@ -55,6 +55,14 @@ nix eval --json '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$US
 
 Purpose: confirm which packages are attached to the user profile and spot overrides by name.
 
+### Inspect a specific Home Manager app package
+
+```bash
+nix eval --raw '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$USER"'.programs.nixcord.discord.package.pname'
+```
+
+Purpose: confirm the exact app package selected after any override or launcher patch.
+
 ### Build one package selected from the Home Manager list
 
 ```bash
@@ -67,6 +75,15 @@ in pkg
 ```
 
 Purpose: force a specific HM-managed package to build even when it has no dedicated flake output.
+
+### Build the evaluated Home Manager package directly
+
+```bash
+cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" \
+nix build --no-link --print-out-paths '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$USER"'.programs.nixcord.discord.package'
+```
+
+Purpose: build the exact HM-selected package when you already know the option path you want to verify.
 
 ### Prefetch a fixed-output release artifact
 
@@ -222,6 +239,18 @@ nix eval '.#nixosConfigurations.'"$HOST"'.config.<option.path>' --json
 
 Purpose: inspect the rendered value of a single NixOS option or nested attrset, such as `services.pipewire` or `home-manager.users.<user>`.
 
+Related portal checks:
+
+```bash
+cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" \
+nix eval '.#nixosConfigurations.'"$HOST"'.config.xdg.portal.extraPortals' --json
+
+cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" \
+nix eval '.#nixosConfigurations.'"$HOST"'.config.xdg.portal.config.niri' --json
+```
+
+Purpose: verify which xdg-desktop-portal backend packages and session-specific portal defaults are actually active.
+
 ### Evaluate the host toplevel derivation
 
 ```bash
@@ -231,6 +260,15 @@ nix eval '.#nixosConfigurations.'"$HOST"'.config.system.build.toplevel.drvPath' 
 
 Purpose: confirm the full NixOS host still evaluates end-to-end after a module or input change.
 
+### Build the host toplevel derivation
+
+```bash
+cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" \
+nix build --no-link --print-out-paths '.#nixosConfigurations.'"$HOST"'.config.system.build.toplevel'
+```
+
+Purpose: force a full host build after an option or module change.
+
 ### Run full flake validation
 
 ```bash
@@ -238,6 +276,16 @@ cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" nix flake check
 ```
 
 Purpose: validate the whole flake and host module graph after a configuration change.
+
+## Runtime Audio Checks
+
+### Inspect the live PipeWire graph
+
+```bash
+wpctl status
+```
+
+Purpose: verify that the current session exposes the expected input/output devices and that PipeWire, WirePlumber, and portal clients are running.
 
 ## Niri Config Validation
 

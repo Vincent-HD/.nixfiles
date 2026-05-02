@@ -4,11 +4,11 @@
   config.flake.modules.homeManager.curseforge =
     { pkgs, ... }:
     let
-      version = "1.300.0";
-      build = "31983";
+      version = "1.302.0";
+      build = "32990";
       src = pkgs.fetchurl {
         url = "https://curseforge.overwolf.com/electron/linux/CurseForge-${version}-${build}.AppImage";
-        sha256 = "02dxs44633n8rin39c07i5dxx81dy2bylwdjd165cxcdch84x69d";
+        sha256 = "175dsm1kbxwbpkgsl22x9xjk207ir0vsv7bvh1aw7xc90aa6gqkn";
       };
       extracted = pkgs.appimageTools.extractType2 {
         pname = "curseforge";
@@ -41,7 +41,7 @@
         ];
         settings = {
           StartupWMClass = "CurseForge";
-          X-AppImage-Version = "${version}-${build}.${build}";
+          X-AppImage-Version = "${version}-${build}";
         };
       };
     };

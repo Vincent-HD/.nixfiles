@@ -39,6 +39,8 @@
 
       console.keyMap = "fr";
 
+      environment.sessionVariables.NIXOS_OZONE_WL = "1";
+
       users.users.${config.flake.username} = {
         isNormalUser = true;
         description = "Vincent";
