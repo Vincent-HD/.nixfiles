@@ -228,6 +228,17 @@ Purpose:
 - confirm that an upstream managed file entry is disabled
 - confirm a NixOS option evaluates to the intended value
 
+### Evaluate a specific Home Manager option subtree
+
+```bash
+cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" \
+nix eval '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$USER"'.<hm.option.path>' --json
+```
+
+Purpose: inspect the rendered value of a single Home Manager option or nested attrset, such as `programs.nixcord.config.plugins.<plugin>.enable` or `programs.noctalia-shell.settings`.
+
+Use `--json` for booleans and attrsets; reserve `--raw` for strings and store paths.
+
 ## NixOS Host Evaluation
 
 ### Evaluate a specific NixOS option subtree

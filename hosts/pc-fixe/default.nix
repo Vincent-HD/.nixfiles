@@ -39,8 +39,8 @@ in
             hm.noctalia
             hm.noctalia-plugins-dependencies
             hm.coding
-            hm.browser
             hm.discord
+            hm.browser
             hm.spotify
             hm.vicinae
             hm.bitwarden
