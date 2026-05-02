@@ -275,7 +275,7 @@ Purpose: force a full host build after an option or module change.
 cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" nix flake check
 ```
 
-Purpose: validate the whole flake and host module graph after a configuration change.
+Purpose: validate the whole flake and host module graph after a configuration or input change.
 
 ## Runtime Audio Checks
 

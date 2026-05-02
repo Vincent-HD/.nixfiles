@@ -1,6 +1,6 @@
 { inputs, ... }:
 {
-  # Home Manager side: Discord with Vencord and NVIDIA VAAPI flags.
+  # Home Manager side: Discord with Equicord and NVIDIA VAAPI flags.
   config.flake.modules.homeManager.discord =
     { pkgs, ... }:
     let
@@ -25,11 +25,16 @@
         discord = {
           enable = true;
           branch = "stable";
-          vencord.enable = true;
+          vencord.enable = false;
+          equicord.enable = true;
           package = discordWithVaapi;
         };
 
-        config.plugins.fakeNitro.enable = true;
+        config.plugins.neverPausePreviews.enable = true;
+        config.plugins.betterFolders.enable = true;
+        config.plugins.equibopStreamFixes.enable = true;
+        config.plugins.streamingCodecDisabler.enable = true;
+        config.plugins.voiceMessageTranscriber.enable = true;
         config.plugins.volumeBooster.enable = true;
       };
     };
