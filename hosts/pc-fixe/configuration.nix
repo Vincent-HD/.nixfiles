@@ -52,10 +52,20 @@
 
       nixpkgs.config.allowUnfree = true;
 
-      nix.settings.experimental-features = [
-        "nix-command"
-        "flakes"
-      ];
+      nix.settings = {
+        experimental-features = [
+          "nix-command"
+          "flakes"
+        ];
+        extra-substituters = [
+          "https://nix-community.cachix.org"
+          "https://cachix.cachix.org"
+        ];
+        extra-trusted-public-keys = [
+          "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+          "cachix.cachix.org-1:eWNHQldwUO7G2VkjpnjDbWwy4KQ/HNxht7H4SSoMckM="
+        ];
+      };
 
       # Mounting Windows + WSL (see modules/features/windows-mounts.nix).
       # NTFS uses kernel ntfs3 (not FUSE) so nixos-rebuild can reload mounts cleanly.

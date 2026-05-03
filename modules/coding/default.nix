@@ -166,14 +166,21 @@ in
       # ------------------------------------------------------------------------
       # Jujutsu Config
       # ------------------------------------------------------------------------
-      xdg.configFile."jj/config.toml".source = pkgs.writeText "jj-config.toml" ''
-        [user]
-        name = "Vincent-HD"
-        email = "vincenthoudan@gmail.com"
-
-        [ui]
-        conflict-marker-style = "git"
-      '';
+      programs.jujutsu = {
+        enable = true;
+        settings = {
+          user = {
+            name = "Vincent-HD";
+            email = "vincenthoudan@gmail.com";
+          };
+          ui = {
+            "conflict-marker-style" = "git";
+          };
+          remotes.origin = {
+            "auto-track-bookmarks" = "*";
+          };
+        };
+      };
 
       # ------------------------------------------------------------------------
       # Shell Configuration

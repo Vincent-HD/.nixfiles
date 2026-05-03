@@ -123,6 +123,31 @@ Use when:
 - you already have a commit SHA and need the matching SRI hash
 - updating any derivation that fetches from a specific GitHub revision
 
+### Debug a failing package build
+
+```bash
+cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" \
+nix eval '.#nixosConfigurations.'"$HOST"'.pkgs.<pkg>.version' --raw
+
+cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" \
+nix eval '.#nixosConfigurations.'"$HOST"'.pkgs.<pkg>.meta.position' --raw
+
+cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" \
+nix build --no-link --print-out-paths '.#nixosConfigurations.'"$HOST"'.pkgs.<pkg>'
+
+nix log /nix/store/<failed-derivation>.drv
+
+cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" \
+nix why-depends '.#nixosConfigurations.'"$HOST"'.config.system.build.toplevel' '.#nixosConfigurations.'"$HOST"'.pkgs.<pkg>'
+```
+
+Purpose: isolate the first broken derivation, inspect the exact nixpkgs source file, and trace why a package is in the host closure.
+
+Use when:
+- a switch fails in a single dependency before reaching `toplevel`
+- you need to inspect a multilib/FHS package such as `pkgsi686Linux.<pkg>`
+- you want the full build log for the failing derivation instead of the truncated switch output
+
 ## Niri Action / Capability Discovery
 
 ### List Niri actions and filter by keyword

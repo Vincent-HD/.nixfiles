@@ -55,7 +55,7 @@
                   rightClickUpdateText = true;
                   showExecTooltip = false;
                   showTextTooltip = false;
-                  textCommand = ''if [ "$(easyeffects -a output)" = "Music Ducking" ]; then printf '{"icon":"music-up"}'; else printf '{"icon":"music-down"}'; fi'';
+                  textCommand = ''sleep 0.2 && if [ "$(easyeffects -a output)" = "Music Ducking" ]; then printf '{"icon":"music-down"}'; else printf '{"icon":"music"}'; fi'';
                   textIntervalMs = 600000;
                 }
                 {
