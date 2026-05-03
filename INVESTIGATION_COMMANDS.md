@@ -93,6 +93,14 @@ nix store prefetch-file --json https://example.com/artifact.ext
 
 Purpose: get the SRI hash for release tarballs, debs, zip files, or AppImages before wiring them into an override.
 
+### Convert an SRI hash to nix32
+
+```bash
+nix hash convert --hash-algo sha256 --to nix32 sha256-<sri-hash>
+```
+
+Purpose: normalize a prefetch result into the older `sha256 = "..."` form used by existing fixed-output derivations.
+
 ### Check which package from an overlay is actually selected
 
 ```bash
@@ -101,6 +109,19 @@ nix eval '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$USER"'.pr
 ```
 
 Purpose: confirm whether you are using `niri-stable`, `niri-unstable`, or another overridden package.
+
+### Prefetch a GitHub source hash
+
+```bash
+NIX_CONFIG="$NIX_EVAL_FEATURES" nix run nixpkgs#nix-prefetch-github -- --json <owner> <repo> --rev <commit-sha>
+```
+
+Purpose: get the `fetchFromGitHub` hash for a pinned commit before updating a fixed-output source.
+
+Use when:
+- bumping a GitHub-backed overlay or package source
+- you already have a commit SHA and need the matching SRI hash
+- updating any derivation that fetches from a specific GitHub revision
 
 ## Niri Action / Capability Discovery
 

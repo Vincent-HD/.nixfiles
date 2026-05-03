@@ -4,17 +4,17 @@
   config.flake.modules.nixos.graphics =
     { pkgs, config, ... }:
     {
-      # PR #407: Fixes AV1 hardware decoding in Chromium/Brave
-      # https://github.com/elFarto/nvidia-vaapi-driver/pull/407
+      # PR #427: Adds NVENC hardware encoding support via VA-API
+      # https://github.com/elFarto/nvidia-vaapi-driver/pull/427
       nixpkgs.overlays = [
         (final: prev: {
           nvidia-vaapi-driver = prev.nvidia-vaapi-driver.overrideAttrs (oldAttrs: {
-            version = "0.0.16-pr407";
+            version = "0.0.16-pr427";
             src = pkgs.fetchFromGitHub {
-              owner = "kode54";
+              owner = "elFarto";
               repo = "nvidia-vaapi-driver";
-              rev = "b78dc72524d01200b590aeb8807e0e402be3ce06";
-              sha256 = "sha256-SFYyEYzE6sxwJSgA8/wPZHKhLLJm5vV4QzZvCwM9wU4=";
+              rev = "3a58095f1833c997fd4f0a73ce3fa0300cdc20fc";
+              sha256 = "sha256-Kz3ibI3XIpyOCQC7I+cD1N7qBvWwJITj9QdsTA0hsgQ=";
             };
           });
         })
