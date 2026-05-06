@@ -21,7 +21,6 @@ in
       nixos.windowsMounts
       nixos.sunshine
       nixos.gaming
-      nixos.comma
 
       # ── Home Manager integration ─────────────────────────
       inputs.home-manager.nixosModules.home-manager

@@ -1,9 +1,13 @@
-{ ... }:
+{ inputs, ... }:
 {
-  # NixOS side: install comma as a system package.
-  config.flake.modules.nixos.comma =
-    { pkgs, ... }:
+  # Home Manager side: install comma with the prebuilt nix-index database.
+  config.flake.modules.homeManager.comma =
+    { ... }:
     {
-      environment.systemPackages = [ pkgs.comma ];
+      imports = [
+        inputs.nix-index-database.homeModules.default
+      ];
+
+      programs.nix-index-database.comma.enable = true;
     };
 }
