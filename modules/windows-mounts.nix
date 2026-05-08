@@ -4,10 +4,9 @@
   #
   # Reference: references/neoelectron-nixfiles (hardware + wsl-mount.nix).
   #
-  # 1) NTFS: optional fstab mounts at boot — uses `nofail` so a missing/wrong disk does not block boot.
-  #    We use the kernel ntfs3 driver (not ntfs-3g FUSE) so systemd can remount/reload on nixos-rebuild
-  #    without failing. If a switch still errors on mnt-*.mount, run:
-  #      sudo umount /mnt/windows /mnt/data 2>/dev/null; sudo nixos-rebuild switch
+  # 1) NTFS: optional fstab mounts at boot — uses systemd automount so a missing/wrong/hibernated
+  #    Windows disk does not block boot or nixos-rebuild switch. Accessing the mountpoint triggers
+  #    the actual mount attempt.
   # 2) WSL: never mounted automatically. Only `wsl-mount` / `wsl-umount` (manual). No fstab, no systemd
   #    unit, no kernel module loaded at boot — nbd is modprobed inside the script when you run it.
   #    NEVER mount the VHDX while Windows/WSL is using it — risk of corruption.
@@ -28,7 +27,10 @@
         "gid=100"
         "dmask=022"
         "fmask=133"
+        "noauto"
         "nofail"
+        "x-systemd.automount"
+        "x-systemd.idle-timeout=1min"
       ];
     in
     {

@@ -308,6 +308,15 @@ nix eval '.#nixosConfigurations.'"$HOST"'.config.xdg.portal.config.niri' --json
 
 Purpose: verify which xdg-desktop-portal backend packages and session-specific portal defaults are actually active.
 
+### Evaluate rendered filesystem mount options
+
+```bash
+cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" \
+nix eval '.#nixosConfigurations.'"$HOST"'.config.fileSystems."<mountpoint>".options' --json
+```
+
+Purpose: confirm the exact `fstab` / systemd mount options NixOS will render for a mountpoint such as `/mnt/windows` before retrying a rebuild or switch.
+
 ### Evaluate the host toplevel derivation
 
 ```bash
@@ -325,6 +334,15 @@ nix build --no-link --print-out-paths '.#nixosConfigurations.'"$HOST"'.config.sy
 ```
 
 Purpose: force a full host build after an option or module change.
+
+### Dry-run the host toplevel build
+
+```bash
+cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" \
+nix build '.#nixosConfigurations.'"$HOST"'.config.system.build.toplevel' --dry-run
+```
+
+Purpose: validate evaluation and see which derivations would build without creating a result link or realizing the build.
 
 ### Run full flake validation
 
@@ -444,6 +462,26 @@ Use when:
 - a new tracked file must be added for import-tree to discover it
 
 ## Runtime / Environment Checks
+
+### Inspect a Nix-managed user service
+
+```bash
+systemctl --user status <service> --no-pager
+journalctl --user -u <service> -b --no-pager
+journalctl --user -u <service> -b -g 'Error|Fatal|Warning|display|encoder|CAP|KMS|Wayland' --no-pager
+```
+
+Purpose: check whether a user service is running and filter the current boot logs for capture, permission, or initialization failures.
+
+Use when a Home Manager or NixOS-managed user service starts but fails at runtime.
+
+### Check Linux capabilities on wrapped binaries
+
+```bash
+getcap /run/current-system/sw/bin/<binary> /etc/profiles/per-user/$USER/bin/<binary> 2>/dev/null
+```
+
+Purpose: verify whether a deployed binary or wrapper has capabilities such as `cap_sys_admin`, which some capture or hardware access paths require.
 
 ### Check NVIDIA video engine usage
 

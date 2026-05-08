@@ -38,6 +38,7 @@ in
             hm.noctalia
             hm.noctalia-plugins-dependencies
             hm.coding
+            hm.comma
             hm.discord
             hm.browser
             hm.spotify

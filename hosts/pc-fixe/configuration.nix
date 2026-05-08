@@ -68,8 +68,8 @@
       };
 
       # Mounting Windows + WSL (see modules/features/windows-mounts.nix).
-      # NTFS uses kernel ntfs3 (not FUSE) so nixos-rebuild can reload mounts cleanly.
-      # If mnt-windows.mount / mnt-data.mount still fail on switch: sudo umount /mnt/windows /mnt/data; sudo nixos-rebuild switch
+      # NTFS mounts are systemd automounts, so nixos-rebuild does not fail when Windows leaves
+      # the partition hibernated/dirty. Accessing /mnt/windows or /mnt/data triggers the mount.
       # UUIDs: nvme0n1p3 = Windows, sda1 = second disk — verify: sudo blkid | grep -i ntfs
       custom.windowsMounts = {
         enable = true;
