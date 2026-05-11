@@ -4,17 +4,17 @@
   config.flake.modules.nixos.graphics =
     { pkgs, config, ... }:
     {
-      # PR #427: Adds NVENC hardware encoding support via VA-API
-      # https://github.com/elFarto/nvidia-vaapi-driver/pull/427
+      # PR #430: Fixes Chrome stream format switches, including VP9 -> AV1 and SDR -> HDR.
+      # https://github.com/elFarto/nvidia-vaapi-driver/pull/430
       nixpkgs.overlays = [
         (final: prev: {
           nvidia-vaapi-driver = prev.nvidia-vaapi-driver.overrideAttrs (oldAttrs: {
-            version = "0.0.16-pr427";
+            version = "0.0.16-pr430";
             src = pkgs.fetchFromGitHub {
-              owner = "elFarto";
+              owner = "imperishableSecret";
               repo = "nvidia-vaapi-driver";
-              rev = "3a58095f1833c997fd4f0a73ce3fa0300cdc20fc";
-              sha256 = "sha256-Kz3ibI3XIpyOCQC7I+cD1N7qBvWwJITj9QdsTA0hsgQ=";
+              rev = "288a7ba79d47219ea6dea737ec8d684b53a8de36";
+              sha256 = "sha256-wxgdf+Gln1Tv7S/EbVUNOpxJ4Z0Ew4VudBglX7d5XD8=";
             };
           });
         })

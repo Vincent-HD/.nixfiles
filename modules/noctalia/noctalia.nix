@@ -115,9 +115,9 @@
 
           idle = {
             enabled = true;
-            screenOffTimeout = 120;
-            suspendCommand = "echo \"\" > /dev/null";
-            resumeSuspendCommand = "echo \"\" > /dev/null";
+            screenOffTimeout = 300;
+            lockTimeout = 0;
+            suspendTimeout = 0;
           };
         };
       };

@@ -475,6 +475,23 @@ Purpose: check whether a user service is running and filter the current boot log
 
 Use when a Home Manager or NixOS-managed user service starts but fails at runtime.
 
+### Inspect Sunshine display and input mapping logs
+
+```bash
+journalctl --user -u sunshine -b -g 'Resolution|Offset|Logical size|Name:|monitor list|CLIENT|Screencasting|Found monitor|touch|Mouse|absolute|input' --no-pager
+```
+
+Purpose: verify which output Sunshine is streaming and which logical offset / size it detected, especially when debugging Moonlight absolute/direct mouse, touch, or stylus mapping issues.
+
+### Inspect and temporarily reposition Niri outputs
+
+```bash
+niri msg outputs
+niri msg output <output-name> position set 0 0
+```
+
+Purpose: check whether a non-zero output offset is causing absolute-input coordinate bugs, and temporarily test a zero-origin output layout without editing the Niri config.
+
 ### Check Linux capabilities on wrapped binaries
 
 ```bash
