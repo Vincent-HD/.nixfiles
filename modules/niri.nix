@@ -418,8 +418,20 @@
               "Mod+Alt+Shift+F".action.switch-focus-between-floating-and-tiling = [ ];
 
               # Screenshots and quit.
-              "Print".action.screenshot = [ ];
-              "Mod+Print".action.screenshot-screen = [ ];
+              "Print".action.spawn = [
+                "noctalia-shell"
+                "ipc"
+                "call"
+                "plugin:screen-toolkit"
+                "annotate"
+              ];
+              "Mod+Print".action.spawn = [
+                "noctalia-shell"
+                "ipc"
+                "call"
+                "plugin:screen-toolkit"
+                "annotateFullscreen"
+              ];
               "Mod+Ctrl+Q".action.quit = { };
             }
             (lib.mkIf (audioCfg.volumeUpKey != null) {

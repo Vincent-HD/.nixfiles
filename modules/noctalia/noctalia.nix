@@ -81,6 +81,9 @@
                   drawerEnabled = false;
                   id = "Tray";
                 }
+                {
+                  id = "plugin:screen-toolkit";
+                }
               ];
             };
           };

@@ -1,38 +1,49 @@
-{ inputs, ... }:
+{ ... }:
 {
   config.flake.modules.homeManager.noctalia-plugins-dependencies =
-    { config, ... }:
+    { pkgs, ... }:
     let
-      pkgs = inputs.nixpkgs.legacyPackages.x86_64-linux;
+      pluginSource = "https://github.com/noctalia-dev/noctalia-plugins";
     in
     {
-      home.packages = with pkgs; [
+      home.packages = [
         # screen-toolkit dependencies
-        curl
-        ffmpeg
-        gifski
-        grim
-        imagemagick
-        jq
-        slurp
-        tesseract
-        translate-shell
-        wf-recorder
-        wl-clipboard
-        zbar
+        pkgs.curl
+        pkgs.ffmpeg
+        pkgs.gifski
+        pkgs.grim
+        pkgs.hyprpicker
+        pkgs.imagemagick
+        pkgs.jq
+        pkgs.kdePackages.kdialog
+        pkgs.python3
+        pkgs.python3Packages.pygobject3
+        pkgs.slurp
+        pkgs.tesseract
+        pkgs.translate-shell
+        pkgs.wf-recorder
+        pkgs.wl-clipboard
+        pkgs.zbar
         # end of screen-toolkit dependencies
       ];
 
-      # NOTE: We do NOT use `programs.noctalia-shell.plugins` here because
-      # the Noctalia Home Manager module manages plugins.json as a read-only
-      # symlink into the Nix store. Noctalia needs to write to plugins.json
-      # to track plugin state, migrations, and updates.
-      #
-      # Instead, install the plugin manually into ~/.config/noctalia/plugins/
-      # and let Noctalia create and manage plugins.json itself.
-      # The screen-toolkit plugin can be downloaded from:
-      # https://github.com/noctalia-dev/noctalia-plugins/tree/main/screen-toolkit
-      #
+      programs.noctalia-shell.plugins = {
+        version = 2;
+        sources = [
+          {
+            enabled = true;
+            name = "Noctalia Plugins";
+            url = pluginSource;
+          }
+        ];
+        states.screen-toolkit = {
+          enabled = true;
+          sourceUrl = pluginSource;
+        };
+      };
+
+      xdg.configFile."noctalia/plugins.json".force = true;
+
       # IMPORTANT: On NVIDIA GPUs, wl-screenrec fails with VAAPI errors.
       # The upstream plugin auto-detects recorders with:
       #   which wl-screenrec || which wf-recorder

@@ -48,7 +48,6 @@ in
             hm.onlyoffice
             hm.work
             hm.kdeConnect
-            hm.xerahs
           ];
 
           custom.niri.audioBinds = {
