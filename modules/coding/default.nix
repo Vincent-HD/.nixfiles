@@ -187,7 +187,7 @@ in
       # ------------------------------------------------------------------------
       programs.bash.enable = true;
       programs.bash.shellAliases = {
-        nixos-switch = "sudo nixos-rebuild switch --flake ${config.home.homeDirectory}/.nixfiles#pc-fixe";
+        nixswitch = "sudo nixos-rebuild switch --flake ${config.home.homeDirectory}/.nixfiles#pc-fixe";
       };
       programs.bash.initExtra = ''
         eval "$(${pkgs.lib.getExe pkgs.fnm} env --use-on-cd --shell bash)"
