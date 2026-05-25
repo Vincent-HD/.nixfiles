@@ -122,6 +122,29 @@
         "type": "github"
       }
     },
+    "jjui": {
+      "inputs": {
+        "flake-parts": [
+          "flake-parts"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1779396719,
+        "narHash": "sha256-YDAXb5SaGNNP9qXZ6BE5gMRIyT5b3AgwKRLHRLD1xyY=",
+        "owner": "idursun",
+        "repo": "jjui",
+        "rev": "33667b1ff052e57362c1885a2309265629364332",
+        "type": "github"
+      },
+      "original": {
+        "owner": "idursun",
+        "repo": "jjui",
+        "type": "github"
+      }
+    },
     "niri": {
       "inputs": {
         "niri-stable": "niri-stable",
@@ -367,6 +390,7 @@
         "flake-parts": "flake-parts",
         "home-manager": "home-manager",
         "import-tree": "import-tree",
+        "jjui": "jjui",
         "niri": "niri",
         "nix-index-database": "nix-index-database",
         "nixcord": "nixcord",

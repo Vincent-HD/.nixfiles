@@ -107,6 +107,7 @@ in
         pkgs.nixfmt
         pkgs.fnm
         pkgs.jujutsu
+        inputs.jjui.packages.${pkgs.system}.jjui
         pkgs.mcp-nixos
       ];
 
