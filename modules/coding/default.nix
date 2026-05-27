@@ -106,6 +106,7 @@ in
         pkgs.nixd
         pkgs.nixfmt
         pkgs.fnm
+        inputs.self.packages.${pkgs.system}.crosspipe
         pkgs.jujutsu
         inputs.jjui.packages.${pkgs.system}.jjui
         pkgs.mcp-nixos
