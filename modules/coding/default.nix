@@ -108,6 +108,7 @@ in
         pkgs.fnm
         inputs.self.packages.${pkgs.system}.crosspipe
         pkgs.jujutsu
+        inputs.self.packages.${pkgs.system}.lightjj
         inputs.jjui.packages.${pkgs.system}.jjui
         pkgs.mcp-nixos
       ];
