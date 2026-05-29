@@ -156,6 +156,8 @@ nix flake show
   `finalAttrs` pattern. The module should then import it via `pkgs.callPackage`. This structure lets
   `nix-update` locate and bump the version/hash automatically. See `packages/xerahs/default.nix`
   for the reference pattern.
+- **See `docs/UPDATE_COMMANDS.md`** for the full list of nix-update-compatible pinned packages
+  and their exact update commands.
 - When adding a new external flake input, add `inputs.<name>.follows = "nixpkgs"` when the input
   supports it, to avoid duplicate nixpkgs evaluations.
 - Keep `system.stateVersion` and `home.stateVersion` stable unless intentionally migrating state.
