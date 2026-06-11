@@ -1,6 +1,7 @@
 # nixfiles
 
-Personal NixOS configuration for a single machine, `pc-fixe`, and a single user, `vincent`.
+Personal NixOS and macOS configuration for two machines, `pc-fixe` and `macbook-pro`, and a single
+user, `vincent`.
 
 This repository manages both system configuration and Home Manager configuration in one flake-based
 setup. It uses a feature-oriented structure, so desktop apps, shell tools, audio, graphics, and
@@ -8,11 +9,11 @@ other concerns each live in their own module.
 
 ## At a Glance
 
-- Host: `pc-fixe`
+- Hosts: `pc-fixe` (NixOS) and `macbook-pro` (nix-darwin)
 - User: `vincent`
-- Desktop: KDE Plasma 6
-- GPU: NVIDIA
-- Config style: Nix flake + flake-parts + Home Manager
+- NixOS desktop: KDE Plasma 6 / Niri on NVIDIA
+- macOS platform: Apple Silicon with nix-darwin, Home Manager, and declarative Homebrew
+- Config style: Nix flake + flake-parts + NixOS/nix-darwin + Home Manager
 - Module loading: automatic via `import-tree`
 
 ## How This Repo Is Organized
@@ -28,6 +29,7 @@ In practice, that means:
 
 - `modules/` contains reusable features such as graphics, audio, browser, coding tools, or desktop setup.
 - `hosts/pc-fixe/default.nix` is the composition root that assembles the final system.
+- `hosts/macbook-pro/default.nix` is the conservative macOS composition root.
 - `hosts/pc-fixe/configuration.nix` contains the base machine configuration.
 - `hosts/pc-fixe/hardware-configuration.nix` contains hardware-specific settings.
 
@@ -55,6 +57,9 @@ modules/
   curseforge.nix
   gparted.nix
 hosts/
+  macbook-pro/
+    default.nix
+    configuration.nix
   pc-fixe/
     default.nix
     configuration.nix
@@ -66,6 +71,7 @@ hosts/
 Most feature files expose configuration through one or both of these namespaces:
 
 - `config.flake.modules.nixos.<name>` for system-level NixOS configuration
+- `config.flake.modules.darwin.<name>` for system-level nix-darwin configuration
 - `config.flake.modules.homeManager.<name>` for user-level Home Manager configuration
 
 That allows a single feature file to define both machine-wide and user-specific settings when that
@@ -92,8 +98,9 @@ Not every module needs both parts.
 A few conventions matter when editing this repo:
 
 - The username comes from `config.flake.username`, not from a hardcoded string.
-- The home directory should be derived from the username, for example `"/home/${username}"`.
-- Home Manager is integrated through the NixOS configuration rather than managed separately.
+- The home directory should be derived from the username and host platform.
+- Home Manager is integrated through the NixOS and nix-darwin configurations rather than managed
+  separately.
 - Custom option trees should live under `custom.*` when they do not belong to a standard NixOS or
   Home Manager namespace.
 - Explicit Nix is preferred over shorthand. Clear bindings are favored over `with`, `inherit`, or
@@ -164,6 +171,12 @@ Apply the configuration:
 sudo nixos-rebuild switch --flake .#pc-fixe
 ```
 
+Apply the macOS configuration after completing `docs/MACOS_BOOTSTRAP.md`:
+
+```bash
+sudo darwin-rebuild switch --flake .#macbook-pro
+```
+
 Test the configuration without making it the default boot target:
 
 ```bash
@@ -188,11 +201,18 @@ If you want to add a new feature:
 
 1. Create a new `.nix` file under `modules/`.
 2. Define the NixOS and/or Home Manager module in that file.
-3. Enable it from `hosts/pc-fixe/default.nix`.
+3. Enable it from the relevant host composition under `hosts/`.
 
-If you want to remove a feature, the main place to change is also `hosts/pc-fixe/default.nix`.
+If you want to remove a feature, change the relevant host composition under `hosts/`.
 
 ## Extra Documentation
 
 - `AGENTS.md` documents repository conventions in more detail, especially for coding agents.
 - `INVESTIGATION_COMMANDS.md` collects useful commands for debugging, validation, and evaluation.
+- `docs/MACOS_INVENTORY.md` records the pre-migration inventory and ownership boundaries for the
+  MacBook Pro.
+- `docs/MACOS_NIX_RESEARCH.md` records the researched nix-darwin, Home Manager, and Homebrew design
+  and migration plan.
+- `docs/MACOS_BOOTSTRAP.md` is the reviewed first-build, activation, validation, and rollback
+  runbook.
+- `docs/MACOS_MIGRATION.md` is the one-item-at-a-time migration ledger and test checklist.

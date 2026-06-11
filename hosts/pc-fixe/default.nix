@@ -50,6 +50,8 @@ in
             hm.kdeConnect
           ];
 
+          home.packages = [ inputs.self.packages.x86_64-linux.crosspipe ];
+
           custom.niri.audioBinds = {
             volumeUpKey = "XF86AudioRaiseVolume";
             volumeDownKey = "XF86AudioLowerVolume";

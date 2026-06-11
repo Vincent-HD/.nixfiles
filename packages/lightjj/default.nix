@@ -10,13 +10,26 @@
   openssh,
 }:
 
+let
+  sources = {
+    "aarch64-darwin" = {
+      artifact = "lightjj-macos-arm64";
+      hash = "sha256-bk0xEdTA2QXIyj/aniux4BCh809ssOMu+shvGESdH4c=";
+    };
+    "x86_64-linux" = {
+      artifact = "lightjj-linux-x86_64";
+      hash = "sha256-hEa0AFWhURKIbfzgLnQWEfD1iGXkeVurM+fLPqDMxH4=";
+    };
+  };
+  source = sources.${stdenvNoCC.hostPlatform.system};
+in
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "lightjj";
   version = "1.29.0";
 
   src = fetchurl {
-    url = "https://github.com/chronologos/lightjj/releases/download/v${finalAttrs.version}/lightjj-linux-x86_64";
-    hash = "sha256-hEa0AFWhURKIbfzgLnQWEfD1iGXkeVurM+fLPqDMxH4=";
+    url = "https://github.com/chronologos/lightjj/releases/download/v${finalAttrs.version}/${source.artifact}";
+    hash = source.hash;
   };
 
   nativeBuildInputs = [ makeWrapper ];
@@ -43,6 +56,6 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     homepage = "https://github.com/chronologos/lightjj";
     license = lib.licenses.mit;
     mainProgram = "lightjj";
-    platforms = [ "x86_64-linux" ];
+    platforms = builtins.attrNames sources;
   };
 })

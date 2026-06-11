@@ -1,7 +1,5 @@
 { inputs, config, ... }:
 {
-  config.flake.username = "vincent"; # Define the username shared across all modules
-
   config.flake.modules.nixos.pcFixeConfiguration =
     { ... }:
     {

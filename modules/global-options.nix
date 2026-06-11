@@ -3,7 +3,12 @@
 ###
 { lib, ... }:
 {
-  config.systems = [ "x86_64-linux" ];
+  config.systems = [
+    "aarch64-darwin"
+    "x86_64-linux"
+  ];
+
+  config.flake.username = "vincent";
 
   options.flake.username = lib.mkOption {
     type = lib.types.str;

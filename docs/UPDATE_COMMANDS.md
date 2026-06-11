@@ -28,18 +28,22 @@ nix run github:Mic92/nix-update -- --flake crosspipe
 
 ### jj-ryu
 
-- **File**: `modules/coding/default.nix` (embedded, not a standalone flake package)
-- **Pattern**: `stdenvNoCC.mkDerivation` + `fetchurl` from npm registry
-- **Requires explicit `--version`** because there is no upstream Git tag to auto-detect.
+- **File**: `packages/jj-ryu/default.nix`
+- **Pattern**: `stdenvNoCC.mkDerivation` + platform-selected `fetchurl` from GitHub releases
+- **Flake output**: `.#jj-ryu`
 
 ```bash
-nix run github:Mic92/nix-update -- --file modules/coding/default.nix --version <new-version> jj-ryu
+nix run github:Mic92/nix-update -- --flake jj-ryu
 ```
 
-Example:
+### sunshine-darwin
+
+- **File**: `packages/sunshine-darwin/default.nix`
+- **Pattern**: `stdenvNoCC.mkDerivation` + `fetchurl` from the official GitHub release DMG
+- **Flake output**: `.#sunshine-darwin`
 
 ```bash
-nix run github:Mic92/nix-update -- --file modules/coding/default.nix --version 0.0.1-alpha.12 jj-ryu
+nix run github:Mic92/nix-update -- --flake sunshine-darwin
 ```
 
 ## Manual-Update Packages (Not nix-update Compatible)
@@ -69,12 +73,8 @@ Run each `nix-update` command in sequence (or in separate terminals):
 ```bash
 nix run github:Mic92/nix-update -- --flake lightjj
 nix run github:Mic92/nix-update -- --flake crosspipe
-```
-
-For `jj-ryu`, check <https://www.npmjs.com/package/jj-ryu-linux-x64> for the latest version first, then:
-
-```bash
-nix run github:Mic92/nix-update -- --file modules/coding/default.nix --version <version> jj-ryu
+nix run github:Mic92/nix-update -- --flake jj-ryu
+nix run github:Mic92/nix-update -- --flake sunshine-darwin
 ```
 
 ## Verification
@@ -85,10 +85,8 @@ After any update, verify the package still builds:
 nix build .#<package-name>
 ```
 
-Or for `jj-ryu` (which has no flake output):
-
 ```bash
-nix eval '.#nixosConfigurations.pc-fixe.config.home-manager.users.vincent.home.packages' --apply 'pkgs: builtins.head (builtins.filter (p: (p.pname or "") == "jj-ryu") pkgs)'
+nix build .#jj-ryu
 ```
 
 Then apply the system configuration:
