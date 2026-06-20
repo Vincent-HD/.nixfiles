@@ -30,7 +30,14 @@ in
       # ------------------------------------------------------------------------
       # Package definitions
       # ------------------------------------------------------------------------
-      cursorPkg = inputs.code-cursor-nix.packages.${pkgs.system}.cursor;
+      # code-cursor-nix's current Cursor 3.8.11 AppImage hash is stale.
+      # Re-evaluate the upstream package.nix but force the correct fixed-output
+      # hash so the build can succeed without pinning the whole input.
+      cursorPkg = pkgs.callPackage "${inputs.code-cursor-nix}/package.nix" {
+        fetchurl = args: pkgs.fetchurl (args // {
+          hash = "sha256-K8MAPqgc6ZokWBAUeLFUCcTLgnFXe9nLlB6Krq6KORo=";
+        });
+      };
 
       # `pkgs.vscode` also installs `bin/code`. A higher-priority wrapper makes every
       # `code` invocation (shell, git, scripts) run Cursor instead, similar to installing

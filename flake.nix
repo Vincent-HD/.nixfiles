@@ -57,8 +57,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Pinned to the last v4 (Quickshell-based) revision. Noctalia v5 is a fresh
+    # rewrite with a TOML config format and is still alpha; keep it out of
+    # `nix flake update` until we intentionally migrate.
     noctalia = {
-      url = "github:noctalia-dev/noctalia-shell";
+      url = "github:noctalia-dev/noctalia-shell/272cd91408b5ff6e329e6397eed042fe422069e7";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
