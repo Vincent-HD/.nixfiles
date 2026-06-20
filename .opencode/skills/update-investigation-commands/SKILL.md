@@ -29,7 +29,7 @@ Use this skill when working in this repo and the session includes command-line i
 - flake or input discovery
 - `nix eval` exploration
 - generated config inspection
-- `niri` / `noctalia-shell` runtime checks
+- `niri` / `noctalia` runtime checks
 - validation or formatting commands
 - debugging a failed rebuild, activation, or session behavior
 

@@ -156,8 +156,6 @@ nix flake show
   `finalAttrs` pattern. The module should then import it via `pkgs.callPackage`. This structure lets
   `nix-update` locate and bump the version/hash automatically. See `packages/xerahs/default.nix`
   for the reference pattern.
-- **See `docs/UPDATE_COMMANDS.md`** for the full list of nix-update-compatible pinned packages
-  and their exact update commands.
 - When adding a new external flake input, add `inputs.<name>.follows = "nixpkgs"` when the input
   supports it, to avoid duplicate nixpkgs evaluations.
 - Keep `system.stateVersion` and `home.stateVersion` stable unless intentionally migrating state.
@@ -166,18 +164,16 @@ nix flake show
 
 ## Agent Learnings
 
-### Noctalia JSON defaults
+### Noctalia v5 defaults
 
-When the user pastes a Noctalia settings export, compare it against the upstream defaults before writing anything into `modules/noctalia/noctalia.nix`.
+Noctalia v5 is a fresh rewrite with a TOML config format; v4 JSON exports are **not migrated automatically**.
+When the user asks to update the Noctalia module, write settings under `programs.noctalia.settings` and
+prefer omitting values that match upstream defaults.
 
-- Local snapshots to check first:
-  - `modules/noctalia/assets/settings-default.json`
-  - `modules/noctalia/assets/settings-widgets-default.json`
-- Check `https://raw.githubusercontent.com/noctalia-dev/noctalia-shell/main/Commons/Settings.qml` for the real default values.
-- Check `https://raw.githubusercontent.com/noctalia-dev/noctalia-shell/main/Assets/settings-default.json` for the generated top-level defaults.
-- Check `https://raw.githubusercontent.com/noctalia-dev/noctalia-shell/main/Assets/settings-widgets-default.json` for widget defaults.
-- Use `nix eval .#nixosConfigurations.pc-fixe.config.home-manager.users.vincent.programs.noctalia-shell.settings --json` to confirm the rendered Nix matches only the non-default values.
-- Prefer omitting values that match upstream defaults, even if they appear in the export JSON.
+- Reference the upstream v5 example config: `https://raw.githubusercontent.com/noctalia-dev/noctalia-shell/main/example.toml`.
+- Reference the v5 docs: `https://docs.noctalia.dev/v5/configuration/`.
+- Verify the rendered attrset with `nix eval .#nixosConfigurations.pc-fixe.config.home-manager.users.vincent.programs.noctalia.settings --json`.
+- The local `modules/noctalia/assets/settings-default.json` and `modules/noctalia/assets/settings-widgets-default.json` snapshots are v4-only and no longer authoritative.
 - The `noctalia` skill in `.opencode/skills/noctalia/SKILL.md` captures this workflow.
 
 ### import-tree requires git-tracked files

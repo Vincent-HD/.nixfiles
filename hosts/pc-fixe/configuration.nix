@@ -49,6 +49,11 @@
       };
 
       nixpkgs.config.allowUnfree = true;
+      # Bitwarden Desktop currently pins an EOL Electron. Allow it until nixpkgs
+      # ships a version built against a supported Electron release.
+      nixpkgs.config.permittedInsecurePackages = [
+        "electron-39.8.10"
+      ];
 
       nix.settings = {
         experimental-features = [

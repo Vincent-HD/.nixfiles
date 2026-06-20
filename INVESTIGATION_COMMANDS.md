@@ -181,37 +181,34 @@ Use only when it is safe for the action to have an immediate visible effect.
 
 ## Noctalia IPC Discovery
 
-### Show Noctalia IPC help
+Noctalia v5 uses `noctalia msg <command> ...` for IPC. The v4 `noctalia-shell ipc ...` interface is gone.
+
+### Show Noctalia CLI help
 
 ```bash
-noctalia-shell ipc --help
+noctalia --help
+noctalia msg --help
 ```
 
 Purpose: understand CLI shape and supported IPC subcommands.
 
-### List all Noctalia IPC targets
+### List common Noctalia IPC commands
 
 ```bash
-noctalia-shell ipc show
+noctalia msg --help 2>&1 | grep -iE 'panel|bar|screenshot|clipboard|media|theme|notification'
 ```
 
-Purpose: discover callable IPC targets and functions such as `launcher`, `settings`, `bar`, or plugin handlers.
+Purpose: quickly check whether Noctalia already exposes a command for the behavior you want.
 
-### Filter Noctalia IPC targets for a feature
+### Example Noctalia IPC calls
 
 ```bash
-noctalia-shell ipc show 2>&1 | grep -iE 'hot|corner|workspace|overview|window'
+noctalia msg panel-toggle launcher
+noctalia msg screenshot-region
+noctalia msg theme-mode-toggle
 ```
 
-Purpose: quickly check whether Noctalia already exposes a target for the behavior you want.
-
-### Probe a specific Noctalia target
-
-```bash
-noctalia-shell ipc call cb --help
-```
-
-Purpose: inspect argument shape for a specific handler before trying to call it.
+Purpose: exercise the new `noctalia msg` IPC shape before wiring it into binds or scripts.
 
 ## Noctalia Settings Defaults
 
@@ -219,21 +216,21 @@ Purpose: inspect argument shape for a specific handler before trying to call it.
 
 ```bash
 cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" \
-nix eval '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$USER"'.programs.noctalia-shell.settings' --json
+nix eval '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$USER"'.programs.noctalia.settings' --json
 ```
 
-Purpose: inspect the effective Noctalia settings after merging the module and filtering defaults.
+Purpose: inspect the effective Noctalia v5 settings attrset before it is converted to TOML.
 
-Use when comparing a pasted export against the local default snapshots in `modules/noctalia/assets/settings-default.json` and `modules/noctalia/assets/settings-widgets-default.json`.
+Use when verifying the TOML that will be written to `~/.config/noctalia/config.toml`.
 
-### Evaluate the rendered Noctalia widget settings
+### Evaluate the rendered Noctalia bar settings
 
 ```bash
 cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" \
-nix eval '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$USER"'.programs.noctalia-shell.settings.bar.widgets' --json
+nix eval '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$USER"'.programs.noctalia.settings.bar.main' --json
 ```
 
-Purpose: inspect the effective bar widget settings as Nix renders them, especially when comparing widget-level defaults.
+Purpose: inspect the effective bar configuration as Nix renders it, especially when adjusting widget lists.
 
 ## Home Manager / Config Evaluation
 
@@ -281,7 +278,7 @@ cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" \
 nix eval '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$USER"'.<hm.option.path>' --json
 ```
 
-Purpose: inspect the rendered value of a single Home Manager option or nested attrset, such as `programs.nixcord.config.plugins.<plugin>.enable` or `programs.noctalia-shell.settings`.
+Purpose: inspect the rendered value of a single Home Manager option or nested attrset, such as `programs.nixcord.config.plugins.<plugin>.enable` or `programs.noctalia.settings`.
 
 Use `--json` for booleans and attrsets; reserve `--raw` for strings and store paths.
 
@@ -528,7 +525,7 @@ Purpose: check what is actually deployed after a switch or failed activation.
 ### Check whether a binary exists in the session
 
 ```bash
-which noctalia-shell
+which noctalia
 ```
 
 Purpose: confirm that a runtime dependency is actually available in the current user environment.
@@ -581,7 +578,7 @@ Purpose: useful when a config is split across includes and you need to validate 
 ```bash
 niri msg action open-overview
 niri msg action focus-window-up
-noctalia-shell ipc call cb up
+noctalia msg clipboard-clear
 ```
 
 Purpose: manual experiments while discovering behavior. These are best used sparingly because they can visibly affect the running session or depend on context.
@@ -598,4 +595,4 @@ Purpose: manual experiments while discovering behavior. These are best used spar
 
 - Prefer validating before rebuilding whenever you touch `programs.niri.settings`, `xdg.configFile."niri/*"`, or Home Manager-managed Niri files.
 
-- When a command touches live compositor state (`niri msg action ...`, `noctalia-shell ipc call ...`), assume it has immediate visible side effects.
+- When a command touches live compositor state (`niri msg action ...`, `noctalia msg ...`), assume it has immediate visible side effects.

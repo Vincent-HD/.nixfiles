@@ -8,7 +8,13 @@
       services.upower.enable = true;
     };
 
-  # Home Manager: Noctalia shell (from upstream flake homeModules.default).
+  # Home Manager: Noctalia v5 shell (from upstream flake homeModules.default).
+  #
+  # Noctalia v5 is a fresh rewrite with a TOML config format; v4 JSON settings
+  # are not migrated automatically. The bar layout below is a best-effort v5
+  # approximation of the previous v4 widgets. Plugins (e.g. screen-toolkit) are
+  # not carried over because the v5 plugin system is experimental and uses a
+  # different manifest format.
   config.flake.modules.homeManager.noctalia =
     { config, ... }:
     {
@@ -16,111 +22,57 @@
         inputs.noctalia.homeModules.default
       ];
 
-      programs.noctalia-shell = {
+      programs.noctalia = {
         enable = true;
+
         settings = {
-          settingsVersion = 59;
-
-          bar = {
-            barType = "floating";
-            density = "comfortable";
-            widgets = {
-              left = [
-                {
-                  id = "ControlCenter";
-                  useDistroLogo = true;
-                }
-                {
-                  id = "Workspace";
-                  labelMode = "none";
-                  showApplications = true;
-                }
-              ];
-              center = [
-                {
-                  id = "ActiveWindow";
-                  maxWidth = 250;
-                }
-              ];
-              right = [
-                {
-                  colorizeSystemIcon = "primary";
-                  generalTooltipText = "Duck music when someone talks";
-                  icon = "music-down";
-                  id = "CustomButton";
-                  leftClickExec = ''[ "$(easyeffects -a output)" = "Music Ducking" ] && easyeffects -l "Without Music Ducking" || easyeffects -l "Music Ducking"'';
-                  leftClickUpdateText = true;
-                  parseJson = true;
-                  rightClickExec = ''easyeffects -l "Without Music Ducking"'';
-                  rightClickUpdateText = true;
-                  showExecTooltip = false;
-                  showTextTooltip = false;
-                  textCommand = ''sleep 0.5 && if [ "$(easyeffects -a output)" = "Music Ducking" ]; then printf '{"icon":"music-down"}'; else printf '{"icon":"music"}'; fi'';
-                  textIntervalMs = 600000;
-                }
-                {
-                  id = "SystemMonitor";
-                  compactMode = false;
-                  showNetworkStats = true;
-                }
-                {
-                  id = "Volume";
-                }
-                {
-                  id = "Microphone";
-                }
-                {
-                  id = "Network";
-                }
-                {
-                  id = "Clock";
-                  formatHorizontal = "HH:mm";
-                  formatVertical = "HH mm";
-                }
-                {
-                  drawerEnabled = false;
-                  id = "Tray";
-                }
-                {
-                  id = "plugin:screen-toolkit";
-                }
-              ];
-            };
+          shell = {
+            avatar_path = "/home/${config.home.username}/.face";
+            font_family = "Sans Serif";
+            telemetry_enabled = true;
+            panel.borders = true;
           };
 
-          general = {
-            avatarImage = "/home/${config.home.username}/.face";
-            radiusRatio = 0.4;
-            iRadiusRatio = 0.4;
-            clockFormat = "ddd dd MMM HH:mm:ss ";
-            lockScreenAnimations = true;
-            enableLockScreenMediaControls = true;
-            telemetryEnabled = true;
-            passwordChars = true;
+          # The default [bar.main] already floats (marginEnds/marginEdge), so we
+          # only override the widget lists here.
+          bar.main = {
+            start = [ "control-center" "workspaces" ];
+            center = [ "active_window" ];
+            end = [ "output_volume" "input_volume" "network" "clock" "tray" ];
           };
 
-          ui = {
-            fontDefault = "Sans Serif";
-            fontFixed = "monospace";
-            boxBorderEnabled = true;
+          widget = {
+            active_window.max_length = 250;
+            clock.format = "{:%H:%M}";
           };
 
-          location.autoLocate = false;
+          theme = {
+            mode = "dark";
+            source = "builtin";
+            builtin = "Gruvbox";
+          };
 
           wallpaper = {
             enabled = false;
             directory = "/home/${config.home.username}/Pictures/Wallpapers";
           };
 
-          colorSchemes = {
-            predefinedScheme = "Gruvbox";
-          };
+          location.auto_locate = false;
 
           idle = {
-            enabled = true;
-            screenOffTimeout = 300;
-            lockTimeout = 0;
-            suspendTimeout = 0;
+            behavior = {
+              lock = {
+                enabled = false;
+                timeout = 0;
+                command = "noctalia:session lock";
+              };
+              "screen-off" = {
+                enabled = true;
+                timeout = 300;
+                command = "noctalia:dpms-off";
+                resume_command = "noctalia:dpms-on";
+              };
+            };
           };
         };
       };

@@ -41,7 +41,7 @@
       services.greetd.restart = true;
     };
 
-  # Home Manager: niri config, kitty (Mod+T), spawn noctalia-shell at startup.
+  # Home Manager: niri config, kitty (Mod+T), spawn noctalia at startup.
   config.flake.modules.homeManager.niri =
     {
       pkgs,
@@ -238,7 +238,7 @@
           };
 
           spawn-at-startup = [
-            { command = [ "noctalia-shell" ]; }
+            { command = [ "noctalia" ]; }
           ];
 
           environment = {
@@ -418,19 +418,16 @@
               "Mod+Alt+Shift+F".action.switch-focus-between-floating-and-tiling = [ ];
 
               # Screenshots and quit.
+              # Noctalia v5 has built-in screenshot IPC (the v4 screen-toolkit plugin is gone).
               "Print".action.spawn = [
-                "noctalia-shell"
-                "ipc"
-                "call"
-                "plugin:screen-toolkit"
-                "annotate"
+                "noctalia"
+                "msg"
+                "screenshot-region"
               ];
               "Mod+Print".action.spawn = [
-                "noctalia-shell"
-                "ipc"
-                "call"
-                "plugin:screen-toolkit"
-                "annotateFullscreen"
+                "noctalia"
+                "msg"
+                "screenshot-fullscreen"
               ];
               "Mod+Ctrl+Q".action.quit = { };
             }

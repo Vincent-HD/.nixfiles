@@ -36,6 +36,11 @@
 
     code-cursor-nix.url = "github:jacopone/code-cursor-nix";
 
+    # Patched Discord that fixes Wayland screen sharing on NVIDIA.
+    # See: https://github.com/niri-wm/niri/issues/4178
+    #      https://github.com/NixOS/nixpkgs/pull/530836
+    discordPatch.url = "github:LuckShiba/nixpkgs/discord-vk";
+
     nixcord = {
       url = "github:FlameFlag/nixcord";
       inputs.nixpkgs.follows = "nixpkgs";
