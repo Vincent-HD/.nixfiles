@@ -21,6 +21,7 @@ in
       nixos.windowsMounts
       nixos.sunshine
       nixos.gaming
+      nixos.deskflow
 
       # ── Home Manager integration ─────────────────────────
       inputs.home-manager.nixosModules.home-manager
@@ -48,6 +49,7 @@ in
             hm.onlyoffice
             hm.work
             hm.kdeConnect
+            hm.deskflow
           ];
 
           home.packages = [ inputs.self.packages.x86_64-linux.crosspipe ];

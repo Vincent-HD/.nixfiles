@@ -129,6 +129,7 @@ nix flake show
 
 - **Be as explicit as possible in Nix.** Avoid shorthand that hides where values come from or where
   they are exported to.
+- When adding new config, include a small comment above it that briefly explains what it does.
 - **Do not use implicit flake-parts top-level exports** such as bare `flake.*` at module top level.
   Prefer explicit `config.flake.*` or `config = { flake.* = ...; };`.
 - **Avoid `with`, `inherit`, and other convenience shorthand** when a direct explicit binding is

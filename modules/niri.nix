@@ -28,6 +28,15 @@
         "org.freedesktop.impl.portal.Secret" = [ "gnome-keyring" ];
       };
 
+      # The xdg-desktop-portal-gnome impl ships with `UseIn=gnome`, so the
+      # dispatcher refuses to activate its `InputCapture` / `RemoteDesktop`
+      # interfaces when the session is `niri` (XDG_CURRENT_DESKTOP=niri).
+      # There is no niri-specific portal impl, so we tell only the portal
+      # dispatcher to identify as `gnome`. This is the standard Niri workaround
+      # and does not change XDG_CURRENT_DESKTOP for any other user app.
+      # Required by libei-based input capture (Deskflow, fcitx5, etc.).
+      systemd.user.services.xdg-desktop-portal.serviceConfig.Environment = "XDG_CURRENT_DESKTOP=gnome";
+
       services.greetd = {
         enable = true;
         settings = {
