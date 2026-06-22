@@ -17,11 +17,10 @@
 
       xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
 
-      xdg.portal.config.niri = {
-        default = [
-          "gnome"
-          "gtk"
-        ];
+      # The portal dispatcher is run with XDG_CURRENT_DESKTOP=gnome below, so
+      # use the common portals.conf rather than a niri-specific config file.
+      xdg.portal.config.common = {
+        default = [ "gtk" ];
         "org.freedesktop.impl.portal.FileChooser" = [ "gtk" ];
         "org.freedesktop.impl.portal.Access" = [ "gtk" ];
         "org.freedesktop.impl.portal.Notification" = [ "gtk" ];

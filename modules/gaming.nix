@@ -18,7 +18,6 @@
       # GameScope is the compositor used for Steam Deck-style fullscreen gaming sessions.
       programs.gamescope = {
         enable = true;
-        capSysNice = true;
       };
 
       programs.gamemode.enable = true;

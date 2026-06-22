@@ -16,6 +16,7 @@ in
       nixos.graphics
       nixos.sound
       nixos.coding
+      nixos.codex
       nixos.printing
       nixos.gparted
       nixos.windowsMounts
@@ -39,6 +40,7 @@ in
             hm.noctalia
             hm.noctalia-plugins-dependencies
             hm.coding
+            hm.codex
             hm.comma
             hm.discord
             hm.browser

@@ -44,7 +44,6 @@
           "brave-browser"
           "bruno"
           "cleanshot"
-          "codex"
           "cursor"
           "dbeaver-community"
           "discord"

@@ -1,0 +1,206 @@
+{ inputs, config, ... }:
+let
+  codexLbVersion = "1.20.1";
+  mkCodexSettings =
+    { pkgs, lib }:
+    {
+      model = "gpt-5.5";
+      model_provider = "codex-lb";
+      model_reasoning_effort = "high";
+      file_opener = "cursor";
+
+      model_providers.codex-lb = {
+        name = "openai";
+        base_url = "http://127.0.0.1:2455/backend-api/codex";
+        wire_api = "responses";
+        supports_websockets = true;
+        requires_openai_auth = true;
+      };
+
+      mcp_servers = {
+        arch-ops = {
+          command = "uvx";
+          args = [ "arch-ops-server" ];
+          enabled = true;
+        };
+
+        context7 = {
+          url = "https://mcp.context7.com/mcp";
+          enabled = true;
+        };
+
+        # GitHub MCP uses a PAT; Codex turns this env var into Authorization: Bearer <token>.
+        github = {
+          url = "https://api.githubcopilot.com/mcp/";
+          enabled = true;
+          bearer_token_env_var = "CODEX_GITHUB_MCP_TOKEN";
+        };
+      }
+      // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
+        nixos = {
+          command = "mcp-nixos";
+          enabled = true;
+        };
+      };
+    };
+
+  mkCodexManagedConfig =
+    { pkgs, lib }:
+    (pkgs.formats.toml { }).generate "codex-managed-config.toml" (mkCodexSettings {
+      pkgs = pkgs;
+      lib = lib;
+    });
+in
+{
+  config.flake.modules.darwin.codex =
+    { pkgs, lib, ... }:
+    {
+      # Install the official Codex desktop app on macOS, where OpenAI publishes it.
+      homebrew.casks = [ "codex" ];
+
+      # Managed Codex defaults layer; Codex merges this above the mutable user config.
+      environment.etc."codex/managed_config.toml".source = mkCodexManagedConfig {
+        pkgs = pkgs;
+        lib = lib;
+      };
+    };
+
+  config.flake.modules.nixos.codex =
+    { pkgs, lib, ... }:
+    {
+      # Managed Codex defaults layer; Codex merges this above the mutable user config.
+      environment.etc."codex/managed_config.toml".source = mkCodexManagedConfig {
+        pkgs = pkgs;
+        lib = lib;
+      };
+    };
+
+  config.flake.modules.homeManager.codex =
+    {
+      pkgs,
+      lib,
+      config,
+      ...
+    }:
+    let
+      codexHome = "${config.home.homeDirectory}/.codex";
+      codexLbHome = "${config.home.homeDirectory}/.codex-lb";
+      githubTokenPath = "${config.home.homeDirectory}/.config/opencode/github-token";
+      codexPackage =
+        if pkgs.stdenv.hostPlatform.isLinux then pkgs.callPackage ../packages/codex { } else pkgs.codex;
+
+      # codex-lb upstream recommends uvx for non-Docker installs. Pin the PyPI
+      # version here while keeping the runtime-managed virtualenv outside /nix/store.
+      codex-lb = pkgs.writeShellScriptBin "codex-lb" ''
+        set -euo pipefail
+
+        mkdir -p "${codexLbHome}"
+        export UV_CACHE_DIR="''${UV_CACHE_DIR:-${config.home.homeDirectory}/.cache/uv}"
+        export UV_TOOL_DIR="''${UV_TOOL_DIR:-${config.home.homeDirectory}/.local/share/uv/tools}"
+        exec ${pkgs.lib.getExe pkgs.uv} tool run --from codex-lb==${codexLbVersion} codex-lb "$@"
+      '';
+
+      # Codex reads bearer tokens from environment variables, so this wrapper
+      # bridges the existing sops-managed GitHub token file into Codex at launch.
+      codex = pkgs.lib.hiPrio (
+        pkgs.writeShellScriptBin "codex" ''
+          set -euo pipefail
+
+          if [ -r "${githubTokenPath}" ]; then
+            export CODEX_GITHUB_MCP_TOKEN="$(<"${githubTokenPath}")"
+          fi
+
+          exec ${pkgs.lib.getExe codexPackage} "$@"
+        ''
+      );
+
+      codexDesktopLinuxBasePackage = inputs.codex-desktop-linux.packages.${pkgs.system}.codex-desktop;
+      codexDesktopLinuxPackage = pkgs.symlinkJoin {
+        name = "${codexDesktopLinuxBasePackage.name}-github-mcp-token";
+        paths = [ codexDesktopLinuxBasePackage ];
+        nativeBuildInputs = [ pkgs.makeWrapper ];
+        postBuild = ''
+          if [ -e "$out/bin/codex-desktop" ]; then
+            rm -f "$out/bin/codex-desktop"
+            makeWrapper "${codexDesktopLinuxBasePackage}/bin/codex-desktop" "$out/bin/codex-desktop" \
+              --set-default CODEX_CLI_PATH "${pkgs.lib.getExe codex}" \
+              --run 'if [ -r "${githubTokenPath}" ]; then export CODEX_GITHUB_MCP_TOKEN="$(<"${githubTokenPath}")"; fi'
+          fi
+
+          desktopFile="$out/share/applications/codex-desktop.desktop"
+          if [ -e "$desktopFile" ]; then
+            target="$(readlink -f "$desktopFile")"
+            rm -f "$desktopFile"
+            substitute "$target" "$desktopFile" \
+              --replace-fail "${codexDesktopLinuxBasePackage}/bin/codex-desktop" "$out/bin/codex-desktop"
+          fi
+        '';
+        meta = codexDesktopLinuxBasePackage.meta or { };
+      };
+
+      codexLbEnvironment = {
+        CODEX_LB_DATABASE_URL = "sqlite+aiosqlite:///${codexLbHome}/store.db";
+        CODEX_LB_DATABASE_MIGRATE_ON_STARTUP = "true";
+        CODEX_LB_DATABASE_SQLITE_PRE_MIGRATE_BACKUP_ENABLED = "true";
+        CODEX_LB_DATABASE_SQLITE_PRE_MIGRATE_BACKUP_MAX_FILES = "5";
+        CODEX_LB_DASHBOARD_AUTH_MODE = "standard";
+        CODEX_LB_FIREWALL_TRUSTED_PROXY_CIDRS = "127.0.0.1/32,::1/128";
+        CODEX_LB_OAUTH_REDIRECT_URI = "http://localhost:1455/auth/callback";
+        CODEX_LB_OAUTH_CALLBACK_HOST = "127.0.0.1";
+        CODEX_LB_OAUTH_CALLBACK_PORT = "1455";
+        CODEX_LB_UPSTREAM_STREAM_TRANSPORT = "websocket";
+        SSL_CERT_FILE = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
+        REQUESTS_CA_BUNDLE = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
+      };
+    in
+    lib.mkMerge [
+      {
+        home.packages = [
+          codex
+          codex-lb
+          pkgs.uv
+        ]
+        ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
+          pkgs.mcp-nixos
+        ];
+
+        home.file.".codex/.keep".text = "";
+        home.file.".codex-lb/.keep".text = "";
+      }
+
+      (lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
+        # OpenAI does not publish a Linux Codex app yet; use the community Nix flake.
+        home.packages = [ codexDesktopLinuxPackage ];
+
+        # Start the codex-lb dashboard/proxy for local Codex app-compatible clients.
+        systemd.user.services.codex-lb = {
+          Unit = {
+            Description = "Codex account load balancer";
+            After = [ "network-online.target" ];
+          };
+          Service = {
+            Type = "simple";
+            ExecStart = "${pkgs.lib.getExe codex-lb}";
+            Environment = lib.mapAttrsToList (name: value: "${name}=${value}") codexLbEnvironment;
+            Restart = "always";
+            RestartSec = "2";
+            WorkingDirectory = codexLbHome;
+          };
+          Install.WantedBy = [ "default.target" ];
+        };
+      })
+
+      (lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
+        launchd.agents.codex-lb = {
+          enable = true;
+          config = {
+            ProgramArguments = [ "${pkgs.lib.getExe codex-lb}" ];
+            EnvironmentVariables = codexLbEnvironment;
+            KeepAlive = true;
+            RunAtLoad = true;
+            WorkingDirectory = codexLbHome;
+          };
+        };
+      })
+    ];
+}

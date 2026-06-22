@@ -10,7 +10,15 @@
 
     flake-parts.url = "github:hercules-ci/flake-parts";
 
+    flake-utils.url = "github:numtide/flake-utils";
+
     import-tree.url = "github:vic/import-tree";
+
+    codex-desktop-linux = {
+      url = "github:ilysenko/codex-desktop-linux/c868dcd19f3a176d833ac9f1d35873f6a21e8921";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.flake-utils.follows = "flake-utils";
+    };
 
     nix-darwin = {
       url = "github:nix-darwin/nix-darwin";
