@@ -9,31 +9,15 @@
 
         taps = [
           "homebrew/services"
-          "jesseduffield/lazydocker"
         ];
 
         # Preserve the current Homebrew formula ownership during the first migration.
         brews = [
           "awscli"
-          "btop"
-          "cffi"
-          {
-            name = "docker";
-            link = false;
-          }
-          "docker-compose"
           "doppler"
-          "fnm"
-          "hub"
-          "hurl"
-          "isl"
-          "jesseduffield/lazydocker/lazydocker"
           "jq"
-          "libpq"
           "mas"
-          "neofetch"
           "thefuck"
-          "watch"
         ];
 
         casks = [

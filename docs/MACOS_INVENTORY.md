@@ -66,20 +66,20 @@ declared individually:
 | --- | --- | --- |
 | `awscli` | 2.34.63 | Nix/Home Manager (`pkgs.awscli2`) |
 | `btop` | 1.4.7 | Home Manager |
-| `cffi` | 2.0.0_1 | Review; likely an accidental leaf or Python dependency |
-| `docker` | 29.5.3 | Keep Homebrew while OrbStack owns the runtime |
-| `docker-compose` | 5.1.4 | Keep Homebrew while OrbStack owns the runtime |
+| `cffi` | 2.0.0_1 | Remove; orphan Homebrew leaf with no installed dependents |
+| `docker` | 29.5.3 | Remove Homebrew formula; OrbStack already provides the active Docker CLI/runtime |
+| `docker-compose` | 5.1.4 | Remove Homebrew formula; OrbStack already provides the active Compose shim |
 | `doppler` | 3.76.0 | Home Manager; already in `hm.work` |
 | `fnm` | 1.39.0 | Home Manager; already in `hm.coding` |
 | `git` | 2.54.0 | Home Manager; already in `hm.coding` |
 | `hub` | 2.14.2 | Remove after confirming no remaining use; prefer `gh` |
-| `hurl` | 8.0.1 | Home Manager |
-| `isl` | 0.27 | Review; likely an accidental leaf |
+| `hurl` | 8.0.1 | Remove; not needed on this machine |
+| `isl` | 0.27 | Remove; orphan Homebrew leaf with no installed dependents |
 | `jesseduffield/lazydocker/lazydocker` | 0.25.2 | Home Manager if Darwin package is available; otherwise Homebrew |
 | `jq` | 1.8.1 | Home Manager |
 | `libpq` | 18.4 | Home Manager or Homebrew, depending on work-project compatibility |
 | `mcfly` | 0.9.4 | Home Manager |
-| `neofetch` | 7.1.0 | Remove or replace; upstream is archived |
+| `fastfetch` | 2.63.1 | Home Manager; replacement for the removed `neofetch` package |
 | `starship` | 1.25.1 | Home Manager |
 | `thefuck` | 3.32 | Home Manager |
 | `watch` | 4.0.6 | Home Manager |

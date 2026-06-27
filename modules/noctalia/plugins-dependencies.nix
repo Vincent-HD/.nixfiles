@@ -14,7 +14,6 @@
         pkgs.grim
         pkgs.hyprpicker
         pkgs.imagemagick
-        pkgs.jq
         pkgs.kdePackages.kdialog
         pkgs.python3
         pkgs.python3Packages.pygobject3

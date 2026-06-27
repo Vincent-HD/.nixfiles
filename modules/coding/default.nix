@@ -30,12 +30,12 @@ in
       # ------------------------------------------------------------------------
       # Package definitions
       # ------------------------------------------------------------------------
-      # code-cursor-nix's current Cursor 3.8.11 AppImage hash is stale.
+      # code-cursor-nix's current Cursor 3.8.11 source hash is stale.
       # Re-evaluate the upstream package.nix but force the correct fixed-output
       # hash so the build can succeed without pinning the whole input.
       cursorPkg = pkgs.callPackage "${inputs.code-cursor-nix}/package.nix" {
         fetchurl = args: pkgs.fetchurl (args // {
-          hash = "sha256-K8MAPqgc6ZokWBAUeLFUCcTLgnFXe9nLlB6Krq6KORo=";
+          hash = "sha256-NouEzXpKO2A3/y8FCNTXspm+Rim6a5Yi1yS1kLeevi8=";
         });
       };
 

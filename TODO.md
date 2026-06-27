@@ -54,8 +54,8 @@ makes the final configuration less obvious than defining it directly in Nix.
 The Mac login shell is Zsh, but shell configuration is currently split:
 
 - `modules/coding/default.nix` enables Bash and initializes Fnm only for Bash on Linux.
-- `modules/darwin/development.nix` contains a Darwin-specific Zsh configuration that still invokes
-  Homebrew-managed `fnm` and `hub`.
+- `modules/darwin/development.nix` contains a Darwin-specific Zsh configuration instead of a shared
+  cross-platform Zsh feature.
 - Some shell integrations remain in manually managed startup files during the incremental macOS
   migration.
 
@@ -80,7 +80,6 @@ to Bash or Homebrew.
 - New Zsh login and interactive shells start without errors on both hosts.
 - `fnm`, Starship, Zoxide, McFly, aliases, completion, autosuggestions, and syntax highlighting
   work on both hosts.
-- Darwin shell initialization no longer references `/opt/homebrew/bin/fnm` or
-  `/opt/homebrew/bin/hub`.
+- Darwin and Linux share the same declarative Zsh configuration.
 - Home Manager owns the intended Zsh files without silently discarding existing behavior.
 - NixOS rebuilds and Darwin rebuilds both pass before removing old startup-file content.

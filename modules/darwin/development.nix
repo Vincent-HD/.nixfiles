@@ -16,7 +16,6 @@
       home.sessionPath = [
         "${config.home.homeDirectory}/Library/Application Support/JetBrains/Toolbox/scripts"
         "${config.home.homeDirectory}/.bun/bin"
-        "/opt/homebrew/opt/libpq/bin"
       ];
 
       programs.zsh = {
@@ -37,8 +36,7 @@
         };
 
         initContent = ''
-          eval "$(/opt/homebrew/bin/fnm env --use-on-cd --shell zsh)"
-          eval "$(/opt/homebrew/bin/hub alias -s)"
+          eval "$(${pkgs.lib.getExe pkgs.fnm} env --use-on-cd --shell zsh)"
           source "${config.home.homeDirectory}/.orbstack/shell/init.zsh" 2>/dev/null || :
         '';
       };

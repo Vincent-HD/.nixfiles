@@ -25,11 +25,15 @@ in
             hm.coding
             hm.codex
             hm.discord
+            hm.jq
+            hm.lazydocker
+            hm.fastfetch
             hm.mcfly
             hm.starship
             hm.sunshine
             hm.work
             hm.zoxide
+            hm.zshHelpers
           ];
 
           home.username = username;

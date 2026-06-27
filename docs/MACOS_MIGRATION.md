@@ -449,9 +449,9 @@ Result:
 - The repository-managed coding applications, commands, Git configuration, Jujutsu configuration,
   and OpenCode configuration are active.
 - The Darwin OpenCode launch agent is running and its health endpoint reports healthy.
-- Homebrew Cursor, Visual Studio Code, Git, and Fnm remain installed. Current Zsh startup content
-  still aliases Git to Hub and initializes Homebrew Fnm, so removing those owners is deferred until
-  the shared Zsh migration recorded in `TODO.md`.
+- Homebrew Cursor and Visual Studio Code remain installed pending separate editor checks.
+- Hub and Homebrew Fnm were removed during the incremental Zsh migration.
+- Homebrew Git was removed after the Nix-managed Git binary and configuration passed their checks.
 
 ## Activation 7: Btop
 
@@ -499,6 +499,12 @@ zsh -lic 'command -v btop; btop --version'
 ```
 
 The final command must resolve btop to `/etc/profiles/per-user/vincent/bin/btop`.
+
+Result:
+
+- The Darwin GPU-disabled Nix btop build runs without producing additional crash reports.
+- Homebrew btop was removed.
+- New Zsh shells resolve btop from `/etc/profiles/per-user/vincent/bin/btop`.
 
 ## Activation 8: RustDesk
 
@@ -588,7 +594,7 @@ Test Sunshine:
 
 ## Activation 10: Deskflow
 
-Status: ready to build and activate
+Status: complete
 
 Deskflow `1.26.0` is currently installed manually through the project's Homebrew tap. Nixpkgs
 Deskflow supports Linux only. Upstream recommends Homebrew for macOS because its macOS app is
@@ -637,3 +643,181 @@ Test Deskflow:
 
 Deskflow is declaratively Homebrew-owned after activation. Do not manually uninstall the cask while
 `darwin.deskflow` remains composed.
+
+Result:
+
+- Nix-darwin owns the upstream Deskflow tap, trust declaration, and cask.
+- Existing Deskflow configuration, TLS identity, and application behavior remain functional.
+
+## Activation 11: jq
+
+Status: ready to build and activate
+
+Jq was already present in the repository, but only as an embedded package dependency of the
+Linux-only `hm.noctalia-plugins-dependencies` feature. Composing that complete feature on macOS
+would incorrectly pull Noctalia and Wayland-specific screen capture tools into the Mac.
+
+Jq is extracted into a reusable `hm.jq` feature and composed on both hosts. The Linux host therefore
+retains jq for the Noctalia screen-toolkit plugin, while the Mac gains the same repository-managed
+package without duplicating its package declaration.
+
+Homebrew and nixpkgs both provide jq version `1.8.1`. Keep Homebrew jq installed during testing.
+
+Build and activate:
+
+```bash
+nix build .#darwinConfigurations.macbook-pro.system \
+  --out-link /tmp/nixfiles-darwin-system
+
+sudo /tmp/nixfiles-darwin-system/sw/bin/darwin-rebuild \
+  check --flake .#macbook-pro
+
+sudo darwin-rebuild switch --flake .#macbook-pro
+```
+
+Test the Nix-managed binary directly:
+
+```bash
+/etc/profiles/per-user/vincent/bin/jq --version
+printf '{"migration":"works"}\n' | /etc/profiles/per-user/vincent/bin/jq -r .migration
+```
+
+Verify any existing scripts or work commands that use jq. Only after those checks pass:
+
+```bash
+brew uninstall jq
+zsh -lic 'command -v jq; jq --version'
+```
+
+The final command must resolve jq to `/etc/profiles/per-user/vincent/bin/jq`.
+
+Result:
+
+- Homebrew jq was removed after the repository-managed binary passed its checks.
+- Both hosts now receive jq from the reusable `hm.jq` feature.
+
+## Activation 12: LazyDocker
+
+Status: ready to build and activate
+
+LazyDocker had no active repository owner. Homebrew and nixpkgs both provide version `0.25.2`, and
+no installed Homebrew package depends on the current formula.
+
+The new reusable `hm.lazydocker` feature installs only the package on both hosts. It does not manage
+LazyDocker configuration or Docker itself. The existing macOS configuration file at
+`~/Library/Application Support/lazydocker/config.yml` is empty and remains untouched. LazyDocker
+continues to use the current OrbStack Docker context and CLI.
+
+Keep Homebrew LazyDocker and its tap installed during testing.
+
+Build and activate:
+
+```bash
+nix build .#darwinConfigurations.macbook-pro.system \
+  --out-link /tmp/nixfiles-darwin-system
+
+sudo /tmp/nixfiles-darwin-system/sw/bin/darwin-rebuild \
+  check --flake .#macbook-pro
+
+sudo darwin-rebuild switch --flake .#macbook-pro
+```
+
+Test the Nix-managed binary directly:
+
+```bash
+/etc/profiles/per-user/vincent/bin/lazydocker --version
+/etc/profiles/per-user/vincent/bin/lazydocker
+```
+
+Confirm LazyDocker connects to the OrbStack context, lists containers/images/volumes, displays logs,
+and can perform a safe action such as restarting a disposable container. Only after those checks
+pass:
+
+```bash
+brew uninstall jesseduffield/lazydocker/lazydocker
+brew untap jesseduffield/lazydocker
+zsh -lic 'command -v lazydocker; lazydocker --version'
+```
+
+The final command must resolve LazyDocker to `/etc/profiles/per-user/vincent/bin/lazydocker`.
+
+Result:
+
+- The Nix-managed LazyDocker binary works with the OrbStack Docker context.
+- The Homebrew LazyDocker formula and its dedicated tap were removed.
+- Both hosts now receive LazyDocker from the reusable `hm.lazydocker` feature.
+
+## Activation 13: Zsh Autosuggestions and Syntax Highlighting
+
+Status: ready to build and activate
+
+The Mac's user-managed `~/.zshrc` currently sources Zsh Autosuggestions and Syntax Highlighting from
+Homebrew. Enabling Home Manager's complete `programs.zsh` module would take ownership of the whole
+startup file, so this incremental activation migrates only the two package owners.
+
+The new `hm.zshHelpers` feature installs:
+
+- Zsh Autosuggestions `0.7.1`
+- Zsh Syntax Highlighting `0.8.0`
+
+The existing `~/.zshrc` remains user-managed and sources a Home Manager-generated
+`~/.config/nixfiles/zsh-helpers.zsh` file containing exact Nix store paths.
+
+Build and activate:
+
+```bash
+nix build .#darwinConfigurations.macbook-pro.system \
+  --out-link /tmp/nixfiles-darwin-system
+
+sudo /tmp/nixfiles-darwin-system/sw/bin/darwin-rebuild \
+  check --flake .#macbook-pro
+
+sudo darwin-rebuild switch --flake .#macbook-pro
+```
+
+Open a new terminal and verify:
+
+- typing a previous command displays a suggestion
+- pressing the right arrow accepts a suggestion
+- valid and invalid commands receive syntax highlighting
+- shell startup has no errors
+
+Confirm the integrations loaded:
+
+```bash
+zsh -lic 'typeset -f _zsh_autosuggest_start >/dev/null && echo autosuggestions-loaded; print -r -- $ZSH_HIGHLIGHT_VERSION'
+```
+
+Only after those checks pass:
+
+```bash
+brew uninstall zsh-autosuggestions zsh-syntax-highlighting
+```
+
+Result:
+
+- New Zsh shells load both helpers from the Nix per-user profile.
+- Homebrew no longer owns either helper.
+
+## Activation 14: Fnm
+
+Status: complete
+
+Fnm was already installed by `hm.coding`, but the Mac's user-managed `~/.zshrc` resolved and
+initialized the Homebrew binary because Homebrew appears earlier in `PATH`.
+
+Zsh initialization now calls `/etc/profiles/per-user/vincent/bin/fnm` explicitly. Existing Node
+versions, aliases, and the default version remain under `~/Library/Application Support/fnm` and are
+not owned or replaced by Nix.
+
+Verification:
+
+```bash
+zsh -lic 'command -v fnm; fnm current; fnm default; command -v node; node --version'
+```
+
+Result:
+
+- New Zsh shells initialize the Nix-managed Fnm binary.
+- Existing Node versions and the `v24.3.0` default remain available.
+- Homebrew Fnm was removed.

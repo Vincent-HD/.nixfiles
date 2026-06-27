@@ -42,6 +42,8 @@ in
             hm.coding
             hm.codex
             hm.comma
+            hm.jq
+            hm.lazydocker
             hm.discord
             hm.browser
             hm.spotify
