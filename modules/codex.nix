@@ -55,8 +55,11 @@ in
   config.flake.modules.darwin.codex =
     { pkgs, lib, ... }:
     {
-      # Install the official Codex desktop app on macOS, where OpenAI publishes it.
-      homebrew.casks = [ "codex" ];
+      # codex = CLI binary, codex-app = Codex.app desktop application.
+      homebrew.casks = [
+        "codex"
+        "codex-app"
+      ];
 
       # Managed Codex defaults layer; Codex merges this above the mutable user config.
       environment.etc."codex/managed_config.toml".source = mkCodexManagedConfig {
@@ -86,8 +89,15 @@ in
       codexHome = "${config.home.homeDirectory}/.codex";
       codexLbHome = "${config.home.homeDirectory}/.codex-lb";
       githubTokenPath = "${config.home.homeDirectory}/.config/opencode/github-token";
-      codexPackage =
-        if pkgs.stdenv.hostPlatform.isLinux then pkgs.callPackage ../packages/codex { } else pkgs.codex;
+      # On Linux, use the pinned package from packages/codex. On macOS, OpenAI
+      # publishes the official binary via the Homebrew cask installed by
+      # darwin.codex; reference that path directly so the wrapper below still
+      # applies the token bridge without introducing a second codex binary.
+      codexExec =
+        if pkgs.stdenv.hostPlatform.isLinux then
+          pkgs.lib.getExe (pkgs.callPackage ../packages/codex { })
+        else
+          "/opt/homebrew/bin/codex";
 
       # codex-lb upstream recommends uvx for non-Docker installs. Pin the PyPI
       # version here while keeping the runtime-managed virtualenv outside /nix/store.
@@ -110,7 +120,7 @@ in
             export CODEX_GITHUB_MCP_TOKEN="$(<"${githubTokenPath}")"
           fi
 
-          exec ${pkgs.lib.getExe codexPackage} "$@"
+          exec ${codexExec} "$@"
         ''
       );
 
