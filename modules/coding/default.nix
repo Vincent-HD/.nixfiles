@@ -35,7 +35,7 @@ in
       # hash so the build can succeed without pinning the whole input.
       cursorPkg = pkgs.callPackage "${inputs.code-cursor-nix}/package.nix" {
         fetchurl = args: pkgs.fetchurl (args // {
-          hash = "sha256-NouEzXpKO2A3/y8FCNTXspm+Rim6a5Yi1yS1kLeevi8=";
+          hash = "sha256-K8MAPqgc6ZokWBAUeLFUCcTLgnFXe9nLlB6Krq6KORo=";
         });
       };
 

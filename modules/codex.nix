@@ -1,6 +1,9 @@
 { inputs, config, ... }:
 let
   codexLbVersion = "1.20.1";
+  codexLbHealthLiveUrl = "http://127.0.0.1:2455/health/live";
+  codexLbHealthReadyUrl = "http://127.0.0.1:2455/health/ready";
+  codexLbHealthStartupUrl = "http://127.0.0.1:2455/health/startup";
   mkCodexSettings =
     { pkgs, lib }:
     {
@@ -15,6 +18,17 @@ let
         wire_api = "responses";
         supports_websockets = true;
         requires_openai_auth = true;
+      };
+
+      # OpenCode Go exposes an OpenAI-compatible Responses endpoint. The API key
+      # is exported by the Home Manager wrapper from OpenCode's own auth store.
+      model_providers.opencode-go = {
+        name = "OpenCode Go";
+        base_url = "https://opencode.ai/zen/go/v1";
+        env_key = "OPENCODE_API_KEY";
+        env_key_instructions = "Run `opencode auth login --provider opencode-go`, or subscribe at https://opencode.ai/go and connect OpenCode Go.";
+        wire_api = "responses";
+        requires_openai_auth = false;
       };
 
       mcp_servers = {
@@ -98,6 +112,9 @@ in
           pkgs.lib.getExe (pkgs.callPackage ../packages/codex { })
         else
           "/opt/homebrew/bin/codex";
+      opencodeAuthPath = "${config.home.homeDirectory}/.local/share/opencode/auth.json";
+      codexPackage =
+        if pkgs.stdenv.hostPlatform.isLinux then pkgs.callPackage ../packages/codex { } else pkgs.codex;
 
       # codex-lb upstream recommends uvx for non-Docker installs. Pin the PyPI
       # version here while keeping the runtime-managed virtualenv outside /nix/store.
@@ -108,6 +125,32 @@ in
         export UV_CACHE_DIR="''${UV_CACHE_DIR:-${config.home.homeDirectory}/.cache/uv}"
         export UV_TOOL_DIR="''${UV_TOOL_DIR:-${config.home.homeDirectory}/.local/share/uv/tools}"
         exec ${pkgs.lib.getExe pkgs.uv} tool run --from codex-lb==${codexLbVersion} codex-lb "$@"
+      '';
+
+      # Bridge codex-lb's HTTP health probes into systemd's native readiness
+      # and watchdog protocol. This mirrors upstream's Helm probes.
+      codex-lb-watchdog = pkgs.replaceVarsWith {
+        src = ./codex/assets/codex-lb-watchdog.sh;
+        replacements = {
+          codexLb = pkgs.lib.getExe codex-lb;
+          curl = pkgs.lib.getExe pkgs.curl;
+          livenessUrl = codexLbHealthLiveUrl;
+          readinessUrl = codexLbHealthReadyUrl;
+          startupUrl = codexLbHealthStartupUrl;
+          systemdNotify = "${pkgs.systemd}/bin/systemd-notify";
+        };
+        name = "codex-lb-watchdog";
+        isExecutable = true;
+      };
+
+      # Share the OpenCode Go API key with Codex without copying secrets into
+      # Nix-managed files. OpenCode writes this credential after `/connect`.
+      codexOpenCodeGoEnv = pkgs.writeShellScript "codex-opencode-go-env" ''
+        if [ -r "${opencodeAuthPath}" ]; then
+          if opencode_api_key="$(${pkgs.lib.getExe pkgs.jq} -er '."opencode-go".key // empty' "${opencodeAuthPath}" 2>/dev/null)"; then
+            export OPENCODE_API_KEY="$opencode_api_key"
+          fi
+        fi
       '';
 
       # Codex reads bearer tokens from environment variables, so this wrapper
@@ -121,6 +164,9 @@ in
           fi
 
           exec ${codexExec} "$@"
+          . ${codexOpenCodeGoEnv}
+
+          exec ${pkgs.lib.getExe codexPackage} "$@"
         ''
       );
 
@@ -134,7 +180,8 @@ in
             rm -f "$out/bin/codex-desktop"
             makeWrapper "${codexDesktopLinuxBasePackage}/bin/codex-desktop" "$out/bin/codex-desktop" \
               --set-default CODEX_CLI_PATH "${pkgs.lib.getExe codex}" \
-              --run 'if [ -r "${githubTokenPath}" ]; then export CODEX_GITHUB_MCP_TOKEN="$(<"${githubTokenPath}")"; fi'
+              --run 'if [ -r "${githubTokenPath}" ]; then export CODEX_GITHUB_MCP_TOKEN="$(<"${githubTokenPath}")"; fi' \
+              --run '. ${codexOpenCodeGoEnv}'
           fi
 
           desktopFile="$out/share/applications/codex-desktop.desktop"
@@ -168,6 +215,7 @@ in
         home.packages = [
           codex
           codex-lb
+          pkgs.jq
           pkgs.uv
         ]
         ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
@@ -187,13 +235,19 @@ in
           Unit = {
             Description = "Codex account load balancer";
             After = [ "network-online.target" ];
+            StartLimitIntervalSec = 300;
+            StartLimitBurst = 5;
           };
           Service = {
-            Type = "simple";
-            ExecStart = "${pkgs.lib.getExe codex-lb}";
+            Type = "notify";
+            ExecStart = codex-lb-watchdog;
             Environment = lib.mapAttrsToList (name: value: "${name}=${value}") codexLbEnvironment;
-            Restart = "always";
-            RestartSec = "2";
+            LimitNOFILE = 65536;
+            NotifyAccess = "all";
+            Restart = "on-failure";
+            RestartSec = "5";
+            TimeoutStartSec = "90";
+            WatchdogSec = "90";
             WorkingDirectory = codexLbHome;
           };
           Install.WantedBy = [ "default.target" ];
