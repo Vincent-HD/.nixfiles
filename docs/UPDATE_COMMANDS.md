@@ -6,6 +6,17 @@ Quick-reference commands for updating packages that are pinned to fixed upstream
 
 These packages use the `finalAttrs` pattern and are wired so `nix-update` can bump versions and hashes automatically.
 
+### codex
+
+- **File**: `packages/codex/default.nix`
+- **Pattern**: `stdenv.mkDerivation` + `fetchurl` from GitHub releases
+- **Flake output**: `.#codex`
+- **Note**: The release tag is `rust-v<version>`, so keep `version` as the bare semver.
+
+```bash
+nix run github:Mic92/nix-update -- --flake codex --use-github-releases
+```
+
 ### lightjj
 
 - **File**: `packages/lightjj/default.nix`
@@ -14,16 +25,6 @@ These packages use the `finalAttrs` pattern and are wired so `nix-update` can bu
 
 ```bash
 nix run github:Mic92/nix-update -- --flake lightjj
-```
-
-### crosspipe
-
-- **File**: `packages/crosspipe/default.nix`
-- **Pattern**: `stdenv.mkDerivation` + `fetchFromGitHub`
-- **Flake output**: `.#crosspipe`
-
-```bash
-nix run github:Mic92/nix-update -- --flake crosspipe
 ```
 
 ### jj-ryu
@@ -46,6 +47,22 @@ nix run github:Mic92/nix-update -- --flake jj-ryu
 nix run github:Mic92/nix-update -- --flake sunshine-darwin
 ```
 
+## Branch-Pinned Packages
+
+These packages are packaged in a `nix-update`-friendly shape, but the upstream tracking model means the naive command is not necessarily correct.
+
+### crosspipe
+
+- **File**: `packages/crosspipe/default.nix`
+- **Why**: It is pinned to a specific commit on `pinpox/Crosspipe`, not an upstream release.
+- **Risk**: `nix-update --version branch` follows the default branch head, which may be older or different from the custom commit you intentionally pinned.
+- **How**: Only update after checking the exact target commit/branch manually, then prefetch the new source hash.
+
+```bash
+git ls-remote https://github.com/pinpox/Crosspipe.git
+nix-prefetch-git https://github.com/pinpox/Crosspipe.git --rev <rev>
+```
+
 ## Manual-Update Packages (Not nix-update Compatible)
 
 These packages are pinned but cannot be updated with `nix-update` without refactoring.
@@ -66,13 +83,32 @@ nix store prefetch-file https://curseforge.overwolf.com/electron/linux/CurseForg
 - **Why**: It is an `overrideAttrs` on an existing nixpkgs package inside an overlay, not a standalone derivation.
 - **How**: Hand-edit `version`, `rev`, and `sha256`. Intended as a temporary override until the PR lands upstream.
 
-## One-Shot: Update All Compatible Packages
+## Custom Flake Inputs
+
+These are updated with `nix flake lock`, not `nix-update`.
+
+### codex-desktop-linux
+
+- **File**: `flake.nix`
+- **Why**: It is a flake input pinned to a Git commit.
+
+```bash
+nix flake lock --update-input codex-desktop-linux
+```
+
+### noctalia
+
+- **File**: `flake.nix`
+- **Why**: It is intentionally pinned to a specific v4 revision and should stay out of routine updates until you migrate to v5.
+- **How**: Do not update this as part of normal maintenance.
+
+## One-Shot: Update All Straightforward Compatible Packages
 
 Run each `nix-update` command in sequence (or in separate terminals):
 
 ```bash
+nix run github:Mic92/nix-update -- --flake codex --use-github-releases
 nix run github:Mic92/nix-update -- --flake lightjj
-nix run github:Mic92/nix-update -- --flake crosspipe
 nix run github:Mic92/nix-update -- --flake jj-ryu
 nix run github:Mic92/nix-update -- --flake sunshine-darwin
 ```

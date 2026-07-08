@@ -7,6 +7,7 @@
     { pkgs, lib, ... }:
     {
       home.pointerCursor = {
+        enable = true;
         name = lib.mkDefault "Adwaita";
         package = lib.mkDefault pkgs.adwaita-icon-theme;
         size = lib.mkDefault 24;
