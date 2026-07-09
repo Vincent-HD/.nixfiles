@@ -4,7 +4,6 @@
     { pkgs, config, ... }:
     {
       home.packages = [
-        pkgs.gh
         pkgs.jujutsu
         pkgs.neovim
         pkgs.nixd
@@ -36,7 +35,7 @@
         };
 
         initContent = ''
-          eval "$(${pkgs.lib.getExe pkgs.fnm} env --use-on-cd --shell zsh)"
+          # TEMP (welii flake test): disable host fnm so project nub/direnv owns Node
           source "${config.home.homeDirectory}/.orbstack/shell/init.zsh" 2>/dev/null || :
         '';
       };

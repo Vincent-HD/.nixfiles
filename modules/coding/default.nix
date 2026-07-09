@@ -100,10 +100,11 @@ in
           pkgs.neovim
           pkgs.vim
           pkgs.uv
-          pkgs.gh
+          # TEMP (welii flake test): gh / fnm come from the project flake + nub
+          # pkgs.gh
           pkgs.nixd
           pkgs.nixfmt
-          pkgs.fnm
+          # pkgs.fnm
           pkgs.jujutsu
           inputs.self.packages.${pkgs.system}.lightjj
           inputs.jjui.packages.${pkgs.system}.jjui
@@ -318,9 +319,6 @@ in
 
         programs.bash = {
           enable = true;
-          initExtra = ''
-            eval "$(${pkgs.lib.getExe pkgs.fnm} env --use-on-cd --shell bash)"
-          '';
         };
       })
 

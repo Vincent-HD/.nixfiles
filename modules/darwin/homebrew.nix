@@ -13,8 +13,6 @@
 
         # Preserve the current Homebrew formula ownership during the first migration.
         brews = [
-          "awscli"
-          "doppler"
           "jq"
           "mas"
           "thefuck"
@@ -44,7 +42,6 @@
           "proton-mail"
           "raycast"
           "rectangle"
-          "session-manager-plugin"
           "tabby"
           "teamviewer"
           "visual-studio-code"

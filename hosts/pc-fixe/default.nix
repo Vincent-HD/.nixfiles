@@ -42,6 +42,7 @@ in
             hm.coding
             hm.codex
             hm.comma
+            hm.direnv
             hm.jq
             hm.lazydocker
             hm.discord

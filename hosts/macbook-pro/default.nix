@@ -24,6 +24,7 @@ in
             hm.btop
             hm.coding
             hm.codex
+            hm.direnv
             hm.discord
             hm.jq
             hm.lazydocker
