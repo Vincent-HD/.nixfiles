@@ -15,6 +15,7 @@ in
       nixos.noctalia
       nixos.graphics
       nixos.sound
+      nixos.memoryPressure
       nixos.coding
       nixos.codex
       nixos.printing

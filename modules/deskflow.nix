@@ -13,16 +13,47 @@
       environment.systemPackages = [
         pkgs.deskflow
       ];
+
+      # Deskflow server listens for clients on TCP 24800 by default.
+      networking.firewall.allowedTCPPorts = [ 24800 ];
     };
 
   # Home Manager: install the deskflow binary for the logged-in user.
   # The package ships its own GUI (`deskflow`) and CLI; no service is enabled here.
   config.flake.modules.homeManager.deskflow =
-    { pkgs, ... }:
+    { pkgs, lib, ... }:
+    let
+      deskflowX11 = pkgs.writeShellApplication {
+        name = "deskflow-x11";
+        runtimeInputs = [ pkgs.deskflow ];
+        text = ''
+          export XDG_SESSION_TYPE=x11
+          export DISPLAY="''${DISPLAY:-:0}"
+          export QT_QPA_PLATFORM=xcb
+          exec deskflow "$@"
+        '';
+      };
+    in
     {
       home.packages = [
         pkgs.deskflow
+        deskflowX11
       ];
+
+      # Niri does not implement the InputCapture portal yet, so force Deskflow
+      # through Xwayland as a practical server-mode workaround.
+      xdg.desktopEntries.deskflow-x11 = {
+        name = "Deskflow (X11 workaround)";
+        genericName = "Mouse and keyboard sharing utility";
+        comment = "Launch Deskflow through Xwayland for compositors without InputCapture";
+        exec = "${lib.getExe deskflowX11}";
+        icon = "org.deskflow.deskflow";
+        terminal = false;
+        categories = [ "Utility" ];
+        settings = {
+          StartupWMClass = "deskflow";
+        };
+      };
     };
 
   # nix-darwin: install Deskflow via the upstream `deskflow/tap` Homebrew cask.
