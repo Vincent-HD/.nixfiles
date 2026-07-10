@@ -1,9 +1,9 @@
 # nixfiles — Agent Guidelines
 
-This is a NixOS configuration repository for a single user (`vincent`) running on a single host
-(`pc-fixe`). The entire config is written in Nix using the **dendritic pattern**: every `.nix` file
-under `modules/` and `hosts/` is a flake-parts module, auto-imported by `import-tree`. The system runs
-**KDE Plasma 6** on **NVIDIA** hardware.
+This is a Nix/NixOS/nix-darwin configuration repository for a single user (`vincent`) running on
+Linux (`pc-fixe`) and macOS (`macbook-pro`) hosts. The entire config is written in Nix using the
+**dendritic pattern**: every `.nix` file under `modules/` and `hosts/` is a flake-parts module,
+auto-imported by `import-tree`. The Linux host runs **KDE Plasma 6** on **NVIDIA** hardware.
 
 ---
 
@@ -41,6 +41,9 @@ hosts/
     default.nix                        # Composition root: assembles nixosConfigurations."pc-fixe"
     configuration.nix                  # Base NixOS config (boot, networking, locale, user, nix)
     hardware-configuration.nix         # Hardware-specific config (disks, CPU, kernel modules)
+  macbook-pro/
+    default.nix                        # Composition root: assembles darwinConfigurations."macbook-pro"
+    configuration.nix                  # Base nix-darwin config
 ```
 
 ---
@@ -122,6 +125,19 @@ nix flake update
 ```bash
 nix flake show
 ```
+
+### Validate affected hosts
+
+When a change touches a shared module, shared package, flake input, or anything imported by both
+hosts, validate both configured systems:
+
+```bash
+nix eval .#nixosConfigurations.pc-fixe.config.system.build.toplevel.drvPath --raw
+nix eval .#darwinConfigurations.macbook-pro.system --raw
+```
+
+For Linux-only changes, validating `.#nixosConfigurations.pc-fixe` is enough. For Darwin-only
+changes, validate `.#darwinConfigurations.macbook-pro`.
 
 ---
 

@@ -100,8 +100,7 @@ in
           pkgs.neovim
           pkgs.vim
           pkgs.uv
-          # TEMP (welii flake test): gh / fnm come from the project flake + nub
-          # pkgs.gh
+          pkgs.gh
           pkgs.nixd
           pkgs.nixfmt
           # pkgs.fnm
