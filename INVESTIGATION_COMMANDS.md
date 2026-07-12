@@ -317,6 +317,18 @@ nix eval '.#nixosConfigurations.'"$HOST"'.config.fileSystems."<mountpoint>".opti
 
 Purpose: confirm the exact `fstab` / systemd mount options NixOS will render for a mountpoint such as `/mnt/windows` before retrying a rebuild or switch.
 
+### Inspect rendered Nix binary cache settings
+
+```bash
+cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" \
+nix eval '.#nixosConfigurations.'"$HOST"'.config.nix.settings.extra-substituters' --json
+
+cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" \
+nix eval '.#nixosConfigurations.'"$HOST"'.config.nix.settings.extra-trusted-public-keys' --json
+```
+
+Purpose: verify that host-level Cachix or upstream binary caches are rendered before rebuilding or debugging unexpectedly slow builds.
+
 ### Evaluate the host toplevel derivation
 
 ```bash
