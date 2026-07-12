@@ -1,7 +1,7 @@
 { inputs, config, ... }:
 {
   config.flake.modules.nixos.pcFixeConfiguration =
-    { ... }:
+    { pkgs, ... }:
     {
       imports = [
         inputs.self.nixosModules.pcFixeHardware
@@ -39,9 +39,13 @@
 
       environment.sessionVariables.NIXOS_OZONE_WL = "1";
 
+      programs.zsh.enable = true;
+
       users.users.${config.flake.username} = {
         isNormalUser = true;
         description = "Vincent";
+        # Use the same interactive shell family as macOS.
+        shell = pkgs.zsh;
         extraGroups = [
           "networkmanager"
           "wheel"

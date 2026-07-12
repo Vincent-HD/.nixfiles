@@ -1,0 +1,1718 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Command Line Cockpit</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #101418;
+        --panel: #171d22;
+        --panel-2: #1d242b;
+        --text: #eef4f1;
+        --muted: #9fafb3;
+        --line: #2b343d;
+        --green: #7bd88f;
+        --cyan: #72d5d5;
+        --blue: #8ab4ff;
+        --yellow: #f3c969;
+        --red: #ff8b8b;
+        --purple: #c9a0ff;
+        --shadow: 0 24px 80px rgb(0 0 0 / 0.35);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background:
+          radial-gradient(circle at 10% 0%, rgb(123 216 143 / 0.18), transparent 28rem),
+          radial-gradient(circle at 85% 10%, rgb(114 213 213 / 0.16), transparent 30rem),
+          linear-gradient(135deg, #101418 0%, #12181d 48%, #0e1317 100%);
+        color: var(--text);
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        line-height: 1.5;
+      }
+
+      a {
+        color: inherit;
+      }
+
+      code,
+      pre {
+        font-family:
+          "CaskaydiaMono Nerd Font", "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+      }
+
+      p code,
+      li code,
+      td code,
+      footer code {
+        overflow-wrap: anywhere;
+      }
+
+      .shell {
+        width: min(1180px, calc(100% - 32px));
+        margin: 0 auto;
+      }
+
+      .hero {
+        min-height: 82vh;
+        display: grid;
+        align-content: center;
+        gap: 32px;
+        padding: 56px 0 32px;
+      }
+
+      .topline {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: rgb(255 255 255 / 0.04);
+        padding: 7px 12px;
+        white-space: nowrap;
+      }
+
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--green);
+        box-shadow: 0 0 20px var(--green);
+      }
+
+      h1 {
+        max-width: 920px;
+        margin: 0;
+        font-size: clamp(3rem, 7vw, 7.2rem);
+        line-height: 0.92;
+        letter-spacing: 0;
+      }
+
+      .lede {
+        max-width: 760px;
+        margin: 0;
+        color: #cbd8d8;
+        font-size: clamp(1.08rem, 2vw, 1.45rem);
+      }
+
+      .terminal {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgb(12 16 20 / 0.88);
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+
+      .terminal-bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--line);
+        background: rgb(255 255 255 / 0.04);
+      }
+
+      .terminal-light {
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+      }
+
+      .terminal-light.red {
+        background: var(--red);
+      }
+
+      .terminal-light.yellow {
+        background: var(--yellow);
+      }
+
+      .terminal-light.green {
+        background: var(--green);
+      }
+
+      .terminal-title {
+        margin-left: 8px;
+        color: var(--muted);
+        font-size: 0.86rem;
+      }
+
+      .terminal-body {
+        padding: 20px;
+        display: grid;
+        gap: 10px;
+        overflow-x: auto;
+      }
+
+      .prompt {
+        color: var(--green);
+      }
+
+      .cmd {
+        color: var(--cyan);
+      }
+
+      .comment {
+        color: var(--muted);
+      }
+
+      .output {
+        color: #d6e1dd;
+      }
+
+      nav {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        margin: 0 calc(50% - 50vw);
+        border-block: 1px solid var(--line);
+        background: rgb(16 20 24 / 0.82);
+        backdrop-filter: blur(18px);
+      }
+
+      .nav-inner {
+        width: min(1180px, calc(100% - 32px));
+        margin: 0 auto;
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding: 10px 0;
+      }
+
+      .nav-inner a {
+        color: var(--muted);
+        text-decoration: none;
+        padding: 7px 10px;
+        border-radius: 6px;
+        white-space: nowrap;
+      }
+
+      .nav-inner a:hover {
+        color: var(--text);
+        background: rgb(255 255 255 / 0.06);
+      }
+
+      main {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 72px;
+        padding: 56px 0 80px;
+      }
+
+      main > * {
+        min-width: 0;
+      }
+
+      section {
+        scroll-margin-top: 72px;
+      }
+
+      .section-head {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 24px;
+        margin-bottom: 20px;
+      }
+
+      h2 {
+        margin: 0;
+        font-size: clamp(1.8rem, 3vw, 2.8rem);
+        line-height: 1;
+      }
+
+      .section-copy {
+        max-width: 620px;
+        margin: 0;
+        color: var(--muted);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .card {
+        min-width: 0;
+        min-height: 168px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: linear-gradient(180deg, rgb(255 255 255 / 0.06), rgb(255 255 255 / 0.025));
+        padding: 18px;
+      }
+
+      .card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+
+      .tool {
+        font-size: 1.1rem;
+        font-weight: 760;
+      }
+
+      .replaces {
+        color: var(--muted);
+        font-size: 0.82rem;
+      }
+
+      .card p {
+        margin: 0;
+        color: #cbd8d8;
+        overflow-wrap: anywhere;
+      }
+
+      .tag-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 16px;
+      }
+
+      .tag {
+        border: 1px solid rgb(255 255 255 / 0.12);
+        border-radius: 999px;
+        color: var(--muted);
+        font-size: 0.78rem;
+        padding: 4px 8px;
+      }
+
+      .source-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 14px;
+      }
+
+      .source-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        min-height: 30px;
+        border: 1px solid rgb(114 213 213 / 0.35);
+        border-radius: 6px;
+        background: rgb(114 213 213 / 0.08);
+        color: #d8fbfb;
+        font-size: 0.82rem;
+        font-weight: 700;
+        text-decoration: none;
+        padding: 5px 9px;
+      }
+
+      .source-link:hover {
+        border-color: rgb(123 216 143 / 0.55);
+        background: rgb(123 216 143 / 0.1);
+        color: #f2fff5;
+      }
+
+      .detail-link {
+        border-color: rgb(243 201 105 / 0.4);
+        background: rgb(243 201 105 / 0.09);
+        color: #fff0c4;
+      }
+
+      .tool-index {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 18px;
+      }
+
+      .index-link {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: rgb(255 255 255 / 0.04);
+        color: #d7e5e2;
+        font-size: 0.86rem;
+        font-weight: 700;
+        text-decoration: none;
+        padding: 7px 11px;
+      }
+
+      .index-link:hover {
+        border-color: rgb(114 213 213 / 0.45);
+        background: rgb(114 213 213 / 0.08);
+      }
+
+      .tool-pages {
+        display: grid;
+        gap: 26px;
+      }
+
+      .tool-page {
+        min-width: 0;
+        scroll-margin-top: 72px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: linear-gradient(180deg, rgb(255 255 255 / 0.055), rgb(255 255 255 / 0.02));
+        padding: 22px;
+      }
+
+      .page-title {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+
+      .page-title h3 {
+        margin: 0;
+        font-size: clamp(1.45rem, 2.5vw, 2rem);
+      }
+
+      .tool-lede {
+        max-width: 900px;
+        margin: 0 0 18px;
+        color: #cbd8d8;
+      }
+
+      .page-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.65fr);
+        gap: 18px;
+        align-items: start;
+      }
+
+      .page-layout > * {
+        min-width: 0;
+      }
+
+      .cheat-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+        gap: 12px;
+      }
+
+      .cheat-card {
+        min-width: 0;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgb(11 16 19 / 0.72);
+        padding: 14px;
+      }
+
+      .cheat-card h4 {
+        margin: 0 0 10px;
+        color: #f3f8f6;
+        font-size: 1rem;
+      }
+
+      .cheat-card p {
+        margin: 0 0 10px;
+        color: var(--muted);
+      }
+
+      .cheat-card pre {
+        border-color: rgb(255 255 255 / 0.08);
+      }
+
+      .feature-list {
+        display: grid;
+        gap: 8px;
+        margin: 0;
+        padding-left: 18px;
+        color: #cbd8d8;
+      }
+
+      .media-card {
+        min-width: 0;
+        overflow: hidden;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #0b1013;
+      }
+
+      .media-card img,
+      .media-card video {
+        display: block;
+        width: 100%;
+        max-height: 360px;
+        object-fit: contain;
+        background: #0b1013;
+      }
+
+      .media-card figcaption {
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.82rem;
+        padding: 10px 12px;
+      }
+
+      .media-stack {
+        display: grid;
+        gap: 12px;
+      }
+
+      .two-col {
+        display: grid;
+        grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+        gap: 18px;
+      }
+
+      .panel {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        padding: 22px;
+      }
+
+      .panel h3 {
+        margin: 0 0 12px;
+        font-size: 1.25rem;
+      }
+
+      .panel p {
+        margin: 0 0 14px;
+        color: #cbd8d8;
+      }
+
+      .mini-list {
+        display: grid;
+        gap: 10px;
+        margin: 16px 0 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .mini-list li {
+        display: grid;
+        grid-template-columns: 150px 1fr;
+        gap: 14px;
+        border-top: 1px solid var(--line);
+        padding-top: 10px;
+        color: var(--muted);
+      }
+
+      .mini-list strong {
+        color: var(--text);
+      }
+
+      .aliases {
+        width: 100%;
+        border-collapse: collapse;
+        border-radius: 8px;
+        background: var(--panel);
+      }
+
+      .table-scroll {
+        max-width: 100%;
+        overflow-x: auto;
+        border-radius: 8px;
+      }
+
+      .aliases th,
+      .aliases td {
+        border-bottom: 1px solid var(--line);
+        padding: 13px 14px;
+        text-align: left;
+        vertical-align: top;
+      }
+
+      .aliases th {
+        color: var(--muted);
+        font-size: 0.82rem;
+        text-transform: uppercase;
+      }
+
+      .aliases tr:last-child td {
+        border-bottom: 0;
+      }
+
+      .command-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      pre {
+        min-width: 0;
+        max-width: 100%;
+        margin: 0;
+        padding: 16px;
+        overflow-x: auto;
+        contain: paint;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #0b1013;
+        color: #dce7e3;
+      }
+
+      pre code {
+        display: block;
+        min-width: 100%;
+        overflow-wrap: anywhere;
+        white-space: pre-wrap;
+      }
+
+      .compat {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+      }
+
+      .compat .panel {
+        background: var(--panel-2);
+      }
+
+      footer {
+        border-top: 1px solid var(--line);
+        padding: 24px 0 36px;
+        color: var(--muted);
+        font-size: 0.92rem;
+      }
+
+      @media (max-width: 900px) {
+        .grid,
+        .two-col,
+        .command-grid,
+        .compat,
+        .page-layout,
+        .cheat-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .section-head {
+          display: grid;
+        }
+
+        .mini-list li {
+          grid-template-columns: 1fr;
+          gap: 4px;
+        }
+      }
+
+      @media (max-width: 560px) {
+        .hero {
+          min-height: auto;
+          padding-top: 40px;
+        }
+
+        .terminal-body {
+          padding: 14px;
+        }
+
+        .aliases {
+          min-width: 680px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="shell hero">
+      <div class="topline">
+        <span class="pill"><span class="dot"></span>Shared Home Manager module</span>
+        <span class="pill">Linux: pc-fixe</span>
+        <span class="pill">macOS: macbook-pro</span>
+        <span class="pill">Nix + Zsh + Starship</span>
+      </div>
+
+      <h1>Command Line Cockpit</h1>
+      <p class="lede">
+        A portable terminal setup for daily work: faster file search, smarter navigation,
+        richer diffs, a readable prompt, JJ-aware repository context, and modern replacements
+        for the old Unix defaults.
+      </p>
+
+      <section class="terminal" aria-label="Setup preview">
+        <div class="terminal-bar">
+          <span class="terminal-light red"></span>
+          <span class="terminal-light yellow"></span>
+          <span class="terminal-light green"></span>
+          <span class="terminal-title">~/.nixfiles/modules/command-line</span>
+        </div>
+        <div class="terminal-body">
+          <code><span class="prompt">vincent@pc-fixe</span> <span class="cmd">ls</span> <span class="comment"># eza with icons and git state</span></code>
+          <code><span class="prompt">vincent@macbook-pro</span> <span class="cmd">z nixfiles</span> <span class="comment"># jump by memory, not path</span></code>
+          <code><span class="prompt">jj repo</span> <span class="cmd">starship-jj</span> <span class="comment"># branch, change, state, metrics</span></code>
+          <code><span class="output">rg + fd + fzf + bat preview = fast project scanning</span></code>
+        </div>
+      </section>
+    </header>
+
+    <nav>
+      <div class="nav-inner">
+        <a href="#tools">Tools</a>
+        <a href="#cheatsheets">Cheatsheets</a>
+        <a href="#aliases">Aliases</a>
+        <a href="#prompt">Prompt</a>
+        <a href="#try">Try First</a>
+        <a href="#compat">Compatibility</a>
+      </div>
+    </nav>
+
+    <main class="shell">
+      <section id="tools">
+        <div class="section-head">
+          <h2>Tool Map</h2>
+          <p class="section-copy">
+            The setup favors small, sharp commands that compose well. Familiar command names stay
+            available through aliases, but the implementation underneath is faster and easier to read.
+          </p>
+        </div>
+
+        <div class="grid">
+          <article class="card">
+            <div class="card-header"><span class="tool">eza</span><span class="replaces">ls, tree</span></div>
+            <p>Readable listings with icons, file metadata, git state, and tree views.</p>
+            <div class="tag-row"><span class="tag">navigation</span><span class="tag">visual</span></div>
+            <div class="source-row">
+              <a class="source-link detail-link" href="#tool-eza">Cheatsheet</a>
+              <a class="source-link" href="https://github.com/eza-community/eza" target="_blank" rel="noreferrer">GitHub</a>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-header"><span class="tool">zoxide</span><span class="replaces">cd</span></div>
+            <p>Tracks the directories you use and lets you jump to them with partial names.</p>
+            <div class="tag-row"><span class="tag">jump</span><span class="tag">memory</span></div>
+            <div class="source-row">
+              <a class="source-link detail-link" href="#tool-zoxide">Cheatsheet</a>
+              <a class="source-link" href="https://github.com/ajeetdsouza/zoxide" target="_blank" rel="noreferrer">GitHub</a>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-header"><span class="tool">bat</span><span class="replaces">cat</span></div>
+            <p>File viewing with syntax highlighting, used directly and as the FZF previewer.</p>
+            <div class="tag-row"><span class="tag">preview</span><span class="tag">code</span></div>
+            <div class="source-row">
+              <a class="source-link detail-link" href="#tool-bat">Cheatsheet</a>
+              <a class="source-link" href="https://github.com/sharkdp/bat" target="_blank" rel="noreferrer">GitHub</a>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-header"><span class="tool">ripgrep</span><span class="replaces">grep</span></div>
+            <p>Project-wide text search that respects ignore files and stays fast in large repos.</p>
+            <div class="tag-row"><span class="tag">search</span><span class="tag">codebase</span></div>
+            <div class="source-row">
+              <a class="source-link detail-link" href="#tool-ripgrep">Cheatsheet</a>
+              <a class="source-link" href="https://github.com/BurntSushi/ripgrep" target="_blank" rel="noreferrer">GitHub</a>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-header"><span class="tool">fd</span><span class="replaces">find</span></div>
+            <p>Simple file discovery with hidden files enabled and <code>.git</code> excluded by default.</p>
+            <div class="tag-row"><span class="tag">files</span><span class="tag">fzf source</span></div>
+            <div class="source-row">
+              <a class="source-link detail-link" href="#tool-fd">Cheatsheet</a>
+              <a class="source-link" href="https://github.com/sharkdp/fd" target="_blank" rel="noreferrer">GitHub</a>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-header"><span class="tool">fzf</span><span class="replaces">manual picking</span></div>
+            <p>Interactive file and directory selection, with <code>bat</code> previews and <code>fd</code> as the source.</p>
+            <div class="tag-row"><span class="tag">interactive</span><span class="tag">preview</span></div>
+            <div class="source-row">
+              <a class="source-link detail-link" href="#tool-fzf">Cheatsheet</a>
+              <a class="source-link" href="https://github.com/junegunn/fzf" target="_blank" rel="noreferrer">GitHub</a>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-header"><span class="tool">atuin</span><span class="replaces">shell history</span></div>
+            <p>Structured shell history with compact UI and Ctrl-R ownership across Bash and Zsh.</p>
+            <div class="tag-row"><span class="tag">history</span><span class="tag">local</span></div>
+            <div class="source-row">
+              <a class="source-link detail-link" href="#tool-atuin">Cheatsheet</a>
+              <a class="source-link" href="https://github.com/atuinsh/atuin" target="_blank" rel="noreferrer">GitHub</a>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-header"><span class="tool">delta</span><span class="replaces">plain git diff</span></div>
+            <p>Side-by-side diffs with line numbers and navigation, wired into Git integration.</p>
+            <div class="tag-row"><span class="tag">git</span><span class="tag">review</span></div>
+            <div class="source-row">
+              <a class="source-link detail-link" href="#tool-delta">Cheatsheet</a>
+              <a class="source-link" href="https://github.com/dandavison/delta" target="_blank" rel="noreferrer">GitHub</a>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-header"><span class="tool">yazi</span><span class="replaces">file manager</span></div>
+            <p>Terminal file manager exposed through the <code>y</code> wrapper for quick directory handoff.</p>
+            <div class="tag-row"><span class="tag">files</span><span class="tag">tui</span></div>
+            <div class="source-row">
+              <a class="source-link detail-link" href="#tool-yazi">Cheatsheet</a>
+              <a class="source-link" href="https://github.com/sxyazi/yazi" target="_blank" rel="noreferrer">GitHub</a>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-header"><span class="tool">btop + bottom</span><span class="replaces">top</span></div>
+            <p>Two resource monitors: <code>btop</code> for rich daily use, <code>btm</code> for a compact alternate view.</p>
+            <div class="tag-row"><span class="tag">system</span><span class="tag">monitor</span></div>
+            <div class="source-row">
+              <a class="source-link detail-link" href="#tool-monitors">Cheatsheet</a>
+              <a class="source-link" href="https://github.com/aristocratos/btop" target="_blank" rel="noreferrer">btop</a>
+              <a class="source-link" href="https://github.com/ClementTsang/bottom" target="_blank" rel="noreferrer">bottom</a>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-header"><span class="tool">dust + duf</span><span class="replaces">du + df</span></div>
+            <p>Human-friendly disk usage and filesystem summaries without decoding dense columns.</p>
+            <div class="tag-row"><span class="tag">storage</span><span class="tag">readable</span></div>
+            <div class="source-row">
+              <a class="source-link detail-link" href="#tool-storage">Cheatsheet</a>
+              <a class="source-link" href="https://github.com/bootandy/dust" target="_blank" rel="noreferrer">dust</a>
+              <a class="source-link" href="https://github.com/muesli/duf/" target="_blank" rel="noreferrer">duf</a>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-header"><span class="tool">xh + doggo</span><span class="replaces">curl + dig</span></div>
+            <p>Friendlier HTTP requests and DNS lookups for debugging services and endpoints.</p>
+            <div class="tag-row"><span class="tag">network</span><span class="tag">debug</span></div>
+            <div class="source-row">
+              <a class="source-link detail-link" href="#tool-network">Cheatsheet</a>
+              <a class="source-link" href="https://github.com/ducaale/xh" target="_blank" rel="noreferrer">xh</a>
+              <a class="source-link" href="https://github.com/mr-karan/doggo" target="_blank" rel="noreferrer">doggo</a>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-header"><span class="tool">herdr</span><span class="replaces">terminal sprawl</span></div>
+            <p>Terminal workspace manager for AI coding sessions, now pinned as a proper flake input.</p>
+            <div class="tag-row"><span class="tag">workspace</span><span class="tag">agents</span></div>
+            <div class="source-row">
+              <a class="source-link detail-link" href="#tool-herdr">Cheatsheet</a>
+              <a class="source-link" href="https://github.com/ogulcancelik/herdr" target="_blank" rel="noreferrer">GitHub</a>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-header"><span class="tool">nh + nom + nvd</span><span class="replaces">raw rebuild logs</span></div>
+            <p>Friendlier Nix rebuilds, cleaner build progress, and readable generation diffs.</p>
+            <div class="tag-row"><span class="tag">nix</span><span class="tag">review</span></div>
+            <div class="source-row">
+              <a class="source-link detail-link" href="#tool-nix-review">Cheatsheet</a>
+              <a class="source-link" href="https://github.com/nix-community/nh" target="_blank" rel="noreferrer">nh</a>
+              <a class="source-link" href="https://github.com/maralorn/nix-output-monitor" target="_blank" rel="noreferrer">nom</a>
+              <a class="source-link" href="https://git.sr.ht/~khumba/nvd" target="_blank" rel="noreferrer">nvd</a>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-header"><span class="tool">deadnix + statix + nurl</span><span class="replaces">manual Nix cleanup</span></div>
+            <p>Nix dead-code checks, linting, and fetcher generation for package maintenance.</p>
+            <div class="tag-row"><span class="tag">nix</span><span class="tag">lint</span></div>
+            <div class="source-row">
+              <a class="source-link detail-link" href="#tool-nix-maintenance">Cheatsheet</a>
+              <a class="source-link" href="https://github.com/astro/deadnix" target="_blank" rel="noreferrer">deadnix</a>
+              <a class="source-link" href="https://github.com/oppiliappan/statix" target="_blank" rel="noreferrer">statix</a>
+              <a class="source-link" href="https://github.com/nix-community/nurl" target="_blank" rel="noreferrer">nurl</a>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-header"><span class="tool">glow + catimg + ripdrag</span><span class="replaces">blind previews</span></div>
+            <p><code>md</code>, <code>img</code>, and <code>view</code> helpers render Markdown or images without adding file-type dispatch to <code>cat</code> or <code>bat</code>.</p>
+            <div class="tag-row"><span class="tag">preview</span><span class="tag">files</span></div>
+            <div class="source-row">
+              <a class="source-link detail-link" href="#tool-previews">Cheatsheet</a>
+              <a class="source-link" href="https://github.com/charmbracelet/glow" target="_blank" rel="noreferrer">glow</a>
+              <a class="source-link" href="https://github.com/posva/catimg" target="_blank" rel="noreferrer">catimg</a>
+              <a class="source-link" href="https://github.com/nik012003/ripdrag" target="_blank" rel="noreferrer">ripdrag</a>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="card-header"><span class="tool">tokei + onefetch</span><span class="replaces">manual repo summaries</span></div>
+            <p>Quick codebase statistics and repository overview when sizing up a project.</p>
+            <div class="tag-row"><span class="tag">repo</span><span class="tag">summary</span></div>
+            <div class="source-row">
+              <a class="source-link detail-link" href="#tool-repo-summary">Cheatsheet</a>
+              <a class="source-link" href="https://github.com/XAMPPRocky/tokei" target="_blank" rel="noreferrer">tokei</a>
+              <a class="source-link" href="https://github.com/o2sh/onefetch" target="_blank" rel="noreferrer">onefetch</a>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="cheatsheets">
+        <div class="section-head">
+          <h2>Cheatsheets</h2>
+          <p class="section-copy">
+            Each card gets a compact page with the commands worth remembering, README-derived notes,
+            and upstream media when the project ships a useful screenshot, GIF, or video.
+          </p>
+        </div>
+
+        <div class="tool-index" aria-label="Tool cheat-sheet index">
+          <a class="index-link" href="#tool-eza">eza</a>
+          <a class="index-link" href="#tool-zoxide">zoxide</a>
+          <a class="index-link" href="#tool-bat">bat</a>
+          <a class="index-link" href="#tool-ripgrep">ripgrep</a>
+          <a class="index-link" href="#tool-fd">fd</a>
+          <a class="index-link" href="#tool-fzf">fzf</a>
+          <a class="index-link" href="#tool-atuin">atuin</a>
+          <a class="index-link" href="#tool-delta">delta</a>
+          <a class="index-link" href="#tool-yazi">yazi</a>
+          <a class="index-link" href="#tool-monitors">btop + bottom</a>
+          <a class="index-link" href="#tool-storage">dust + duf</a>
+          <a class="index-link" href="#tool-network">xh + doggo</a>
+          <a class="index-link" href="#tool-herdr">herdr</a>
+          <a class="index-link" href="#tool-nix-review">nh + nom + nvd</a>
+          <a class="index-link" href="#tool-nix-maintenance">deadnix + statix + nurl</a>
+          <a class="index-link" href="#tool-previews">glow + catimg + ripdrag</a>
+          <a class="index-link" href="#tool-repo-summary">tokei + onefetch</a>
+          <a class="index-link" href="#tool-prompt">starship + JJ</a>
+        </div>
+
+        <div class="tool-pages">
+          <article class="tool-page" id="tool-eza">
+            <div class="page-title">
+              <h3>eza</h3>
+              <div class="source-row">
+                <a class="source-link" href="https://github.com/eza-community/eza" target="_blank" rel="noreferrer">GitHub</a>
+                <a class="source-link" href="https://github.com/eza-community/eza/tree/main/man" target="_blank" rel="noreferrer">Man pages</a>
+              </div>
+            </div>
+            <p class="tool-lede">A modern <code>ls</code> replacement with colors, icons, long views, tree views, metadata, hyperlinks, Git state, and theme support.</p>
+            <div class="page-layout">
+              <div class="cheat-grid">
+                <article class="cheat-card">
+                  <h4>Daily aliases</h4>
+                  <pre><code>ls
+ll
+la
+lt
+tree</code></pre>
+                </article>
+                <article class="cheat-card">
+                  <h4>Useful direct calls</h4>
+                  <pre><code>eza --long --git --icons=auto
+eza --tree --level=3 --icons=auto
+eza --all --sort=modified --reverse
+eza --only-dirs
+eza --git-ignore</code></pre>
+                </article>
+              </div>
+              <figure class="media-card">
+                <img loading="lazy" src="https://raw.githubusercontent.com/eza-community/eza/main/docs/images/screenshots.png" alt="eza README screenshot" />
+                <figcaption>README screenshot: colorized listings with richer file metadata.</figcaption>
+              </figure>
+            </div>
+          </article>
+
+          <article class="tool-page" id="tool-zoxide">
+            <div class="page-title">
+              <h3>zoxide</h3>
+              <div class="source-row">
+                <a class="source-link" href="https://github.com/ajeetdsouza/zoxide" target="_blank" rel="noreferrer">GitHub</a>
+                <a class="source-link" href="https://github.com/ajeetdsouza/zoxide/wiki" target="_blank" rel="noreferrer">Wiki</a>
+              </div>
+            </div>
+            <p class="tool-lede">A smarter <code>cd</code> that ranks directories by use and jumps by partial names. This setup enables both Zsh integration and the <code>zi</code> interactive picker.</p>
+            <div class="page-layout">
+              <div class="cheat-grid">
+                <article class="cheat-card">
+                  <h4>Jump patterns</h4>
+                  <pre><code>z nixfiles
+z foo bar
+z ~/projects
+z ..
+z -</code></pre>
+                </article>
+                <article class="cheat-card">
+                  <h4>Interactive mode</h4>
+                  <pre><code>zi
+zi nix
+cdg</code></pre>
+                </article>
+              </div>
+              <figure class="media-card">
+                <img loading="lazy" src="https://raw.githubusercontent.com/ajeetdsouza/zoxide/main/contrib/tutorial.webp" alt="zoxide README tutorial" />
+                <figcaption>README tutorial: directory ranking and fuzzy jumps.</figcaption>
+              </figure>
+            </div>
+          </article>
+
+          <article class="tool-page" id="tool-bat">
+            <div class="page-title">
+              <h3>bat</h3>
+              <div class="source-row">
+                <a class="source-link" href="https://github.com/sharkdp/bat" target="_blank" rel="noreferrer">GitHub</a>
+                <a class="source-link" href="https://github.com/sharkdp/bat#integration-with-other-tools" target="_blank" rel="noreferrer">Integrations</a>
+              </div>
+            </div>
+            <p class="tool-lede">A <code>cat</code> replacement with syntax highlighting, Git change markers, non-printable character display, and safe plain output when piped.</p>
+            <div class="page-layout">
+              <div class="cheat-grid">
+                <article class="cheat-card">
+                  <h4>Read files</h4>
+                  <pre><code>bat README.md
+bat src/*.rs
+bat -n main.rs
+bat -A /etc/hosts
+bat --plain file.txt</code></pre>
+                </article>
+                <article class="cheat-card">
+                  <h4>Use as a previewer</h4>
+                  <pre><code>fzf --preview "bat --color=always --style=numbers --line-range=:500 {}"
+fd -e nix -X bat
+git show HEAD:flake.nix | bat -l nix
+tail -f app.log | bat --paging=never -l log</code></pre>
+                </article>
+              </div>
+              <figure class="media-card">
+                <img loading="lazy" src="https://imgur.com/rGsdnDe.png" alt="bat README syntax highlighting screenshot" />
+                <figcaption>README screenshot: syntax highlighting in terminal output.</figcaption>
+              </figure>
+            </div>
+          </article>
+
+          <article class="tool-page" id="tool-ripgrep">
+            <div class="page-title">
+              <h3>ripgrep</h3>
+              <div class="source-row">
+                <a class="source-link" href="https://github.com/BurntSushi/ripgrep" target="_blank" rel="noreferrer">GitHub</a>
+                <a class="source-link" href="https://github.com/BurntSushi/ripgrep/blob/master/GUIDE.md" target="_blank" rel="noreferrer">Guide</a>
+              </div>
+            </div>
+            <p class="tool-lede">Fast recursive search that respects ignore files by default, skips hidden and binary files, supports file types, Unicode, replacements, compressed search, and optional PCRE2.</p>
+            <div class="page-layout">
+              <div class="cheat-grid">
+                <article class="cheat-card">
+                  <h4>Common searches</h4>
+                  <pre><code>rg "programs.starship"
+rg -n "TODO|FIXME"
+rg -t nix "home.packages"
+rg -T js "console.log"
+rg -uuu "hidden too"</code></pre>
+                </article>
+                <article class="cheat-card">
+                  <h4>Context and output</h4>
+                  <pre><code>rg -C 2 "pattern"
+rg --files
+rg --files -g "*.nix"
+rg --json "pattern" | jaq .
+rg -P "(?&lt;=foo)bar"</code></pre>
+                </article>
+              </div>
+              <figure class="media-card">
+                <img loading="lazy" src="https://burntsushi.net/stuff/ripgrep1.png" alt="ripgrep README screenshot" />
+                <figcaption>README screenshot: search output with line numbers and highlights.</figcaption>
+              </figure>
+            </div>
+          </article>
+
+          <article class="tool-page" id="tool-fd">
+            <div class="page-title">
+              <h3>fd</h3>
+              <div class="source-row">
+                <a class="source-link" href="https://github.com/sharkdp/fd" target="_blank" rel="noreferrer">GitHub</a>
+                <a class="source-link" href="https://github.com/sharkdp/fd#how-to-use" target="_blank" rel="noreferrer">Usage</a>
+              </div>
+            </div>
+            <p class="tool-lede">A simpler, faster <code>find</code> alternative with smart case, regex or glob matching, Git ignore support, hidden-file controls, and parallel command execution.</p>
+            <div class="page-layout">
+              <div class="cheat-grid">
+                <article class="cheat-card">
+                  <h4>Find entries</h4>
+                  <pre><code>fd nix
+fd -e md
+fd -g "test_*.py"
+fd -H pre-commit
+fd -I target
+fd -HI secret</code></pre>
+                </article>
+                <article class="cheat-card">
+                  <h4>Batch work</h4>
+                  <pre><code>fd -e nix -X bat
+fd -e h -e cpp -x clang-format -i
+fd -e cpp -e h -X rg "std::cout"
+fd -tf -x md5sum &gt; checksums.txt</code></pre>
+                </article>
+              </div>
+              <figure class="media-card">
+                <img loading="lazy" src="https://raw.githubusercontent.com/sharkdp/fd/master/doc/screencast.svg" alt="fd README screencast" />
+                <figcaption>README screencast: intuitive search and command execution.</figcaption>
+              </figure>
+            </div>
+          </article>
+
+          <article class="tool-page" id="tool-fzf">
+            <div class="page-title">
+              <h3>fzf</h3>
+              <div class="source-row">
+                <a class="source-link" href="https://github.com/junegunn/fzf" target="_blank" rel="noreferrer">GitHub</a>
+                <a class="source-link" href="https://github.com/junegunn/fzf/wiki/examples" target="_blank" rel="noreferrer">Examples</a>
+              </div>
+            </div>
+            <p class="tool-lede">A fuzzy finder that reads from stdin, writes a selected item to stdout, and powers file selection, directory jumping, history search, previews, and shell completion.</p>
+            <div class="page-layout">
+              <div class="cheat-grid">
+                <article class="cheat-card">
+                  <h4>Selection</h4>
+                  <pre><code>fd --type f | fzf
+vim "$(fzf)"
+git ls-files | fzf --preview "bat --color=always {}"
+fzf --height 40% --layout reverse --border</code></pre>
+                </article>
+                <article class="cheat-card">
+                  <h4>Search syntax</h4>
+                  <pre><code>^src .nix$ !vendor
+'exact
+!.tmp$
+foo | bar
+TAB       # multi-select
+CTRL-J/K  # move</code></pre>
+                </article>
+              </div>
+              <figure class="media-card">
+                <img loading="lazy" src="https://raw.githubusercontent.com/junegunn/i/master/fzf-preview.png" alt="fzf README preview screenshot" />
+                <figcaption>README screenshot: fzf with a live preview window.</figcaption>
+              </figure>
+            </div>
+          </article>
+
+          <article class="tool-page" id="tool-atuin">
+            <div class="page-title">
+              <h3>atuin</h3>
+              <div class="source-row">
+                <a class="source-link" href="https://github.com/atuinsh/atuin" target="_blank" rel="noreferrer">GitHub</a>
+                <a class="source-link" href="https://docs.atuin.sh" target="_blank" rel="noreferrer">Docs</a>
+              </div>
+            </div>
+            <p class="tool-lede">Structured shell history in SQLite, with command context such as exit code, cwd, hostname, duration, and optional encrypted sync.</p>
+            <div class="page-layout">
+              <div class="cheat-grid">
+                <article class="cheat-card">
+                  <h4>Search history</h4>
+                  <pre><code>atuin search make
+atuin search --exit 0 make
+atuin search --after "yesterday 3pm" make
+atuin stats</code></pre>
+                </article>
+                <article class="cheat-card">
+                  <h4>In-shell workflow</h4>
+                  <pre><code>CTRL-R    # full-screen history UI
+Enter     # execute selected command
+Tab       # edit selected command
+Alt-\\    # quick jump</code></pre>
+                </article>
+              </div>
+              <figure class="media-card">
+                <img loading="lazy" src="https://raw.githubusercontent.com/atuinsh/atuin/main/demo.gif" alt="Atuin README demo" />
+                <figcaption>README demo: command history with context-rich search.</figcaption>
+              </figure>
+            </div>
+          </article>
+
+          <article class="tool-page" id="tool-delta">
+            <div class="page-title">
+              <h3>delta</h3>
+              <div class="source-row">
+                <a class="source-link" href="https://github.com/dandavison/delta" target="_blank" rel="noreferrer">GitHub</a>
+                <a class="source-link" href="https://dandavison.github.io/delta/" target="_blank" rel="noreferrer">Manual</a>
+              </div>
+            </div>
+            <p class="tool-lede">A syntax-highlighting pager for Git, diff, grep, and blame output. This setup enables side-by-side view, line numbers, navigation, and Git integration.</p>
+            <div class="page-layout">
+              <div class="cheat-grid">
+                <article class="cheat-card">
+                  <h4>Git commands</h4>
+                  <pre><code>git diff
+git show
+git log -p
+git blame file.rs
+git grep "pattern" | delta</code></pre>
+                </article>
+                <article class="cheat-card">
+                  <h4>Direct delta</h4>
+                  <pre><code>delta --side-by-side file.diff
+delta --line-numbers
+delta --navigate
+delta --show-syntax-themes --dark
+rg "pattern" | delta</code></pre>
+                </article>
+              </div>
+              <figure class="media-card">
+                <img loading="lazy" src="https://user-images.githubusercontent.com/52205/87230973-412eb900-c381-11ea-8aec-cc200290bd1b.png" alt="delta README side-by-side screenshot" />
+                <figcaption>README screenshot: side-by-side diff with line numbers.</figcaption>
+              </figure>
+            </div>
+          </article>
+
+          <article class="tool-page" id="tool-yazi">
+            <div class="page-title">
+              <h3>yazi</h3>
+              <div class="source-row">
+                <a class="source-link" href="https://github.com/sxyazi/yazi" target="_blank" rel="noreferrer">GitHub</a>
+                <a class="source-link" href="https://yazi-rs.github.io/docs/quick-start" target="_blank" rel="noreferrer">Docs</a>
+              </div>
+            </div>
+            <p class="tool-lede">A fast terminal file manager with async I/O, tabs, previews, bulk operations, plugin support, Git integration, image previews, and this setup's <code>y</code> wrapper.</p>
+            <div class="page-layout">
+              <div class="cheat-grid">
+                <article class="cheat-card">
+                  <h4>Open and hand off</h4>
+                  <pre><code>y
+y ~/Downloads
+y modules/command-line</code></pre>
+                </article>
+                <article class="cheat-card">
+                  <h4>What to try</h4>
+                  <ul class="feature-list">
+                    <li>Preview code, images, archives, PDFs, and directories.</li>
+                    <li>Use tabs and cross-directory selections.</li>
+                    <li>Pair with <code>fd</code>, <code>rg</code>, <code>fzf</code>, and <code>zoxide</code>.</li>
+                  </ul>
+                </article>
+              </div>
+              <figure class="media-card">
+                <video controls muted loop preload="metadata" src="https://github.com/sxyazi/yazi/assets/17523360/92ff23fa-0cd5-4f04-b387-894c12265cc7"></video>
+                <figcaption>README video: Yazi terminal file manager workflow.</figcaption>
+              </figure>
+            </div>
+          </article>
+
+          <article class="tool-page" id="tool-monitors">
+            <div class="page-title">
+              <h3>btop + bottom</h3>
+              <div class="source-row">
+                <a class="source-link" href="https://github.com/aristocratos/btop" target="_blank" rel="noreferrer">btop</a>
+                <a class="source-link" href="https://github.com/ClementTsang/bottom" target="_blank" rel="noreferrer">bottom</a>
+              </div>
+            </div>
+            <p class="tool-lede">Two terminal monitors: <code>btop</code> as the rich daily system monitor and <code>btm</code> as a cross-platform graphical process/system monitor with custom layouts.</p>
+            <div class="page-layout">
+              <div class="cheat-grid">
+                <article class="cheat-card">
+                  <h4>btop</h4>
+                  <pre><code>btop
+top
+btop --force-utf
+btop --low-color
+btop --tty</code></pre>
+                </article>
+                <article class="cheat-card">
+                  <h4>bottom</h4>
+                  <pre><code>btm
+btm --basic
+btm --tree
+btm --group_processes
+btm --theme gruvbox
+btm --help</code></pre>
+                </article>
+              </div>
+              <div class="media-stack">
+                <figure class="media-card">
+                  <img loading="lazy" src="https://raw.githubusercontent.com/aristocratos/btop/main/Img/normal.png" alt="btop README screenshot" />
+                  <figcaption>README screenshot: btop main resource monitor view.</figcaption>
+                </figure>
+                <figure class="media-card">
+                  <img loading="lazy" src="https://raw.githubusercontent.com/ClementTsang/bottom/master/demos/demo.gif" alt="bottom README demo" />
+                  <figcaption>README GIF: bottom search, expansion, and process controls.</figcaption>
+                </figure>
+              </div>
+            </div>
+          </article>
+
+          <article class="tool-page" id="tool-storage">
+            <div class="page-title">
+              <h3>dust + duf</h3>
+              <div class="source-row">
+                <a class="source-link" href="https://github.com/bootandy/dust" target="_blank" rel="noreferrer">dust</a>
+                <a class="source-link" href="https://github.com/muesli/duf" target="_blank" rel="noreferrer">duf</a>
+              </div>
+            </div>
+            <p class="tool-lede"><code>dust</code> answers where disk space went; <code>duf</code> answers how full each filesystem is. Together they replace the most common <code>du</code> and <code>df</code> checks.</p>
+            <div class="page-layout">
+              <div class="cheat-grid">
+                <article class="cheat-card">
+                  <h4>dust</h4>
+                  <pre><code>dust
+dust -n 30
+dust -d 3
+dust -D
+dust -F
+dust -j | jq</code></pre>
+                </article>
+                <article class="cheat-card">
+                  <h4>duf</h4>
+                  <pre><code>duf
+duf /home
+duf --all
+duf --sort size
+duf --only local,network
+duf --json | jq</code></pre>
+                </article>
+              </div>
+              <div class="media-stack">
+                <figure class="media-card">
+                  <img loading="lazy" src="https://raw.githubusercontent.com/bootandy/dust/master/media/snap.png" alt="dust README screenshot" />
+                  <figcaption>README screenshot: dust tree bars showing where disk usage concentrates.</figcaption>
+                </figure>
+                <figure class="media-card">
+                  <img loading="lazy" src="https://raw.githubusercontent.com/muesli/duf/master/duf.png" alt="duf README screenshot" />
+                  <figcaption>README screenshot: duf filesystem usage table.</figcaption>
+                </figure>
+              </div>
+            </div>
+          </article>
+
+          <article class="tool-page" id="tool-network">
+            <div class="page-title">
+              <h3>xh + doggo</h3>
+              <div class="source-row">
+                <a class="source-link" href="https://github.com/ducaale/xh" target="_blank" rel="noreferrer">xh</a>
+                <a class="source-link" href="https://github.com/mr-karan/doggo" target="_blank" rel="noreferrer">doggo</a>
+                <a class="source-link" href="https://doggo.mrkaran.dev/docs/" target="_blank" rel="noreferrer">doggo docs</a>
+              </div>
+            </div>
+            <p class="tool-lede"><code>xh</code> brings HTTPie-style ergonomics to HTTP requests; <code>doggo</code> gives DNS lookups readable output plus JSON and modern transports like DoH, DoT, DoQ, and DNSCrypt.</p>
+            <div class="page-layout">
+              <div class="cheat-grid">
+                <article class="cheat-card">
+                  <h4>xh</h4>
+                  <pre><code>xh https://example.com
+xh GET :3000/api/items
+xh POST :3000/api name=vincent active:=true
+xh --form POST :3000/login user=vincent
+xh --raw '{"ok":true}' POST :3000/events</code></pre>
+                </article>
+                <article class="cheat-card">
+                  <h4>doggo</h4>
+                  <pre><code>doggo example.com
+doggo MX github.com @9.9.9.9
+doggo example.com @https://cloudflare-dns.com/dns-query
+doggo --reverse 8.8.8.8 --short
+doggo example.com --json | jq</code></pre>
+                </article>
+              </div>
+              <div class="media-stack">
+                <figure class="media-card">
+                  <img loading="lazy" src="https://raw.githubusercontent.com/ducaale/xh/master/assets/xh-demo.gif" alt="xh README demo" />
+                  <figcaption>README GIF: xh sending HTTP requests with readable output.</figcaption>
+                </figure>
+                <figure class="media-card">
+                  <img loading="lazy" src="https://raw.githubusercontent.com/mr-karan/doggo/main/www/static/doggo.png" alt="doggo README screenshot" />
+                  <figcaption>README screenshot: doggo DNS lookup output.</figcaption>
+                </figure>
+              </div>
+            </div>
+          </article>
+
+          <article class="tool-page" id="tool-herdr">
+            <div class="page-title">
+              <h3>herdr</h3>
+              <div class="source-row">
+                <a class="source-link" href="https://github.com/ogulcancelik/herdr" target="_blank" rel="noreferrer">GitHub</a>
+                <a class="source-link" href="https://herdr.dev/docs/quick-start/" target="_blank" rel="noreferrer">Quick start</a>
+                <a class="source-link" href="https://herdr.dev/docs/keyboard/" target="_blank" rel="noreferrer">Keyboard</a>
+              </div>
+            </div>
+            <p class="tool-lede">An agent-oriented terminal multiplexer: live panes, detach/reattach, SSH-friendly session persistence, tmux-style prefix keys, mouse support, plugins, and a socket API agents can use.</p>
+            <div class="page-layout">
+              <div class="cheat-grid">
+                <article class="cheat-card">
+                  <h4>Start and return</h4>
+                  <pre><code>herdr
+ctrl+b q   # detach
+herdr      # reattach</code></pre>
+                </article>
+                <article class="cheat-card">
+                  <h4>Use it for</h4>
+                  <ul class="feature-list">
+                    <li>Keep several coding agents visible at once.</li>
+                    <li>Detach while jobs keep running.</li>
+                    <li>Use terminal views instead of wrapped summaries.</li>
+                  </ul>
+                </article>
+              </div>
+              <figure class="media-card">
+                <video controls muted loop preload="metadata" src="https://github.com/user-attachments/assets/043ec09f-4bdd-41d5-aee0-8fda6b83e267"></video>
+                <figcaption>README video: herdr multiplexer overview.</figcaption>
+              </figure>
+            </div>
+          </article>
+
+          <article class="tool-page" id="tool-nix-review">
+            <div class="page-title">
+              <h3>nh + nom + nvd</h3>
+              <div class="source-row">
+                <a class="source-link" href="https://github.com/nix-community/nh" target="_blank" rel="noreferrer">nh</a>
+                <a class="source-link" href="https://github.com/maralorn/nix-output-monitor" target="_blank" rel="noreferrer">nom</a>
+                <a class="source-link" href="https://git.sr.ht/~khumba/nvd" target="_blank" rel="noreferrer">nvd</a>
+              </div>
+            </div>
+            <p class="tool-lede"><code>nh</code> wraps NixOS, Home Manager, and nix-darwin workflows; <code>nom</code> makes Nix build output readable; <code>nvd</code> compares two closures and summarizes version, added, and removed package changes.</p>
+            <div class="page-layout">
+              <div class="cheat-grid">
+                <article class="cheat-card">
+                  <h4>Build review</h4>
+                  <pre><code>nh os build ~/.nixfiles#pc-fixe
+nh darwin build ~/.nixfiles#macbook-pro
+nom build --no-link .#checks.x86_64-linux.statix
+nom build --no-link .#nixosConfigurations.pc-fixe.config.system.build.toplevel</code></pre>
+                </article>
+                <article class="cheat-card">
+                  <h4>Closure diff</h4>
+                  <pre><code>new="$(nix build --no-link --print-out-paths .#nixosConfigurations.pc-fixe.config.system.build.toplevel)"
+nvd diff /run/current-system "$new"
+nvd diff /run/booted-system /run/current-system</code></pre>
+                </article>
+              </div>
+              <figure class="media-card">
+                <img loading="lazy" src="https://raw.githubusercontent.com/maralorn/nix-output-monitor/main/example-screenshot.png" alt="nix-output-monitor README screenshot" />
+                <figcaption>README screenshot: nom build tree and status summary.</figcaption>
+              </figure>
+            </div>
+          </article>
+
+          <article class="tool-page" id="tool-nix-maintenance">
+            <div class="page-title">
+              <h3>deadnix + statix + nurl</h3>
+              <div class="source-row">
+                <a class="source-link" href="https://github.com/astro/deadnix" target="_blank" rel="noreferrer">deadnix</a>
+                <a class="source-link" href="https://github.com/oppiliappan/statix" target="_blank" rel="noreferrer">statix</a>
+                <a class="source-link" href="https://github.com/nix-community/nurl" target="_blank" rel="noreferrer">nurl</a>
+              </div>
+            </div>
+            <p class="tool-lede">Repository maintenance helpers: unused Nix binding detection, Nix linting/fixes, and fetcher generation from source URLs.</p>
+            <div class="page-layout">
+              <div class="cheat-grid">
+                <article class="cheat-card">
+                  <h4>Check first</h4>
+                  <pre><code>deadnix --fail .
+deadnix --fail --exclude references .
+statix check --config checks/statix.toml .
+nix build --no-link .#checks.x86_64-linux.statix</code></pre>
+                </article>
+                <article class="cheat-card">
+                  <h4>Edit intentionally</h4>
+                  <pre><code>deadnix --edit modules/example.nix
+statix fix --config checks/statix.toml modules/example.nix
+nurl https://github.com/owner/project v1.2.3
+nurl --hash https://github.com/owner/project v1.2.3</code></pre>
+                </article>
+              </div>
+              <figure class="media-card">
+                <img loading="lazy" src="https://img.shields.io/badge/Nix-maintenance-7bd88f?style=for-the-badge&amp;logo=nixos" alt="Nix maintenance badge" />
+                <figcaption>These README sources are command-focused, so this page keeps the emphasis on safe invocation patterns.</figcaption>
+              </figure>
+            </div>
+          </article>
+
+          <article class="tool-page" id="tool-previews">
+            <div class="page-title">
+              <h3>glow + catimg + ripdrag</h3>
+              <div class="source-row">
+                <a class="source-link" href="https://github.com/charmbracelet/glow" target="_blank" rel="noreferrer">glow</a>
+                <a class="source-link" href="https://github.com/posva/catimg" target="_blank" rel="noreferrer">catimg</a>
+                <a class="source-link" href="https://github.com/nik012003/ripdrag" target="_blank" rel="noreferrer">ripdrag</a>
+              </div>
+            </div>
+            <p class="tool-lede"><code>glow</code> renders Markdown, <code>catimg</code> renders images in terminal, and <code>ripdrag</code> lets you drag files from terminal windows into GUI applications.</p>
+            <div class="page-layout">
+              <div class="cheat-grid">
+                <article class="cheat-card">
+                  <h4>Preview files</h4>
+                  <pre><code>md README.md
+glow -p README.md
+glow github.com/charmbracelet/glow
+img screenshot.png
+catimg -r 2 image.jpg</code></pre>
+                </article>
+                <article class="cheat-card">
+                  <h4>Drag files</h4>
+                  <pre><code>ripdrag path/to/file
+ripdrag "$(fzf)"
+fd -e png | ripdrag --from-stdin
+ripdrag --target --keep
+ripdrag --all *.png</code></pre>
+                </article>
+              </div>
+              <div class="media-stack">
+                <figure class="media-card">
+                  <img loading="lazy" src="https://github.com/user-attachments/assets/c2246366-f84b-4847-b431-32a61ca07b74" alt="Glow README UI demo" />
+                  <figcaption>README demo: Glow Markdown browsing and rendering.</figcaption>
+                </figure>
+                <figure class="media-card">
+                  <img loading="lazy" src="https://cloud.githubusercontent.com/assets/664177/10122393/6846151e-6518-11e5-9a21-9be0c0765267.gif" alt="catimg README GIF" />
+                  <figcaption>README GIF: catimg rendering an image in the terminal.</figcaption>
+                </figure>
+                <figure class="media-card">
+                  <video controls muted loop preload="metadata" src="https://user-images.githubusercontent.com/10795335/189587471-7ed26f71-3f5e-4d8d-8048-7539e429531f.mp4"></video>
+                  <figcaption>README video: ripdrag dragging files from the terminal.</figcaption>
+                </figure>
+              </div>
+            </div>
+          </article>
+
+          <article class="tool-page" id="tool-repo-summary">
+            <div class="page-title">
+              <h3>tokei + onefetch</h3>
+              <div class="source-row">
+                <a class="source-link" href="https://github.com/XAMPPRocky/tokei" target="_blank" rel="noreferrer">tokei</a>
+                <a class="source-link" href="https://github.com/o2sh/onefetch" target="_blank" rel="noreferrer">onefetch</a>
+                <a class="source-link" href="https://onefetch.dev" target="_blank" rel="noreferrer">onefetch site</a>
+              </div>
+            </div>
+            <p class="tool-lede"><code>tokei</code> reports code statistics by language; <code>onefetch</code> summarizes a Git repository with language, license, contributors, dependencies, size, pending changes, and formatting controls.</p>
+            <div class="page-layout">
+              <div class="cheat-grid">
+                <article class="cheat-card">
+                  <h4>tokei</h4>
+                  <pre><code>tokei .
+tokei . --sort code
+tokei . --files
+tokei . --type Nix,Markdown
+tokei . --output json | jq
+tokei . --exclude "*.d"</code></pre>
+                </article>
+                <article class="cheat-card">
+                  <h4>onefetch</h4>
+                  <pre><code>onefetch
+onefetch --no-color-palette
+onefetch --no-art
+onefetch --output json
+onefetch --exclude "*.lock"
+onefetch --image ./logo.png</code></pre>
+                </article>
+              </div>
+              <div class="media-stack">
+                <figure class="media-card">
+                  <img loading="lazy" src="https://raw.githubusercontent.com/o2sh/onefetch/main/assets/screenshot-1.png" alt="onefetch README screenshot" />
+                  <figcaption>README screenshot: onefetch repository summary in the terminal.</figcaption>
+                </figure>
+                <figure class="media-card">
+                  <img loading="lazy" src="https://img.shields.io/badge/tokei-code%20stats-72d5d5?style=for-the-badge&amp;logo=rust" alt="tokei code stats badge" />
+                  <figcaption>Tokei's README is command-output focused, so the cheat sheet keeps its usage examples in the command cards.</figcaption>
+                </figure>
+              </div>
+            </div>
+          </article>
+
+          <article class="tool-page" id="tool-prompt">
+            <div class="page-title">
+              <h3>starship + starship-jj</h3>
+              <div class="source-row">
+                <a class="source-link" href="https://starship.rs" target="_blank" rel="noreferrer">Starship</a>
+                <a class="source-link" href="https://github.com/starship/starship" target="_blank" rel="noreferrer">Starship GitHub</a>
+                <a class="source-link" href="https://gitlab.com/lanastara_foss/starship-jj" target="_blank" rel="noreferrer">starship-jj</a>
+              </div>
+            </div>
+            <p class="tool-lede">Starship is the fast cross-shell prompt. The custom JJ segment calls <code>starship-jj</code> only inside Jujutsu workspaces to show bookmarks, current change text, state, and metrics.</p>
+            <div class="page-layout">
+              <div class="cheat-grid">
+                <article class="cheat-card">
+                  <h4>Prompt checks</h4>
+                  <pre><code>starship explain
+starship module directory
+jj root --ignore-working-copy
+starship-jj starship prompt</code></pre>
+                </article>
+                <article class="cheat-card">
+                  <h4>JJ signal shown</h4>
+                  <ul class="feature-list">
+                    <li>Bookmarks near the current commit.</li>
+                    <li>Commit text and conflict/divergent/hidden state.</li>
+                    <li>Changed files, insertions, and deletions.</li>
+                  </ul>
+                </article>
+              </div>
+              <figure class="media-card">
+                <img loading="lazy" src="https://raw.githubusercontent.com/starship/starship/master/media/demo.gif" alt="Starship README demo" />
+                <figcaption>README media: Starship prompt overview.</figcaption>
+              </figure>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="prompt">
+        <div class="section-head">
+          <h2>Prompt + JJ</h2>
+          <p class="section-copy">
+            Starship is enabled for Bash and Zsh, with a custom JJ segment that appears only inside
+            Jujutsu workspaces.
+          </p>
+        </div>
+
+        <div class="two-col">
+          <article class="panel">
+            <h3>What the prompt knows</h3>
+            <p>
+              The custom module runs <code>starship-jj starship prompt</code> when
+              <code>jj root --ignore-working-copy</code> succeeds. That keeps normal directories
+              quiet while showing useful context in JJ repos.
+            </p>
+            <div class="source-row">
+              <a class="source-link" href="https://starship.rs" target="_blank" rel="noreferrer">Starship website</a>
+              <a class="source-link" href="https://gitlab.com/lanastara_foss/starship-jj" target="_blank" rel="noreferrer">starship-jj GitLab</a>
+            </div>
+            <ul class="mini-list">
+              <li><strong>Change context</strong><span>current change, bookmark, and commit message</span></li>
+              <li><strong>State</strong><span>conflict, divergent, empty, immutable, or hidden status</span></li>
+              <li><strong>Metrics</strong><span>changed files plus added and removed lines</span></li>
+            </ul>
+          </article>
+
+          <article class="terminal" aria-label="Starship JJ example">
+            <div class="terminal-bar">
+              <span class="terminal-light red"></span>
+              <span class="terminal-light yellow"></span>
+              <span class="terminal-light green"></span>
+              <span class="terminal-title">jj-aware prompt</span>
+            </div>
+            <div class="terminal-body">
+              <code><span class="prompt">~/src/app</span> <span style="color: var(--purple)">branch feature/login</span></code>
+              <code><span style="color: var(--purple)">"tighten cli setup" [3 +42-9]</span></code>
+              <code><span class="cmd">$ jj status</span></code>
+              <code><span class="output">Working copy changes are reflected before the command runs.</span></code>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section id="aliases">
+        <div class="section-head">
+          <h2>Aliases</h2>
+          <p class="section-copy">
+            Muscle memory stays useful. The common names now point at richer tools where it makes sense.
+          </p>
+        </div>
+
+        <div class="table-scroll">
+          <table class="aliases">
+            <thead>
+              <tr>
+                <th>Old habit</th>
+                <th>New target</th>
+                <th>Why it is nicer</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><code>ls</code></td><td><code>eza --icons=auto</code></td><td>Cleaner listings with icons.</td></tr>
+              <tr><td><code>ll</code></td><td><code>eza --long --git --icons=auto</code></td><td>Long listing plus git state.</td></tr>
+              <tr><td><code>la</code></td><td><code>eza --all --long --git --icons=auto</code></td><td>Hidden files included.</td></tr>
+              <tr><td><code>tree</code></td><td><code>eza --tree --icons=auto</code></td><td>Tree view without a separate tool.</td></tr>
+              <tr><td><code>cat</code></td><td><code>bat</code></td><td>Syntax-highlighted file output.</td></tr>
+              <tr><td><code>grep</code></td><td><code>rg</code></td><td>Fast recursive search.</td></tr>
+              <tr><td><code>find</code></td><td><code>fd</code></td><td>Simpler file discovery.</td></tr>
+              <tr><td><code>df</code></td><td><code>duf</code></td><td>Readable filesystem usage.</td></tr>
+              <tr><td><code>du</code></td><td><code>dust</code></td><td>Disk usage sorted visually.</td></tr>
+              <tr><td><code>top</code></td><td><code>btop</code></td><td>Modern resource monitor.</td></tr>
+              <tr><td><code>ps</code></td><td><code>procs</code></td><td>Process listing with better columns.</td></tr>
+              <tr><td><code>ping</code></td><td><code>gping</code></td><td>Latency graph instead of scrolling text.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="try">
+        <div class="section-head">
+          <h2>Try First</h2>
+          <p class="section-copy">
+            A short route through the setup after activation. These commands show the biggest quality
+            of life changes quickly.
+          </p>
+        </div>
+
+        <div class="command-grid">
+          <pre><code># jump around and inspect files
+z nixfiles
+ls
+lt
+bat modules/command-line/default.nix</code></pre>
+
+          <pre><code># search and preview
+rg "programs.starship"
+fd nix$
+fzf</code></pre>
+
+          <pre><code># git and jj work
+git diff
+jj status
+lazygit</code></pre>
+
+          <pre><code># system and network checks
+btop
+dust
+duf
+xh https://example.com
+doggo openai.com</code></pre>
+
+          <pre><code># nix review helpers
+nh os build ~/.nixfiles#pc-fixe
+nom build --no-link .#checks.x86_64-linux.statix
+new="$(nix build --no-link --print-out-paths .#nixosConfigurations.pc-fixe.config.system.build.toplevel)"
+nvd diff /run/current-system "$new"</code></pre>
+
+          <pre><code># richer file previews
+md README.md
+img screenshot.png
+view modules/command-line/default.nix
+ripdrag path/to/file</code></pre>
+        </div>
+      </section>
+
+      <section id="compat">
+        <div class="section-head">
+          <h2>Compatibility</h2>
+          <p class="section-copy">
+            The module is shared, but a couple of platform details stay explicit so each machine gets
+            the right owner.
+          </p>
+        </div>
+
+        <div class="compat">
+          <article class="panel">
+            <h3>Linux: pc-fixe</h3>
+            <p>
+              Ghostty is installed from nixpkgs as part of the shared module. The same Zsh,
+              Starship, Zoxide, Atuin, FZF, Yazi, Delta, and modern CLI packages are enabled through
+              Home Manager.
+            </p>
+          </article>
+
+          <article class="panel">
+            <h3>macOS: macbook-pro</h3>
+            <p>
+              Ghostty remains the existing Homebrew cask, while the command-line tools are Nix-owned.
+              JetBrains Toolbox scripts, Bun, and OrbStack shell integration are preserved for Darwin.
+            </p>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer class="shell">
+      Managed by <code>config.flake.modules.homeManager.commandLine</code>. No JavaScript, no build
+      step, just a local HTML map of the terminal setup.
+    </footer>
+  </body>
+</html>

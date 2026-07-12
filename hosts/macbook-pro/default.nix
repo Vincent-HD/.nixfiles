@@ -21,20 +21,16 @@ in
           imports = [
             # Migrate one application at a time. Keep this list deliberately small.
             hm.browser
-            hm.btop
             hm.coding
             hm.codex
+            hm.commandLine
+            hm.comma
             hm.direnv
             hm.discord
             hm.jq
             hm.lazydocker
-            hm.fastfetch
-            hm.mcfly
-            hm.starship
             hm.sunshine
             hm.work
-            hm.zoxide
-            hm.zshHelpers
           ];
 
           home.username = username;

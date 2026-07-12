@@ -34,7 +34,6 @@
           "gitbutler"
           "insomnia"
           "jetbrains-toolbox"
-          "kitty"
           "moonlight"
           "msty"
           "obs"

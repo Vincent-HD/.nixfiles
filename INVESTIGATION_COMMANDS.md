@@ -422,6 +422,23 @@ Purpose: verify that important binds or AZERTY aliases made it into the generate
 
 ## Formatting / Static Checks
 
+### Run the repo Statix flake check
+
+```bash
+cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" \
+nix build --no-link '.#checks.'"$(nix eval --impure --expr 'builtins.currentSystem' --raw)"'.statix'
+```
+
+Purpose: run the repository's Statix check with the repo-specific lint configuration.
+
+### Run Statix directly with the repo config
+
+```bash
+cd "$REPO" && nix run nixpkgs#statix -- check --config checks/statix.toml .
+```
+
+Purpose: get direct Statix diagnostics locally without building the flake check derivation.
+
 ### Format a Nix file with nixfmt
 
 ```bash

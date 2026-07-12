@@ -146,6 +146,27 @@
         "type": "github"
       }
     },
+    "herdr": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1783441162,
+        "narHash": "sha256-pdoH9jpoecI1M6CqbSZXSKwuTOTSqotI8L25rvWVVmI=",
+        "owner": "ogulcancelik",
+        "repo": "herdr",
+        "rev": "199c27609c08a253a884eeba8331449b0b1a71a4",
+        "type": "github"
+      },
+      "original": {
+        "owner": "ogulcancelik",
+        "ref": "v0.7.2",
+        "repo": "herdr",
+        "type": "github"
+      }
+    },
     "home-manager": {
       "inputs": {
         "nixpkgs": [
@@ -524,6 +545,7 @@
         "codex-desktop-linux": "codex-desktop-linux",
         "flake-parts": "flake-parts",
         "flake-utils": "flake-utils_2",
+        "herdr": "herdr",
         "home-manager": "home-manager",
         "home-manager-darwin": "home-manager-darwin",
         "import-tree": "import-tree",

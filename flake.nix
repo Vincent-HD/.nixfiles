@@ -60,6 +60,11 @@
       inputs.flake-parts.follows = "flake-parts";
     };
 
+    herdr = {
+      url = "github:ogulcancelik/herdr/v0.7.2";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     niri = {
       url = "github:sodiboo/niri-flake";
       inputs.nixpkgs.follows = "nixpkgs";

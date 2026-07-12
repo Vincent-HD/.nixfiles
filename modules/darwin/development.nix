@@ -6,7 +6,7 @@
       home.packages = [
         pkgs.jujutsu
         pkgs.neovim
-        pkgs.nixd
+        pkgs.nil
         pkgs.nixfmt
         pkgs.uv
         pkgs.vim

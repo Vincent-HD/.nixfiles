@@ -10,7 +10,9 @@ auto-imported by `import-tree`. The Linux host runs **KDE Plasma 6** on **NVIDIA
 ## Agent References
 
 - `INVESTIGATION_COMMANDS.md` — reusable shell, eval, validation, and debugging command patterns
-- `.cursor/skills/update-investigation-commands/SKILL.md` — project skill for maintaining the investigation command reference
+- `.agents/skills/` — Codex-native project skills; OpenCode also reads this location
+- `.cursor/skills` — compatibility symlink to `.agents/skills` for Cursor-style skill discovery
+- `.agents/skills/update-investigation-commands/SKILL.md` — project skill for maintaining the investigation command reference
 
 ---
 
@@ -195,7 +197,7 @@ When the user pastes a Noctalia settings export, compare it against the upstream
 - Check `https://raw.githubusercontent.com/noctalia-dev/noctalia-shell/main/Assets/settings-widgets-default.json` for widget defaults.
 - Use `nix eval .#nixosConfigurations.pc-fixe.config.home-manager.users.vincent.programs.noctalia-shell.settings --json` to confirm the rendered Nix matches only the non-default values.
 - Prefer omitting values that match upstream defaults, even if they appear in the export JSON.
-- The `noctalia` skill in `.opencode/skills/noctalia/SKILL.md` captures this workflow.
+- The `noctalia` skill in `.agents/skills/noctalia/SKILL.md` captures this workflow.
 
 ### import-tree requires git-tracked files
 

@@ -1,7 +1,6 @@
 ---
 name: noctalia
 description: Compare Noctalia JSON exports against local and upstream defaults before updating `modules/noctalia/noctalia.nix`.
-compatibility: opencode
 metadata:
   workflow: noctalia-json
   scope: repo

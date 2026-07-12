@@ -42,6 +42,7 @@ in
             hm.noctalia-plugins-dependencies
             hm.coding
             hm.codex
+            hm.commandLine
             hm.comma
             hm.direnv
             hm.jq

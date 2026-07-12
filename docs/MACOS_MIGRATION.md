@@ -401,7 +401,7 @@ This is intentionally a broader ownership boundary. It provides:
 
 - Cursor and Visual Studio Code, with `code` resolving to Cursor
 - OpenCode, its repository configuration, and a Darwin launch agent for its background service
-- Neovim, Vim, uv, GitHub CLI, nixd, nixfmt, Fnm, Jujutsu, and JJUI
+- Neovim, Vim, uv, GitHub CLI, nil, nixfmt, Fnm, Jujutsu, and JJUI
 - cross-platform standalone JJ-Ryu and LightJJ packages
 - repository-managed Git and Jujutsu configuration
 - a shell-independent `nixswitch` command
@@ -432,7 +432,7 @@ sudo darwin-rebuild switch --flake .#macbook-pro
 Test the Nix-managed tools and applications:
 
 ```bash
-zsh -lic 'command -v code cursor git fnm opencode nvim uv gh nixd nixfmt jj jjui ryu lightjj nixswitch'
+zsh -lic 'command -v code cursor git fnm opencode nvim uv gh nil nixfmt jj jjui ryu lightjj nixswitch'
 open "$HOME/Applications/Home Manager Apps/Cursor.app"
 open "$HOME/Applications/Home Manager Apps/Visual Studio Code.app"
 git config --list --show-origin

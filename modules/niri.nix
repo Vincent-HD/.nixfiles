@@ -49,7 +49,7 @@
       services.greetd.restart = true;
     };
 
-  # Home Manager: niri config, kitty (Mod+T), spawn noctalia-shell at startup.
+  # Home Manager: niri config, Ghostty (Mod+T), spawn noctalia-shell at startup.
   config.flake.modules.homeManager.niri =
     {
       pkgs,
@@ -119,16 +119,6 @@
 
       config = {
         home.packages = [ pkgs.playerctl ];
-
-        programs.kitty = {
-          enable = true;
-          settings = {
-            font_size = lib.mkDefault 12;
-            enable_audio_bell = lib.mkDefault false;
-            confirm_os_window_close = lib.mkDefault 0;
-            window_padding_width = lib.mkDefault 4;
-          };
-        };
 
         # Not in niri-flake's programs.niri.settings schema yet; merged via `include` (requires niri-unstable).
         xdg.configFile."niri/recent-windows.kdl".text = ''
@@ -313,7 +303,7 @@
                 "toggle"
               ];
               "Mod+Tab".action.open-overview = [ ];
-              "Mod+T".action.spawn = "kitty";
+              "Mod+T".action.spawn = "ghostty";
               "Mod+Q".action.close-window = [ ];
 
               # Focus movement on arrows.

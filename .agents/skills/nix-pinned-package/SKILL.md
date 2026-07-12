@@ -1,7 +1,6 @@
 ---
 name: nix-pinned-package
 description: Install and maintain pinned Nix packages from fixed upstream versions in a nix-update-friendly way.
-compatibility: opencode
 metadata:
   workflow: nix-update
   scope: repo

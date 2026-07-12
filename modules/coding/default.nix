@@ -101,7 +101,7 @@ in
           pkgs.vim
           pkgs.uv
           pkgs.gh
-          pkgs.nixd
+          pkgs.nil
           pkgs.nixfmt
           # pkgs.fnm
           pkgs.jujutsu
@@ -316,9 +316,6 @@ in
           Install.WantedBy = [ "graphical-session.target" ];
         };
 
-        programs.bash = {
-          enable = true;
-        };
       })
 
       (lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {

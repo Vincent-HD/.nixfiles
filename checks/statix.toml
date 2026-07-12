@@ -1,0 +1,3 @@
+# Keep Statix aligned with this repo's explicit Nix style.
+disabled = [ "manual_inherit", "manual_inherit_from", "empty_pattern", "repeated_keys" ]
+ignore = [ ".direnv", "references" ]
