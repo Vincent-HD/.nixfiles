@@ -1,6 +1,6 @@
 { inputs, config, ... }:
 let
-  codexLbVersion = "1.20.1";
+  codexLbVersion = "1.21.0b3";
   codexLbHealthLiveUrl = "http://127.0.0.1:2455/health/live";
   codexLbHealthReadyUrl = "http://127.0.0.1:2455/health/ready";
   codexLbHealthStartupUrl = "http://127.0.0.1:2455/health/startup";
