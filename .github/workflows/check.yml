@@ -1,0 +1,36 @@
+name: Check
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  nix:
+    name: Nix
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: nixbuild/nix-quick-install-action@v33
+        with:
+          nix_conf: |
+            extra-substituters = https://niri.cachix.org https://nix-community.cachix.org https://cachix.cachix.org
+            extra-trusted-public-keys = niri.cachix.org-1:Wv0OmO7PsuocRKzfDoJ3mulSl7Z6oezYhGhR+3W2964= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= cachix.cachix.org-1:eWNHQldwUO7G2VkjpnjDbWwy4KQ/HNxht7H4SSoMckM=
+
+      - name: Check Nix lint
+        run: nix build --print-build-logs .#checks.x86_64-linux.statix
+
+      - name: Evaluate nix-darwin configuration
+        run: nix eval .#darwinConfigurations.macbook-pro.system --raw
+
+      - name: Build NixOS configuration
+        run: nix build --print-build-logs .#nixosConfigurations.pc-fixe.config.system.build.toplevel
