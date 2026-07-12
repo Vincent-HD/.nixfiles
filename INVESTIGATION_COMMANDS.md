@@ -329,6 +329,36 @@ nix eval '.#nixosConfigurations.'"$HOST"'.config.nix.settings.extra-trusted-publ
 
 Purpose: verify that host-level Cachix or upstream binary caches are rendered before rebuilding or debugging unexpectedly slow builds.
 
+### Compare binary cache impact from an empty temporary store
+
+```bash
+cd "$REPO"
+tmp_store=$(mktemp -d /tmp/nix-cache-probe-store.XXXXXX)
+nix --store "$tmp_store" build --dry-run --no-link \
+  '.#nixosConfigurations.'"$HOST"'.config.system.build.toplevel' 2>&1 \
+  | tee /tmp/nix-cache-probe-current.log
+```
+
+Purpose: estimate how many derivations would still build locally on a fresh machine with the current configured substituters.
+
+To test candidate caches without editing the repo first:
+
+```bash
+cd "$REPO"
+tmp_store=$(mktemp -d /tmp/nix-cache-probe-store-candidate.XXXXXX)
+NIX_CONFIG='extra-substituters = https://<cache>.cachix.org
+extra-trusted-public-keys = <cache>.cachix.org-1:<public-key>' \
+nix --store "$tmp_store" build --dry-run --no-link \
+  '.#nixosConfigurations.'"$HOST"'.config.system.build.toplevel' 2>&1 \
+  | tee /tmp/nix-cache-probe-candidate.log
+```
+
+Compare the summary lines:
+
+```bash
+rg 'derivations will be built|paths will be fetched' /tmp/nix-cache-probe-*.log
+```
+
 ### Evaluate the host toplevel derivation
 
 ```bash
