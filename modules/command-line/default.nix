@@ -67,6 +67,14 @@
         NH_FLAKE = "${config.home.homeDirectory}/.nixfiles";
       };
 
+      xdg.configFile."ghostty/config" = lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
+        text = ''
+          gtk-titlebar = false
+          window-decoration = false
+          window-show-tab-bar = never
+        '';
+      };
+
       programs.atuin = {
         enable = true;
         enableBashIntegration = true;
@@ -113,7 +121,7 @@
           "--layout=reverse"
           "--border"
           "--info=inline"
-          "--preview=${batPreview}"
+          "--preview=${lib.escapeShellArg batPreview}"
         ];
       };
 
