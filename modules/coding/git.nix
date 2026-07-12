@@ -1,45 +1,17 @@
 { ... }:
 {
-  config.flake.modules.homeManager.darwinDevelopment =
-    { pkgs, config, ... }:
+  config.flake.modules.homeManager.codingGit =
     {
-      home.packages = [
-        pkgs.jujutsu
-        pkgs.neovim
-        pkgs.nil
-        pkgs.nixfmt
-        pkgs.uv
-        pkgs.vim
-      ];
+      pkgs,
+      config,
+      ...
+    }:
+    {
+      home.packages = [ pkgs.gh ];
 
-      home.sessionPath = [
-        "${config.home.homeDirectory}/Library/Application Support/JetBrains/Toolbox/scripts"
-        "${config.home.homeDirectory}/.bun/bin"
-      ];
-
-      programs.zsh = {
-        enable = true;
-        enableCompletion = true;
-        autosuggestion.enable = true;
-        syntaxHighlighting.enable = true;
-
-        shellAliases = {
-          brun = "pnpm -F backend exec doppler run -- pnpm";
-          frun = "pnpm -F frontend exec doppler run -- pnpm";
-          wdev = "pnpm -F backend exec doppler run -- pnpm dev";
-          wddev = "pnpm -F backend exec doppler run -- pnpm dev:debug";
-          wgen = "pnpm -F backend exec doppler run -- pnpm codegen";
-          wfb = "pnpm -F backend -F frontend --parallel exec doppler run -- pnpm dev";
-          wformat = "pnpm -r lint && pnpm -r format";
-          nixswitch = "sudo darwin-rebuild switch --flake ${config.home.homeDirectory}/.nixfiles#macbook-pro";
-        };
-
-        initContent = ''
-          # TEMP (welii flake test): disable host fnm so project nub/direnv owns Node
-          source "${config.home.homeDirectory}/.orbstack/shell/init.zsh" 2>/dev/null || :
-        '';
-      };
-
+      # `lib.generators.toGitINI` cannot express both `[color] branch = auto`
+      # and `[color "branch"]` in one attrset, so raw color subsections live in
+      # `includes`.
       programs.git = {
         enable = true;
         package = pkgs.git;
@@ -58,6 +30,27 @@
           "\\#*#"
           "*.tmp"
           "*.temp"
+        ];
+        includes = [
+          {
+            path = pkgs.writeText "git-color-subsections.ini" ''
+              [color "branch"]
+                current = yellow reverse
+                local = yellow
+                remote = green
+
+              [color "diff"]
+                meta = yellow bold
+                frag = magenta bold
+                old = red bold
+                new = green bold
+
+              [color "status"]
+                added = yellow
+                changed = green
+                untracked = cyan
+            '';
+          }
         ];
         settings = {
           user = {
@@ -97,7 +90,12 @@
             autoSetupMerge = "always";
             autoSetupRebase = "always";
           };
-          color.ui = "auto";
+          color = {
+            ui = "auto";
+            branch = "auto";
+            diff = "auto";
+            status = "auto";
+          };
           alias = {
             st = "status";
             co = "checkout";
@@ -105,29 +103,31 @@
             ci = "commit";
             unstage = "reset HEAD --";
             last = "log -1 HEAD";
+            lg = "log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit";
             ll = "log --oneline --graph --decorate --all";
             amend = "commit --amend --no-edit";
             fix = "commit --fixup";
             squash = "commit --squash";
+            wip = "commit -am \"WIP\"";
             undo = "reset HEAD~1 --mixed";
+            stash-show = "stash show -p";
+            find = "!git log --pretty=\"format:%Cgreen%H %Cblue%s\" --name-status --grep";
+            filelog = "log -u";
+            aliases = "config --get-regexp alias";
           };
           help.autocorrect = 1;
           rerere.enabled = true;
           log.date = "relative";
           grep.lineNumber = true;
           tag.sort = "version:refname";
-        };
-      };
-
-      programs.jujutsu = {
-        enable = true;
-        settings = {
-          user = {
-            name = "Vincent-HD";
-            email = "vincenthoudan@gmail.com";
-          };
-          ui."conflict-marker-style" = "git";
-          remotes.origin."auto-track-bookmarks" = "*";
+          versionsort.suffix = [
+            "-pre"
+            ".pre"
+            "-beta"
+            ".beta"
+            "-rc"
+            ".rc"
+          ];
         };
       };
     };
