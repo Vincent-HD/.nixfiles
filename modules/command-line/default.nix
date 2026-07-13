@@ -79,6 +79,7 @@
         enable = true;
         enableBashIntegration = true;
         enableZshIntegration = true;
+        flags = [ "--disable-up-arrow" ];
         settings = {
           auto_sync = false;
           enter_accept = true;
