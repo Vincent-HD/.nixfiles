@@ -13,6 +13,7 @@
 
       networking.hostName = "pc-fixe";
       networking.enableIPv6 = false;
+      networking.hosts."192.168.1.254" = [ "mabbox.bytel.fr" ];
       networking.networkmanager.enable = true;
 
       time.timeZone = "Europe/Paris";
