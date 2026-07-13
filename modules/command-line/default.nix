@@ -176,6 +176,7 @@
 
         shellAliases = {
           cat = "bat";
+          cd = "z";
           cdg = "zi";
           df = "duf";
           du = "dust";
