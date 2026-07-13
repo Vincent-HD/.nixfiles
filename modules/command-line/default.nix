@@ -40,6 +40,7 @@
         pkgs.onefetch
         pkgs.ouch
         pkgs.pay-respects
+        pkgs.pik
         pkgs.procs
         pkgs.ripdrag
         pkgs.ripgrep
@@ -188,6 +189,7 @@
           ls = "eza --icons=auto";
           lt = "eza --tree --level=2 --icons=auto";
           ping = "gping";
+          pkill = "pik";
           ps = "procs";
           top = "btop";
           tree = "eza --tree --icons=auto";
