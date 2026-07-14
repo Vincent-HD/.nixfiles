@@ -11,13 +11,4 @@
         package = pkgs.sunshine.override { cudaSupport = true; };
       };
     };
-
-  # Home Manager side: official signed Sunshine.app for Apple Silicon.
-  config.flake.modules.homeManager.sunshine =
-    { pkgs, ... }:
-    {
-      home.packages = [
-        (pkgs.callPackage ../packages/sunshine-darwin { })
-      ];
-    };
 }

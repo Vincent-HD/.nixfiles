@@ -116,9 +116,6 @@ in
         else
           "/opt/homebrew/bin/codex";
       opencodeAuthPath = "${config.home.homeDirectory}/.local/share/opencode/auth.json";
-      codexPackage =
-        if pkgs.stdenv.hostPlatform.isLinux then pkgs.callPackage ../packages/codex { } else pkgs.codex;
-
       # codex-lb upstream recommends uvx for non-Docker installs. Pin the PyPI
       # version here while keeping the runtime-managed virtualenv outside /nix/store.
       codex-lb = pkgs.writeShellScriptBin "codex-lb" ''
@@ -166,37 +163,11 @@ in
             export CODEX_GITHUB_MCP_TOKEN="$(<"${githubTokenPath}")"
           fi
 
-          exec ${codexExec} "$@"
           . ${codexOpenCodeGoEnv}
 
-          exec ${pkgs.lib.getExe codexPackage} "$@"
+          exec ${codexExec} "$@"
         ''
       );
-
-      codexDesktopLinuxBasePackage = inputs.codex-desktop-linux.packages.${pkgs.system}.codex-desktop;
-      codexDesktopLinuxPackage = pkgs.symlinkJoin {
-        name = "${codexDesktopLinuxBasePackage.name}-github-mcp-token";
-        paths = [ codexDesktopLinuxBasePackage ];
-        nativeBuildInputs = [ pkgs.makeWrapper ];
-        postBuild = ''
-          if [ -e "$out/bin/codex-desktop" ]; then
-            rm -f "$out/bin/codex-desktop"
-            makeWrapper "${codexDesktopLinuxBasePackage}/bin/codex-desktop" "$out/bin/codex-desktop" \
-              --set-default CODEX_CLI_PATH "${pkgs.lib.getExe codex}" \
-              --run 'if [ -r "${githubTokenPath}" ]; then export CODEX_GITHUB_MCP_TOKEN="$(<"${githubTokenPath}")"; fi' \
-              --run '. ${codexOpenCodeGoEnv}'
-          fi
-
-          desktopFile="$out/share/applications/codex-desktop.desktop"
-          if [ -e "$desktopFile" ]; then
-            target="$(readlink -f "$desktopFile")"
-            rm -f "$desktopFile"
-            substitute "$target" "$desktopFile" \
-              --replace-fail "${codexDesktopLinuxBasePackage}/bin/codex-desktop" "$out/bin/codex-desktop"
-          fi
-        '';
-        meta = codexDesktopLinuxBasePackage.meta or { };
-      };
 
       codexLbEnvironment = {
         CODEX_LB_DATABASE_URL = "sqlite+aiosqlite:///${codexLbHome}/store.db";
@@ -213,61 +184,71 @@ in
         REQUESTS_CA_BUNDLE = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
       };
     in
-    lib.mkMerge [
-      {
-        home.packages = [
-          codex
-          codex-lb
-          pkgs.jq
-          pkgs.uv
-        ]
-        ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
-          pkgs.mcp-nixos
-        ];
+    {
+      imports = [
+        inputs.codex-desktop-linux.homeManagerModules.default
+      ];
 
-        home.file.".codex/.keep".text = "";
-        home.file.".codex-lb/.keep".text = "";
-      }
+      config = lib.mkMerge [
+        {
+          home.packages = [
+            codex
+            codex-lb
+            pkgs.jq
+            pkgs.uv
+          ]
+          ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
+            pkgs.mcp-nixos
+          ];
 
-      (lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
-        # OpenAI does not publish a Linux Codex app yet; use the community Nix flake.
-        home.packages = [ codexDesktopLinuxPackage ];
+          home.file.".codex/.keep".text = "";
+          home.file.".codex-lb/.keep".text = "";
+        }
 
-        # Start the codex-lb dashboard/proxy for local Codex app-compatible clients.
-        systemd.user.services.codex-lb = {
-          Unit = {
-            Description = "Codex account load balancer";
-            After = [ "network-online.target" ];
-            StartLimitIntervalSec = 300;
-            StartLimitBurst = 5;
+        (lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
+          # OpenAI does not publish a Linux Codex app yet; use the community
+          # module and point it at the local CLI wrapper for graphical launches.
+          programs.codexDesktopLinux = {
+            enable = true;
+            cliPackage = codex;
           };
-          Service = {
-            Type = "notify";
-            ExecStart = codex-lb-watchdog;
-            Environment = lib.mapAttrsToList (name: value: "${name}=${value}") codexLbEnvironment;
-            LimitNOFILE = 65536;
-            NotifyAccess = "all";
-            Restart = "on-failure";
-            RestartSec = "5";
-            TimeoutStartSec = "90";
-            WatchdogSec = "90";
-            WorkingDirectory = codexLbHome;
-          };
-          Install.WantedBy = [ "default.target" ];
-        };
-      })
 
-      (lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
-        launchd.agents.codex-lb = {
-          enable = true;
-          config = {
-            ProgramArguments = [ "${pkgs.lib.getExe codex-lb}" ];
-            EnvironmentVariables = codexLbEnvironment;
-            KeepAlive = true;
-            RunAtLoad = true;
-            WorkingDirectory = codexLbHome;
+          # Start the codex-lb dashboard/proxy for local Codex app-compatible clients.
+          systemd.user.services.codex-lb = {
+            Unit = {
+              Description = "Codex account load balancer";
+              After = [ "network-online.target" ];
+              StartLimitIntervalSec = 300;
+              StartLimitBurst = 5;
+            };
+            Service = {
+              Type = "notify";
+              ExecStart = codex-lb-watchdog;
+              Environment = lib.mapAttrsToList (name: value: "${name}=${value}") codexLbEnvironment;
+              LimitNOFILE = 65536;
+              NotifyAccess = "all";
+              Restart = "on-failure";
+              RestartSec = "5";
+              TimeoutStartSec = "90";
+              WatchdogSec = "90";
+              WorkingDirectory = codexLbHome;
+            };
+            Install.WantedBy = [ "default.target" ];
           };
-        };
-      })
-    ];
+        })
+
+        (lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
+          launchd.agents.codex-lb = {
+            enable = true;
+            config = {
+              ProgramArguments = [ "${pkgs.lib.getExe codex-lb}" ];
+              EnvironmentVariables = codexLbEnvironment;
+              KeepAlive = true;
+              RunAtLoad = true;
+              WorkingDirectory = codexLbHome;
+            };
+          };
+        })
+      ];
+    };
 }

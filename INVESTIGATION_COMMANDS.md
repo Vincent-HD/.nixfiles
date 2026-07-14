@@ -69,12 +69,18 @@ Purpose: confirm the exact app package selected after any override or launcher p
 nix build --impure --no-link --expr '
 let
   flake = builtins.getFlake "git+file:///home/vincent/.nixfiles";
-  pkg = builtins.head (builtins.filter (p: (p.pname or "") == "<pkg-name>") flake.nixosConfigurations.pc-fixe.config.home-manager.users.vincent.home.packages);
+  pkg = builtins.head (
+    builtins.filter (
+      p:
+      (p.pname or "") == "<pkg-name-or-wrapper-name>"
+      || (p.name or "") == "<pkg-name-or-wrapper-name>"
+    ) flake.nixosConfigurations.pc-fixe.config.home-manager.users.vincent.home.packages
+  );
 in pkg
 '
 ```
 
-Purpose: force a specific HM-managed package to build even when it has no dedicated flake output.
+Purpose: force a specific HM-managed package or wrapper package to build even when it has no dedicated flake output.
 
 ### Build the evaluated Home Manager package directly
 

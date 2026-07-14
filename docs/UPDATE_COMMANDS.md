@@ -43,21 +43,15 @@ If nix-update refuses the latest alpha release as unstable, use:
 nix run github:Mic92/nix-update -- --flake jj-ryu --version=unstable
 ```
 
-### sunshine-darwin
+### curseforge
 
-- **File**: `packages/sunshine-darwin/default.nix`
-- **Pattern**: `stdenvNoCC.mkDerivation` + `fetchurl` from the official GitHub release DMG
-- **Flake output**: `.#sunshine-darwin`
-
-```bash
-nix run github:Mic92/nix-update -- --flake sunshine-darwin --system aarch64-darwin
-```
-
-On a Linux host, nix-update may update the version but fail to realize the Darwin-only fixed-output
-derivation. In that case, prefetch the DMG directly and replace `src.hash`:
+- **File**: `packages/curseforge/default.nix`
+- **Pattern**: `appimageTools.wrapType2` + `fetchurl` from CurseForge's versioned AppImage URL
+- **Flake output**: `.#curseforge`
+- **Note**: Upstream artifact names include both the public version and a separate build number; use the package update script so both are updated together.
 
 ```bash
-nix store prefetch-file --json https://github.com/LizardByte/Sunshine/releases/download/v<version>/Sunshine-macOS-arm64.dmg
+nix run github:Mic92/nix-update -- --flake curseforge --use-update-script
 ```
 
 ## Branch-Pinned Packages
@@ -76,20 +70,6 @@ git ls-remote https://github.com/pinpox/Crosspipe.git
 nix-prefetch-git https://github.com/pinpox/Crosspipe.git --rev <rev>
 ```
 
-## Manual-Update Packages (Not nix-update Compatible)
-
-These packages are pinned but cannot be updated with `nix-update` without refactoring.
-
-### curseforge
-
-- **File**: `modules/curseforge.nix`
-- **Why**: Version is a plain `let` binding, not `finalAttrs.version`; uses `appimageTools.wrapType2`.
-- **How**: Hand-edit `version` and `build`, then prefetch the new AppImage hash.
-
-```bash
-nix store prefetch-file https://curseforge.overwolf.com/electron/linux/CurseForge-<version>-<build>.AppImage
-```
-
 ## Custom Flake Inputs
 
 These are updated with `nix flake lock`, not `nix-update`.
@@ -98,9 +78,16 @@ These are updated with `nix flake lock`, not `nix-update`.
 
 - **File**: `flake.nix`
 - **Why**: It is a flake input pinned to a Git commit.
+- **How**: Resolve upstream HEAD, rewrite the commit in `flake.nix`, and refresh only this input in `flake.lock`.
 
 ```bash
-nix flake lock --update-input codex-desktop-linux
+nix shell nixpkgs#git nixpkgs#gnused --command bash scripts/update-codex-desktop-linux.sh
+```
+
+To preview without touching `flake.nix` or `flake.lock`:
+
+```bash
+nix shell nixpkgs#git nixpkgs#gnused --command bash scripts/update-codex-desktop-linux.sh --dry-run
 ```
 
 ### noctalia
@@ -117,7 +104,7 @@ Run each `nix-update` command in sequence (or in separate terminals):
 nix run github:Mic92/nix-update -- --flake codex --use-github-releases --version-regex 'rust-v(.*)'
 nix run github:Mic92/nix-update -- --flake lightjj
 nix run github:Mic92/nix-update -- --flake jj-ryu --version=unstable
-nix run github:Mic92/nix-update -- --flake sunshine-darwin --system aarch64-darwin
+nix run github:Mic92/nix-update -- --flake curseforge --use-update-script
 ```
 
 ## Verification

@@ -229,10 +229,10 @@ files.
 known compatible commands in `docs/UPDATE_COMMANDS.md`.
 
 ```bash
-nix run github:Mic92/nix-update -- --flake codex --use-github-releases
+nix run github:Mic92/nix-update -- --flake codex --use-github-releases --version-regex 'rust-v(.*)'
 nix run github:Mic92/nix-update -- --flake lightjj
-nix run github:Mic92/nix-update -- --flake jj-ryu
-nix run github:Mic92/nix-update -- --flake sunshine-darwin
+nix run github:Mic92/nix-update -- --flake jj-ryu --version=unstable
+nix run github:Mic92/nix-update -- --flake curseforge --use-update-script
 ```
 
 Use it for update tasks only. It mutates package files and may update hashes.

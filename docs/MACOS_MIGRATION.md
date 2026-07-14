@@ -549,48 +549,10 @@ cask while `darwin.rustdesk` remains composed.
 
 ## Activation 9: Sunshine
 
-Status: ready to build and activate
+Status: skipped
 
-The existing `sunshine.nix` feature previously contained only the NixOS Sunshine service, configured
-with CUDA support for the NVIDIA Linux host. That service remains unchanged.
-
-For macOS, the feature now installs a standalone `sunshine-darwin` package built from the official
-signed Apple Silicon DMG. The nixpkgs and official Homebrew packages both install command-only
-builds; using the signed `Sunshine.app` gives macOS a stable application identity for Screen
-Recording, Microphone, Accessibility, and Local Network permissions.
-
-Sunshine on macOS is experimental. Gamepads are not supported, Command keys are not forwarded by
-Moonlight, and system audio requires a virtual audio device such as the existing BlackHole
-installation.
-
-Build before activating:
-
-```bash
-nix build .#sunshine-darwin --out-link /tmp/nixfiles-sunshine-darwin
-codesign --verify --deep --strict /tmp/nixfiles-sunshine-darwin/Applications/Sunshine.app
-
-nix build .#darwinConfigurations.macbook-pro.system \
-  --out-link /tmp/nixfiles-darwin-system
-
-sudo /tmp/nixfiles-darwin-system/sw/bin/darwin-rebuild \
-  check --flake .#macbook-pro
-```
-
-Activate and launch:
-
-```bash
-sudo darwin-rebuild switch --flake .#macbook-pro
-open "$HOME/Applications/Home Manager Apps/Sunshine.app"
-open https://localhost:47990
-```
-
-Test Sunshine:
-
-- Grant Screen Recording, Microphone, Accessibility, and Local Network permissions when requested.
-- Configure the initial web UI credentials and pair a Moonlight client.
-- Verify VideoToolbox encoding, video quality, keyboard/mouse input, clipboard, and each display.
-- Configure BlackHole if system audio streaming is required.
-- Quit and reopen Sunshine, then confirm settings and permissions persist.
+Sunshine is intentionally Linux-only in this repository. The `sunshine.nix` feature keeps the NixOS
+service with CUDA support for the NVIDIA Linux host, and the macOS Home Manager package was removed.
 
 ## Activation 10: Deskflow
 

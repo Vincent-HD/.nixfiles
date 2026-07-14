@@ -29,7 +29,6 @@ in
             hm.discord
             hm.jq
             hm.lazydocker
-            hm.sunshine
             hm.work
           ];
 

@@ -4,22 +4,7 @@
   config.flake.modules.homeManager.curseforge =
     { pkgs, ... }:
     let
-      version = "1.312.1";
-      build = "36055";
-      src = pkgs.fetchurl {
-        url = "https://curseforge.overwolf.com/electron/linux/CurseForge-${version}-${build}.AppImage";
-        sha256 = "sha256-0o3L2hy2d1nuXktRElY3GnAjI85t3qOtt9/eXCoGNck=";
-      };
-      extracted = pkgs.appimageTools.extractType2 {
-        pname = "curseforge";
-        version = version;
-        src = src;
-      };
-      curseforge = pkgs.appimageTools.wrapType2 {
-        pname = "curseforge";
-        version = version;
-        src = src;
-      };
+      curseforge = pkgs.callPackage ../packages/curseforge { };
     in
     {
       home.packages = [ curseforge ];
@@ -31,7 +16,7 @@
         genericName = "CurseForge";
         comment = "The Easiest Way to Manage Your Mods";
         exec = "curseforge %U";
-        icon = "${extracted}/usr/share/icons/hicolor/512x512/apps/curseforge.png";
+        icon = "${curseforge.passthru.extracted}/usr/share/icons/hicolor/512x512/apps/curseforge.png";
         terminal = false;
         categories = [ "Utility" ];
         mimeType = [
@@ -41,7 +26,7 @@
         ];
         settings = {
           StartupWMClass = "CurseForge";
-          X-AppImage-Version = "${version}-${build}";
+          X-AppImage-Version = "${curseforge.version}-${curseforge.passthru.build}";
         };
       };
     };
