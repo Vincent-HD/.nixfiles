@@ -10,7 +10,10 @@ let
       model = "gpt-5.5";
       model_provider = "codex-lb";
       model_reasoning_effort = "high";
+      model_reasoning_summary = "concise";
+      model_verbosity = "low";
       file_opener = "cursor";
+      personality = "pragmatic";
 
       model_providers.codex-lb = {
         name = "openai";
@@ -58,9 +61,9 @@ let
       };
     };
 
-  mkCodexManagedConfig =
+  mkCodexConfig =
     { pkgs, lib }:
-    (pkgs.formats.toml { }).generate "codex-managed-config.toml" (mkCodexSettings {
+    (pkgs.formats.toml { }).generate "codex-config.toml" (mkCodexSettings {
       pkgs = pkgs;
       lib = lib;
     });
@@ -75,8 +78,8 @@ in
         "codex-app"
       ];
 
-      # Managed Codex defaults layer; Codex merges this above the mutable user config.
-      environment.etc."codex/managed_config.toml".source = mkCodexManagedConfig {
+      # System-level Codex defaults shared by the CLI, app, and IDE extension.
+      environment.etc."codex/config.toml".source = mkCodexConfig {
         pkgs = pkgs;
         lib = lib;
       };
@@ -85,8 +88,8 @@ in
   config.flake.modules.nixos.codex =
     { pkgs, lib, ... }:
     {
-      # Managed Codex defaults layer; Codex merges this above the mutable user config.
-      environment.etc."codex/managed_config.toml".source = mkCodexManagedConfig {
+      # System-level Codex defaults shared by the CLI, app, and IDE extension.
+      environment.etc."codex/config.toml".source = mkCodexConfig {
         pkgs = pkgs;
         lib = lib;
       };
