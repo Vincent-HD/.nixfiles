@@ -7,11 +7,11 @@
 
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "sunshine-darwin";
-  version = "2026.516.143833";
+  version = "2026.713.170739";
 
   src = fetchurl {
     url = "https://github.com/LizardByte/Sunshine/releases/download/v${finalAttrs.version}/Sunshine-macOS-arm64.dmg";
-    hash = "sha256-qzGtcWEXuRPGqrEEJo6CBZXAuvibMZ/Tt100ya6N3R4=";
+    hash = "sha256-bp+v0PmNJeMxpkOwMTWwxK4uWDVS+EPYJJqmHW9fGFA=";
   };
 
   nativeBuildInputs = [ undmg ];

@@ -14,7 +14,7 @@ These packages use the `finalAttrs` pattern and are wired so `nix-update` can bu
 - **Note**: The release tag is `rust-v<version>`, so keep `version` as the bare semver.
 
 ```bash
-nix run github:Mic92/nix-update -- --flake codex --use-github-releases
+nix run github:Mic92/nix-update -- --flake codex --use-github-releases --version-regex 'rust-v(.*)'
 ```
 
 ### lightjj
@@ -37,6 +37,12 @@ nix run github:Mic92/nix-update -- --flake lightjj
 nix run github:Mic92/nix-update -- --flake jj-ryu
 ```
 
+If nix-update refuses the latest alpha release as unstable, use:
+
+```bash
+nix run github:Mic92/nix-update -- --flake jj-ryu --version=unstable
+```
+
 ### sunshine-darwin
 
 - **File**: `packages/sunshine-darwin/default.nix`
@@ -44,7 +50,14 @@ nix run github:Mic92/nix-update -- --flake jj-ryu
 - **Flake output**: `.#sunshine-darwin`
 
 ```bash
-nix run github:Mic92/nix-update -- --flake sunshine-darwin
+nix run github:Mic92/nix-update -- --flake sunshine-darwin --system aarch64-darwin
+```
+
+On a Linux host, nix-update may update the version but fail to realize the Darwin-only fixed-output
+derivation. In that case, prefetch the DMG directly and replace `src.hash`:
+
+```bash
+nix store prefetch-file --json https://github.com/LizardByte/Sunshine/releases/download/v<version>/Sunshine-macOS-arm64.dmg
 ```
 
 ## Branch-Pinned Packages
@@ -77,12 +90,6 @@ These packages are pinned but cannot be updated with `nix-update` without refact
 nix store prefetch-file https://curseforge.overwolf.com/electron/linux/CurseForge-<version>-<build>.AppImage
 ```
 
-### nvidia-vaapi-driver (PR override)
-
-- **File**: `modules/graphics.nix`
-- **Why**: It is an `overrideAttrs` on an existing nixpkgs package inside an overlay, not a standalone derivation.
-- **How**: Hand-edit `version`, `rev`, and `sha256`. Intended as a temporary override until the PR lands upstream.
-
 ## Custom Flake Inputs
 
 These are updated with `nix flake lock`, not `nix-update`.
@@ -107,10 +114,10 @@ nix flake lock --update-input codex-desktop-linux
 Run each `nix-update` command in sequence (or in separate terminals):
 
 ```bash
-nix run github:Mic92/nix-update -- --flake codex --use-github-releases
+nix run github:Mic92/nix-update -- --flake codex --use-github-releases --version-regex 'rust-v(.*)'
 nix run github:Mic92/nix-update -- --flake lightjj
-nix run github:Mic92/nix-update -- --flake jj-ryu
-nix run github:Mic92/nix-update -- --flake sunshine-darwin
+nix run github:Mic92/nix-update -- --flake jj-ryu --version=unstable
+nix run github:Mic92/nix-update -- --flake sunshine-darwin --system aarch64-darwin
 ```
 
 ## Verification

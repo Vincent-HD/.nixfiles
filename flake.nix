@@ -15,7 +15,7 @@
     import-tree.url = "github:vic/import-tree";
 
     codex-desktop-linux = {
-      url = "github:ilysenko/codex-desktop-linux/3cc77cdda4dd4ec9c853f16716a9ddcb5e20c75a";
+      url = "github:ilysenko/codex-desktop-linux/9b7f1c513d3d4cb62fe05c73c0db5b7ef0efc618";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-utils.follows = "flake-utils";
     };
@@ -61,7 +61,7 @@
     };
 
     herdr = {
-      url = "github:ogulcancelik/herdr/v0.7.2";
+      url = "github:ogulcancelik/herdr/v0.7.3";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
