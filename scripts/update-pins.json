@@ -1,0 +1,149 @@
+{
+  "denylist": [
+    "noctalia"
+  ],
+  "updates": [
+    {
+      "name": "codex",
+      "type": "nix-update",
+      "description": "OpenAI Codex CLI release tarball",
+      "command": [
+        "nix",
+        "run",
+        "github:Mic92/nix-update",
+        "--",
+        "--flake",
+        "codex",
+        "--use-github-releases",
+        "--version-regex",
+        "rust-v(.*)"
+      ]
+    },
+    {
+      "name": "lightjj",
+      "type": "nix-update",
+      "description": "lightjj release tarball",
+      "command": [
+        "nix",
+        "run",
+        "github:Mic92/nix-update",
+        "--",
+        "--flake",
+        "lightjj"
+      ]
+    },
+    {
+      "name": "jj-ryu",
+      "type": "nix-update",
+      "description": "jj-ryu alpha release tarballs",
+      "command": [
+        "nix",
+        "run",
+        "github:Mic92/nix-update",
+        "--",
+        "--flake",
+        "jj-ryu",
+        "--version=unstable"
+      ]
+    },
+    {
+      "name": "curseforge",
+      "type": "nix-update",
+      "description": "CurseForge AppImage version, build, and hash",
+      "command": [
+        "nix",
+        "run",
+        "github:Mic92/nix-update",
+        "--",
+        "--flake",
+        "curseforge",
+        "--use-update-script"
+      ]
+    },
+    {
+      "name": "codex-desktop-linux",
+      "type": "flake-input",
+      "description": "ChatGPT/Codex Desktop Linux flake input",
+      "command": [
+        "nix",
+        "flake",
+        "update",
+        "codex-desktop-linux"
+      ]
+    },
+    {
+      "name": "noctalia",
+      "type": "flake-input",
+      "description": "Intentionally held on the v4 Quickshell revision until a v5 migration",
+      "command": [
+        "nix",
+        "flake",
+        "update",
+        "noctalia"
+      ]
+    },
+    {
+      "name": "crosspipe",
+      "type": "manual",
+      "description": "Pinned to a specific Crosspipe commit; update only after manually choosing the target revision",
+      "enabled": false,
+      "command": [
+        "nix-prefetch-git",
+        "https://github.com/pinpox/Crosspipe.git",
+        "--rev",
+        "<rev>"
+      ]
+    }
+  ],
+  "validations": {
+    "fast": [
+      {
+        "name": "linux eval",
+        "command": [
+          "nix",
+          "eval",
+          ".#nixosConfigurations.pc-fixe.config.system.build.toplevel.drvPath",
+          "--raw"
+        ]
+      },
+      {
+        "name": "darwin eval",
+        "command": [
+          "nix",
+          "eval",
+          ".#darwinConfigurations.macbook-pro.system",
+          "--raw"
+        ]
+      },
+      {
+        "name": "curseforge build",
+        "command": [
+          "nix",
+          "build",
+          ".#curseforge",
+          "--no-link"
+        ]
+      }
+    ],
+    "full": [
+      {
+        "name": "linux system build",
+        "command": [
+          "nix",
+          "build",
+          ".#nixosConfigurations.pc-fixe.config.system.build.toplevel",
+          "--no-link"
+        ]
+      },
+      {
+        "name": "darwin system build",
+        "command": [
+          "nix",
+          "build",
+          ".#darwinConfigurations.macbook-pro.system",
+          "--no-link"
+        ]
+      }
+    ]
+  }
+}

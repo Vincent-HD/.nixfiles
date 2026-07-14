@@ -226,18 +226,18 @@ files.
 ### `nix-update`
 
 `nix-update` updates package versions and fixed-output hashes. This repo keeps
-known compatible commands in `docs/UPDATE_COMMANDS.md`.
+known compatible commands in `scripts/update-pins.json` and
+`docs/UPDATE_COMMANDS.md`.
 
 ```bash
-nix run github:Mic92/nix-update -- --flake codex --use-github-releases --version-regex 'rust-v(.*)'
-nix run github:Mic92/nix-update -- --flake lightjj
-nix run github:Mic92/nix-update -- --flake jj-ryu --version=unstable
-nix run github:Mic92/nix-update -- --flake curseforge --use-update-script
+nix run .#update-pins -- --dry-run
+nix run .#update-pins -- --only codex,curseforge
+nix run .#update-pins -- --validate fast
 ```
 
 Use it for update tasks only. It mutates package files and may update hashes.
-Custom flake inputs are updated with `nix flake lock --update-input <name>`, not
-with `nix-update`.
+Custom flake inputs are updated with `nix flake update <name>`, not with
+`nix-update`.
 
 ## Formatter and LSP Context
 

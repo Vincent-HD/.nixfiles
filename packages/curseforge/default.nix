@@ -1,6 +1,8 @@
 {
   appimageTools,
+  bun,
   fetchurl,
+  lib,
 }:
 
 let
@@ -18,7 +20,10 @@ let
 
     passthru = rec {
       build = finalAttrs.build;
-      updateScript = ./update.sh;
+      updateScript = [
+        (lib.getExe bun)
+        ./update.ts
+      ];
       appimageContents = appimageTools.extractType2 {
         pname = finalAttrs.pname;
         version = finalAttrs.version;

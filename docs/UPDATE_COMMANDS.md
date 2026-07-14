@@ -2,6 +2,26 @@
 
 Quick-reference commands for updating packages that are pinned to fixed upstream versions and backed by `fetchurl` / `fetchFromGitHub` sources.
 
+## Data-Driven Update Runner
+
+Routine updates are configured in `scripts/update-pins.json` and run through the Bun-based app:
+
+```bash
+nix run .#update-pins
+```
+
+Useful variants:
+
+```bash
+nix run .#update-pins -- --dry-run
+nix run .#update-pins -- --only codex,curseforge
+nix run .#update-pins -- --skip codex-desktop-linux
+nix run .#update-pins -- --validate fast
+nix run .#update-pins -- --list
+```
+
+`noctalia` is listed in the JSON denylist, so the default update flow skips it explicitly.
+
 ## nix-update Compatible Packages
 
 These packages use the `finalAttrs` pattern and are wired so `nix-update` can bump versions and hashes automatically.
@@ -54,6 +74,12 @@ nix run github:Mic92/nix-update -- --flake jj-ryu --version=unstable
 nix run github:Mic92/nix-update -- --flake curseforge --use-update-script
 ```
 
+To run the package-specific updater directly:
+
+```bash
+nix run .#update-curseforge -- --check
+```
+
 ## Branch-Pinned Packages
 
 These packages are packaged in a `nix-update`-friendly shape, but the upstream tracking model means the naive command is not necessarily correct.
@@ -92,13 +118,10 @@ nix flake update codex-desktop-linux
 
 ## One-Shot: Update All Straightforward Compatible Packages
 
-Run each `nix-update` command in sequence (or in separate terminals):
+Prefer the data-driven runner:
 
 ```bash
-nix run github:Mic92/nix-update -- --flake codex --use-github-releases --version-regex 'rust-v(.*)'
-nix run github:Mic92/nix-update -- --flake lightjj
-nix run github:Mic92/nix-update -- --flake jj-ryu --version=unstable
-nix run github:Mic92/nix-update -- --flake curseforge --use-update-script
+nix run .#update-pins -- --validate fast
 ```
 
 ## Verification
