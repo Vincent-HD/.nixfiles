@@ -15,7 +15,7 @@
     import-tree.url = "github:vic/import-tree";
 
     codex-desktop-linux = {
-      url = "github:ilysenko/codex-desktop-linux/9b7f1c513d3d4cb62fe05c73c0db5b7ef0efc618";
+      url = "github:ilysenko/codex-desktop-linux/main";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-utils.follows = "flake-utils";
     };

@@ -77,17 +77,11 @@ These are updated with `nix flake lock`, not `nix-update`.
 ### codex-desktop-linux
 
 - **File**: `flake.nix`
-- **Why**: It is a flake input pinned to a Git commit.
-- **How**: Resolve upstream HEAD, rewrite the commit in `flake.nix`, and refresh only this input in `flake.lock`.
+- **Why**: It is a flake input that follows upstream `main`; `flake.lock` carries the reproducible revision.
+- **How**: Refresh only this input in `flake.lock`.
 
 ```bash
-nix shell nixpkgs#git nixpkgs#gnused --command bash scripts/update-codex-desktop-linux.sh
-```
-
-To preview without touching `flake.nix` or `flake.lock`:
-
-```bash
-nix shell nixpkgs#git nixpkgs#gnused --command bash scripts/update-codex-desktop-linux.sh --dry-run
+nix flake update codex-desktop-linux
 ```
 
 ### noctalia
