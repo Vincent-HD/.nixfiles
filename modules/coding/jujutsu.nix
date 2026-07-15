@@ -4,10 +4,10 @@
     { pkgs, ... }:
     {
       home.packages = [
-        inputs.self.packages.${pkgs.system}.jj-ryu
+        inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.jj-ryu
         pkgs.jujutsu
-        inputs.self.packages.${pkgs.system}.lightjj
-        inputs.jjui.packages.${pkgs.system}.jjui
+        inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.lightjj
+        inputs.jjui.packages.${pkgs.stdenv.hostPlatform.system}.jjui
       ];
 
       programs.jujutsu = {

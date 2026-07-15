@@ -42,7 +42,6 @@
         pkgs.pay-respects
         pkgs.pik
         pkgs.procs
-        pkgs.ripdrag
         pkgs.ripgrep
         pkgs.sad
         pkgs.sd
@@ -56,6 +55,8 @@
       ]
       ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
         pkgs.ghostty
+        # GTK4 currently fails to link ripdrag on Apple Silicon macOS.
+        pkgs.ripdrag
       ];
 
       home.sessionPath = lib.optionals pkgs.stdenv.hostPlatform.isDarwin [

@@ -383,6 +383,20 @@ nix eval '.#nixosConfigurations.'"$HOST"'.config.system.build.toplevel.drvPath' 
 
 Purpose: confirm the full NixOS host still evaluates end-to-end after a module or input change.
 
+### Evaluate or dry-run a nix-darwin host
+
+```bash
+cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" \
+nix eval '.#darwinConfigurations.<host>.config.system.build.toplevel.drvPath' --raw
+
+cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" \
+nix build --dry-run --no-link '.#darwinConfigurations.<host>.config.system.build.toplevel'
+```
+
+Purpose: validate a nix-darwin configuration and preview its build closure without switching the macOS host.
+
+Use when: checking a shared Home Manager module on macOS, or isolating the package that introduces an unsupported or failing Darwin dependency.
+
 ### Build the host toplevel derivation
 
 ```bash
