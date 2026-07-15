@@ -110,6 +110,12 @@
 
       programs.fastfetch.enable = true;
 
+      # Manage language and CLI tool versions declared by each project.
+      programs.mise = {
+        enable = true;
+        enableZshIntegration = true;
+      };
+
       programs.fzf = {
         enable = true;
         enableBashIntegration = true;
