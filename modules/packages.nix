@@ -1,7 +1,15 @@
+{ inputs, ... }:
 {
   config.perSystem =
     { pkgs, lib, ... }:
     let
+      # Cursor Agent is proprietary; keep its standalone flake package
+      # evaluable even though the generic per-system package set is free-only.
+      unfreePkgs = import inputs.nixpkgs {
+        system = pkgs.stdenv.hostPlatform.system;
+        config.allowUnfree = true;
+      };
+
       mkBunApp =
         name: script:
         let
@@ -22,6 +30,7 @@
     in
     {
       packages = {
+        cursor-agent = unfreePkgs.callPackage ../packages/cursor-agent { };
         jj-ryu = pkgs.callPackage ../packages/jj-ryu { };
         lightjj = pkgs.callPackage ../packages/lightjj { };
       }

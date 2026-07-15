@@ -18,11 +18,14 @@
           exec ${pkgs.lib.getExe cursorPkg} "$@"
         ''
       );
+
+      cursorAgentPkg = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.cursor-agent;
     in
     lib.mkMerge [
       {
         home.packages = [
           codeCliWrapsCursor
+          cursorAgentPkg
           (pkgs.lib.lowPrio pkgs.vscode)
           cursorPkg
           pkgs.neovim

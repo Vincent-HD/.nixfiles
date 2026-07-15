@@ -82,6 +82,15 @@ in pkg
 
 Purpose: force a specific HM-managed package or wrapper package to build even when it has no dedicated flake output.
 
+### Build an unfree flake package
+
+```bash
+cd "$REPO" && NIXPKGS_ALLOW_UNFREE=1 NIX_CONFIG="$NIX_EVAL_FEATURES" \
+nix build --impure --no-link --print-out-paths '.#<package>'
+```
+
+Purpose: realize a flake package whose metadata is marked unfree while preserving the repository's normal experimental-feature settings.
+
 ### Build the evaluated Home Manager package directly
 
 ```bash
