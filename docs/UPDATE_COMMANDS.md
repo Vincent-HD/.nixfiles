@@ -80,6 +80,17 @@ To run the package-specific updater directly:
 nix run .#update-curseforge -- --check
 ```
 
+### cursor-agent
+
+- **File**: `packages/cursor-agent/default.nix`
+- **Pattern**: `stdenvNoCC.mkDerivation` + Cursor's versioned multi-architecture archives
+- **Flake output**: `.#cursor-agent`
+- **Note**: Cursor publishes the current version through its installer and provides separate hashes for Linux/macOS and x64/arm64; use the package update script so all four sources stay aligned.
+
+```bash
+nix run github:Mic92/nix-update -- --flake cursor-agent --use-update-script
+```
+
 ## Branch-Pinned Packages
 
 These packages are packaged in a `nix-update`-friendly shape, but the upstream tracking model means the naive command is not necessarily correct.

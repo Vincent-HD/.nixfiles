@@ -1,5 +1,6 @@
 {
   lib,
+  bun,
   fetchurl,
   stdenvNoCC,
 }:
@@ -51,6 +52,11 @@ stdenvNoCC.mkDerivation (finalAttrs: {
 
     runHook postInstall
   '';
+
+  passthru.updateScript = [
+    (lib.getExe bun)
+    ./update.ts
+  ];
 
   meta = {
     description = "Cursor's AI coding agent for the terminal";

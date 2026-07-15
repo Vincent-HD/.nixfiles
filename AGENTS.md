@@ -175,8 +175,13 @@ changes, validate `.#darwinConfigurations.macbook-pro`.
   `finalAttrs` pattern. The module should then import it via `pkgs.callPackage`. This structure lets
   `nix-update` locate and bump the version/hash automatically. See `packages/xerahs/default.nix`
   for the reference pattern.
-- **See `docs/UPDATE_COMMANDS.md`** for the full list of nix-update-compatible pinned packages
-  and their exact update commands.
+- **Every new pinned package or flake input must be added to the update automation registry.** For
+  packages, make the derivation `nix-update` compatible (including a package-specific
+  `passthru.updateScript` when upstream metadata or multiple platform hashes need custom handling),
+  expose it as a flake package, add its command to `scripts/update-pins.json`, and document it in
+  `docs/UPDATE_COMMANDS.md`. For flake inputs, add a `flake-input` entry to that JSON registry.
+- **See `docs/UPDATE_COMMANDS.md`** for the full list of nix-update-compatible pinned packages,
+  flake inputs, and their exact update commands.
 - When adding a new external flake input, add `inputs.<name>.follows = "nixpkgs"` when the input
   supports it, to avoid duplicate nixpkgs evaluations.
 - Keep `system.stateVersion` and `home.stateVersion` stable unless intentionally migrating state.
