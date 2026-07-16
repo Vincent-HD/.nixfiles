@@ -183,6 +183,17 @@ Test the configuration without making it the default boot target:
 sudo nixos-rebuild test --flake .#pc-fixe
 ```
 
+Initialize the Linux-only Autodesk Fusion Wine prefix after the first activation:
+
+```bash
+fusion360-setup
+```
+
+The setup command installs the pinned offline Fusion build into a user-writable prefix. Start it
+afterward from the desktop launcher or with `fusion360`; use `fusion360-diagnose` to inspect the
+managed runtime and discovered Windows executables. Autodesk sign-in opens in a Nix-managed
+WebKitGTK window that returns the `adskidmgr` callback directly to the Wine prefix.
+
 Update flake inputs:
 
 ```bash

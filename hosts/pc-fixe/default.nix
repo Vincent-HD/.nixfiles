@@ -53,6 +53,7 @@ in
             hm.vicinae
             hm.bitwarden
             hm.curseforge
+            hm.fusion360
             hm.onlyoffice
             hm.work
             hm.kdeConnect

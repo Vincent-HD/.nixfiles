@@ -91,6 +91,19 @@ nix run .#update-curseforge -- --check
 nix run github:Mic92/nix-update -- --flake cursor-agent --use-update-script
 ```
 
+### fusion360
+
+- **File**: `packages/fusion360/default.nix`
+- **Pattern**: `stdenvNoCC.mkDerivation` + the fixed-output Autodesk offline Admin installer
+- **Flake output**: `.#fusion360` (Linux only)
+- **Note**: Autodesk replaces the installer at a stable URL. The update script prefetches the full payload, extracts its embedded `build-version`, and updates both the version and hash. The download is about 1.5 GB.
+
+```bash
+nix run github:Mic92/nix-update -- --flake fusion360 --use-update-script
+```
+
+After updating, rebuild the package and rerun `fusion360-setup --force` only if the existing mutable Wine prefix does not update itself successfully.
+
 ## Branch-Pinned Packages
 
 These packages are packaged in a `nix-update`-friendly shape, but the upstream tracking model means the naive command is not necessarily correct.

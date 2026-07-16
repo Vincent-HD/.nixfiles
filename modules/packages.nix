@@ -38,6 +38,7 @@
         codex = pkgs.callPackage ../packages/codex { };
         curseforge = pkgs.callPackage ../packages/curseforge { };
         crosspipe = pkgs.callPackage ../packages/crosspipe { };
+        fusion360 = unfreePkgs.callPackage ../packages/fusion360 { };
       };
 
       apps = {

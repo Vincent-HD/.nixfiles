@@ -75,6 +75,20 @@
       ]
     },
     {
+      "name": "fusion360",
+      "type": "nix-update",
+      "description": "Autodesk Fusion offline Admin installer build and hash",
+      "command": [
+        "nix",
+        "run",
+        "github:Mic92/nix-update",
+        "--",
+        "--flake",
+        "fusion360",
+        "--use-update-script"
+      ]
+    },
+    {
       "name": "codex-desktop-linux",
       "type": "flake-input",
       "description": "ChatGPT/Codex Desktop Linux flake input",
