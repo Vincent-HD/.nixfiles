@@ -23,6 +23,7 @@ in
             hm.browser
             hm.coding
             hm.codex
+            hm.plannotator
             hm.commandLine
             hm.comma
             hm.direnv

@@ -104,9 +104,12 @@ Purpose: build the exact HM-selected package when you already know the option pa
 
 ```bash
 nix store prefetch-file --json https://example.com/artifact.ext
+
+# Use the unpacked NAR hash expected by fetchzip/fetchFromGitHub-style sources.
+nix store prefetch-file --unpack --json https://example.com/source.tar.gz
 ```
 
-Purpose: get the SRI hash for release tarballs, debs, zip files, or AppImages before wiring them into an override.
+Purpose: get the SRI hash for release tarballs, debs, zip files, or AppImages before wiring them into an override. Add `--unpack` when the Nix fetcher hashes the extracted source tree instead of the downloaded archive bytes.
 
 ### Convert an SRI hash to nix32
 

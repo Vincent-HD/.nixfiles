@@ -6,6 +6,9 @@ let
   codexLbHealthStartupUrl = "http://127.0.0.1:2455/health/startup";
   mkCodexSettings =
     { pkgs, lib }:
+    let
+      plannotatorPackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.plannotator;
+    in
     {
       model = "gpt-5.5";
       model_provider = "codex-lb";
@@ -14,6 +17,21 @@ let
       model_verbosity = "low";
       file_opener = "cursor";
       personality = "pragmatic";
+
+      # Plannotator uses Codex's Stop lifecycle hook for automatic plan review.
+      features.hooks = true;
+      hooks.Stop = [
+        {
+          hooks = [
+            {
+              type = "command";
+              command = lib.getExe plannotatorPackage;
+              timeout = 345600;
+              statusMessage = "Reviewing plan in Plannotator";
+            }
+          ];
+        }
+      ];
 
       model_providers.codex-lb = {
         name = "openai";

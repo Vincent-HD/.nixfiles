@@ -33,6 +33,7 @@
         cursor-agent = unfreePkgs.callPackage ../packages/cursor-agent { };
         jj-ryu = pkgs.callPackage ../packages/jj-ryu { };
         lightjj = pkgs.callPackage ../packages/lightjj { };
+        plannotator = pkgs.callPackage ../packages/plannotator { };
       }
       // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
         codex = pkgs.callPackage ../packages/codex { };

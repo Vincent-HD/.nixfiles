@@ -91,6 +91,17 @@ nix run .#update-curseforge -- --check
 nix run github:Mic92/nix-update -- --flake cursor-agent --use-update-script
 ```
 
+### plannotator
+
+- **File**: `packages/plannotator/default.nix`
+- **Pattern**: `stdenvNoCC.mkDerivation` + platform-selected release binary and tagged shared Agent Skills
+- **Flake output**: `.#plannotator`
+- **Note**: The update script refreshes all Linux/macOS release checksums and the tagged source hash that supplies the Codex/Cursor-compatible skills.
+
+```bash
+nix run github:Mic92/nix-update -- --flake plannotator --use-update-script
+```
+
 ## Branch-Pinned Packages
 
 These packages are packaged in a `nix-update`-friendly shape, but the upstream tracking model means the naive command is not necessarily correct.
