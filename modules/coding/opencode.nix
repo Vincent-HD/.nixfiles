@@ -1,4 +1,4 @@
-{ ... }:
+{ inputs, ... }:
 {
   config.flake.modules.homeManager.codingOpenCode =
     {
@@ -9,6 +9,9 @@
     }:
     let
       opencode-bin = "${pkgs.opencode}/bin/opencode";
+      archOpsPackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.arch-ops-server;
+      context7TokenPath = "${config.home.homeDirectory}/.config/agent-mcp/context7-token";
+      githubTokenPath = "${config.home.homeDirectory}/.config/agent-mcp/github-token";
 
       # Bare `opencode` attaches to the running service with the current
       # directory. Any subcommand is passed through to the real binary.
@@ -19,29 +22,46 @@
         exec ${opencode-bin} attach http://localhost:4096 --dir "$PWD"
       '';
 
-      opencodeSettings = builtins.fromJSON (builtins.readFile ./assets/opencode.jsonc);
-      opencodeSettingsWithHome = lib.recursiveUpdate opencodeSettings {
-        mcp.github.headers.Authorization = "Bearer {file:${config.home.homeDirectory}/.config/opencode/github-token}";
+      # OpenCode's native MCP schema uses command arrays and supports file
+      # interpolation for local-server environment variables.
+      opencodeMcpServers = {
+        arch-ops = {
+          type = "local";
+          command = [ (lib.getExe archOpsPackage) ];
+          enabled = true;
+        };
+        context7 = {
+          type = "local";
+          command = [ (lib.getExe pkgs.context7-mcp) ];
+          environment.CONTEXT7_API_KEY = "{file:${context7TokenPath}}";
+          enabled = true;
+        };
+        github = {
+          type = "local";
+          command = [
+            (lib.getExe pkgs.github-mcp-server)
+            "stdio"
+          ];
+          environment.GITHUB_PERSONAL_ACCESS_TOKEN = "{file:${githubTokenPath}}";
+          enabled = true;
+        };
+      }
+      // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
+        nixos = {
+          type = "local";
+          command = [ (lib.getExe pkgs.mcp-nixos) ];
+          enabled = true;
+        };
       };
-      opencodeSettingsForPlatform =
-        if pkgs.stdenv.hostPlatform.isDarwin then
-          opencodeSettingsWithHome
-          // {
-            mcp = builtins.removeAttrs opencodeSettingsWithHome.mcp [
-              "github"
-              "nixos"
-            ];
-          }
-        else
-          opencodeSettingsWithHome;
     in
     lib.mkMerge [
       {
-        home.packages = [ opencode-wrapper ];
-
-        xdg.configFile."opencode/opencode.jsonc".source =
-          (pkgs.formats.json { }).generate "opencode.jsonc"
-            opencodeSettingsForPlatform;
+        # Keep OpenCode's MCP config explicit in its own native schema.
+        programs.opencode = {
+          enable = true;
+          package = opencode-wrapper;
+          settings.mcp = opencodeMcpServers;
+        };
       }
 
       (lib.mkIf pkgs.stdenv.hostPlatform.isLinux {

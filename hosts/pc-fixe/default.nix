@@ -42,6 +42,7 @@ in
             hm.noctalia-plugins-dependencies
             hm.coding
             hm.codex
+            hm.agents
             hm.plannotator
             hm.commandLine
             hm.comma

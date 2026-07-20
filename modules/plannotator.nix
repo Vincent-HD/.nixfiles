@@ -26,12 +26,11 @@
     {
       home.packages = [ plannotator ];
 
-      # Shared Agent Skills are discovered globally by both Codex and Cursor.
-      home.file.".agents/skills/plannotator-review".source =
-        "${plannotatorPackage}/share/plannotator/skills/plannotator-review";
-      home.file.".agents/skills/plannotator-annotate".source =
-        "${plannotatorPackage}/share/plannotator/skills/plannotator-annotate";
-      home.file.".agents/skills/plannotator-last".source =
-        "${plannotatorPackage}/share/plannotator/skills/plannotator-last";
+      # Register once; the shared agent module installs every skill canonically.
+      custom.agentSetup.skills = {
+        plannotator-review = "${plannotatorPackage}/share/plannotator/skills/plannotator-review";
+        plannotator-annotate = "${plannotatorPackage}/share/plannotator/skills/plannotator-annotate";
+        plannotator-last = "${plannotatorPackage}/share/plannotator/skills/plannotator-last";
+      };
     };
 }

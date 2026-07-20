@@ -8,6 +8,8 @@ in
   config.flake.darwinConfigurations."macbook-pro" = inputs.nix-darwin.lib.darwinSystem {
     modules = [
       darwin.macbookProConfiguration
+      inputs.sops-nix.darwinModules.sops
+      darwin.secrets
       darwin.codex
       darwin.deskflow
       darwin.rustdesk
@@ -23,6 +25,7 @@ in
             hm.browser
             hm.coding
             hm.codex
+            hm.agents
             hm.plannotator
             hm.commandLine
             hm.comma

@@ -8,6 +8,26 @@ generation adopts only nix-darwin, Home Manager, and the existing repository Bra
 Homebrew, shell configuration, Git configuration, macOS defaults, and every other application
 remain unchanged.
 
+## SOPS Prerequisite
+
+The Darwin generation decrypts shared MCP credentials during activation. An SSH agent can sign
+with its key but cannot provide private-key material to `ssh-to-age`. Before the first build,
+explicitly export the Bitwarden-managed Ed25519 private key to a protected temporary file, then
+derive the same age key used on Linux:
+
+```bash
+mkdir -p "$HOME/.config/sops/age"
+nix-shell -p ssh-to-age --run "ssh-to-age -private-key -i ~/.ssh/id_ed25519 > ~/.config/sops/age/keys.txt"
+chmod 600 "$HOME/.config/sops/age/keys.txt"
+age-keygen -y "$HOME/.config/sops/age/keys.txt"
+```
+
+The printed public recipient must match `.sops.yaml`. Securely delete the exported SSH key once
+the age identity has been derived. If exporting the SSH key is not possible, securely transfer the
+existing `~/.config/sops/age/keys.txt` from Linux, or add a Mac-specific age recipient to
+`.sops.yaml` and run `sops updatekeys secrets/github-token.yaml`. Do not begin activation while
+`~/.config/sops/age/keys.txt` is missing.
+
 ## Build Without Activating
 
 The installer has not enabled flakes globally yet, so pass the feature flag until the first switch:

@@ -33,6 +33,34 @@
       ]
     },
     {
+      "name": "arch-ops-server",
+      "type": "nix-update",
+      "description": "Arch Ops MCP universal PyPI wheel",
+      "command": [
+        "nix",
+        "run",
+        "github:Mic92/nix-update",
+        "--",
+        "--flake",
+        "arch-ops-server",
+        "--use-update-script"
+      ]
+    },
+    {
+      "name": "papercuts",
+      "type": "nix-update",
+      "description": "Papercuts tagged source compiled with Bun",
+      "command": [
+        "nix",
+        "run",
+        "github:Mic92/nix-update",
+        "--",
+        "--flake",
+        "papercuts",
+        "--use-github-releases"
+      ]
+    },
+    {
       "name": "jj-ryu",
       "type": "nix-update",
       "description": "jj-ryu alpha release tarballs",

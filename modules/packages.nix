@@ -30,9 +30,11 @@
     in
     {
       packages = {
+        arch-ops-server = pkgs.callPackage ../packages/arch-ops-server { };
         cursor-agent = unfreePkgs.callPackage ../packages/cursor-agent { };
         jj-ryu = pkgs.callPackage ../packages/jj-ryu { };
         lightjj = pkgs.callPackage ../packages/lightjj { };
+        papercuts = pkgs.callPackage ../packages/papercuts { };
         plannotator = pkgs.callPackage ../packages/plannotator { };
       }
       // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {

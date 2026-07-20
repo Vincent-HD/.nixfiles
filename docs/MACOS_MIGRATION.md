@@ -412,8 +412,10 @@ entry, OpenCode systemd service, and MCP NixOS package remain guarded to Linux.
 
 The Mac keeps its existing user-managed Zsh Fnm initialization. Home Manager does not take
 ownership of `.zshrc` or `.zprofile`, but activation does take ownership of Git configuration and
-the OpenCode configuration file. The Darwin OpenCode configuration omits the NixOS MCP server and
-the GitHub MCP entry that depends on the Linux host's managed token file.
+the OpenCode configuration file. The Darwin OpenCode, Codex, and Cursor configurations share the
+Nix-packaged Arch Ops, Context7, and GitHub MCP servers. NixOS MCP remains Linux-only. The age
+key prerequisite in `docs/MACOS_BOOTSTRAP.md` must be complete so sops-nix can materialize the two
+API tokens under `~/.config/agent-mcp`.
 
 Keep Homebrew Cursor, Visual Studio Code, Git, and Fnm installed during testing.
 
