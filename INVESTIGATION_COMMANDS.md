@@ -278,6 +278,20 @@ nix eval '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$USER"'.xd
 
 Purpose: inspect the final text for a specific XDG-managed file when you override or replace upstream file ownership.
 
+### Realize and inspect a generated Home Manager file source
+
+```bash
+cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" \
+nix build --no-link --print-out-paths \
+  '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$USER"'.home.file."<home-relative-path>".source'
+
+cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" \
+nix build --no-link --print-out-paths \
+  '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$USER"'.xdg.configFile."<xdg-relative-path>".source'
+```
+
+Purpose: realize a `pkgs.formats.*.generate` derivation before opening the returned store path. A plain `nix eval --raw` can return a valid output path that does not exist yet because the source derivation has not been built.
+
 Related useful checks:
 
 ```bash

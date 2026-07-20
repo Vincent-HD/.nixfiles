@@ -10,8 +10,7 @@ auto-imported by `import-tree`. The Linux host runs **KDE Plasma 6** on **NVIDIA
 ## Agent References
 
 - `INVESTIGATION_COMMANDS.md` — reusable shell, eval, validation, and debugging command patterns
-- `.agents/skills/` — Codex-native project skills; OpenCode also reads this location
-- `.cursor/skills` — compatibility symlink to `.agents/skills` for Cursor-style skill discovery
+- `.agents/skills/` — project-scoped Agent Skills discovered natively by Codex, Cursor, and OpenCode
 - `.agents/skills/update-investigation-commands/SKILL.md` — project skill for maintaining the investigation command reference
 
 ---
@@ -23,6 +22,7 @@ flake.nix                              # Entrypoint: inputs + mkFlake via import
 flake.lock                             # Pinned input versions (auto-generated)
 AGENTS.md                              # This file
 modules/
+  agents/                              # Agent-specific modules: common, skills, Cursor, Codex, OpenCode
   global-options.nix                   # Shared flake-parts options: systems, flake.username
   plasma.nix                           # KDE Plasma 6 + SDDM + Kate (NixOS + HM)
   niri.nix                             # Niri compositor + greetd + Kitty (NixOS + HM); see hosts/pc-fixe/default.nix `desktopSession`
@@ -185,6 +185,17 @@ changes, validate `.#darwinConfigurations.macbook-pro`.
 - When adding a new external flake input, add `inputs.<name>.follows = "nixpkgs"` when the input
   supports it, to avoid duplicate nixpkgs evaluations.
 - Keep `system.stateVersion` and `home.stateVersion` stable unless intentionally migrating state.
+- **Add cross-client Agent Skills through `custom.agentSetup.skills` in `modules/agents/skills.nix` (or a
+  contributing feature module).** Home Manager installs each entry under `~/.agents/skills`, which
+  Codex, Cursor, and OpenCode discover natively. Do not duplicate them under
+  `~/.codex/skills`, `~/.cursor/skills`, or `~/.config/opencode/skills`, and do not manage
+  any tool's built-in skill directory.
+- **Keep MCP definitions explicit in each client's native schema.** Maintain Cursor in
+  `modules/agents/cursor.nix`, Codex in `modules/agents/codex.nix`, and OpenCode in
+  `modules/agents/opencode.nix`. Repeating the small server list is preferred over a normalizing
+  abstraction. Use pinned executable paths and file-backed sops secrets.
+- **Keep copied text-only third-party skills as local snapshots.** Do not add flake inputs or
+  update automation for Grill Me or Reference Repository.
 
 ---
 

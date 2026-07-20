@@ -22,8 +22,7 @@ replace. It excludes secrets, serial numbers, hardware UUIDs, and the MDM server
 
 At the time of this snapshot, the repository was not applicable on this machine. It only exported
 an `x86_64-linux` NixOS host, and its only Home Manager composition used `/home/vincent`. The
-subsequent implementation is documented in [MACOS_NIX_RESEARCH.md](./MACOS_NIX_RESEARCH.md) and
-[MACOS_BOOTSTRAP.md](./MACOS_BOOTSTRAP.md).
+subsequent implementation is documented in [MACOS_NIX_RESEARCH.md](./MACOS_NIX_RESEARCH.md).
 
 ## Ownership Model
 

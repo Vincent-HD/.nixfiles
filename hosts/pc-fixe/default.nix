@@ -17,7 +17,7 @@ in
       nixos.sound
       nixos.memoryPressure
       nixos.coding
-      nixos.codex
+      nixos.agentCodex
       nixos.printing
       nixos.gparted
       nixos.windowsMounts
@@ -41,7 +41,11 @@ in
             hm.noctalia
             hm.noctalia-plugins-dependencies
             hm.coding
-            hm.codex
+            hm.agentCommon
+            hm.agentSkills
+            hm.agentCursor
+            hm.agentCodex
+            hm.agentOpenCode
             hm.plannotator
             hm.commandLine
             hm.comma

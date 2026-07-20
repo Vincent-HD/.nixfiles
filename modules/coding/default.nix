@@ -24,7 +24,6 @@ in
         homeManagerModules.codingGit
         homeManagerModules.codingJujutsu
         homeManagerModules.codingNixTools
-        homeManagerModules.codingOpenCode
       ];
     };
 }

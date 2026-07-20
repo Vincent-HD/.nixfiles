@@ -1,0 +1,4 @@
+interface:
+  display_name: "Papercuts"
+  short_description: "Record small workflow friction safely"
+  default_prompt: "Use $papercuts to record a concise workflow friction observation."

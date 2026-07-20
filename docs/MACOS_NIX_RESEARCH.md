@@ -25,8 +25,7 @@ Not activated:
 - Homebrew has not been migrated or cleaned.
 - no package has been installed or removed by the configuration.
 
-Follow [MACOS_BOOTSTRAP.md](./MACOS_BOOTSTRAP.md) and migrate one item at a time using
-[MACOS_MIGRATION.md](./MACOS_MIGRATION.md).
+Make ownership changes incrementally and validate the affected configuration before activation.
 
 ## Recommendation
 
@@ -308,13 +307,11 @@ Initial candidates from the inventory:
 
 ## Secrets and Work Machine Constraints
 
-The NixOS host currently uses `sops-nix` as a NixOS module with Linux paths. Darwin secret handling
-needs a separate design before composing secret-dependent modules:
-
-- derive paths from `/Users/${username}` or Home Manager's `config.home.homeDirectory`
-- decide whether to use a nix-darwin-compatible sops-nix module or Home Manager sops-nix module
-- do not read private SSH keys into the Nix store
-- preserve MDM and organization security policy
+Both hosts now use the system-level `sops-nix` modules. The shared secret module derives Linux
+paths from `/home/${username}` and Darwin paths from `/Users/${username}`; the age key remains
+outside the Nix store at `~/.config/sops/age/keys.txt`. The GitHub and Context7 tokens are
+available on both hosts. Verify the configured age recipient before Darwin activation so the design
+continues to respect MDM and organization security policy.
 
 Installing Nix creates a dedicated APFS volume, daemon, build users, and launchd configuration.
 Although this Mac is not DEP-enrolled, it is MDM-enrolled. Confirm that local policy allows Nix

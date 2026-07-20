@@ -8,7 +8,9 @@ in
   config.flake.darwinConfigurations."macbook-pro" = inputs.nix-darwin.lib.darwinSystem {
     modules = [
       darwin.macbookProConfiguration
-      darwin.codex
+      inputs.sops-nix.darwinModules.sops
+      darwin.secrets
+      darwin.agentCodex
       darwin.deskflow
       darwin.rustdesk
 
@@ -22,7 +24,11 @@ in
             # Migrate one application at a time. Keep this list deliberately small.
             hm.browser
             hm.coding
-            hm.codex
+            hm.agentCommon
+            hm.agentSkills
+            hm.agentCursor
+            hm.agentCodex
+            hm.agentOpenCode
             hm.plannotator
             hm.commandLine
             hm.comma

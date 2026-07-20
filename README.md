@@ -130,10 +130,11 @@ Secrets are stored encrypted in `secrets/` and decrypted at activation time.
 
 The age private key used by sops-nix is **derived from the SSH private key** (Ed25519)
 rather than being a standalone age key. This allows recreating the same age key on any
-machine where the SSH private key is available.
+machine where the SSH private key can be exported.
 
-The SSH private key is managed by **Bitwarden SSH Agent**. When needed, export the
-private key from Bitwarden and run:
+The Bitwarden SSH Agent can sign with the key but does not make its private material
+available to `ssh-to-age`. When needed, explicitly export the private key from Bitwarden,
+write it to a protected temporary file, and run:
 
 ```bash
 # Derive age key from SSH private key
@@ -142,7 +143,7 @@ nix-shell -p ssh-to-age --run "ssh-to-age -private-key -i ~/.ssh/id_ed25519 > ~/
 
 ### Recreating the Age Key on a New Machine
 
-1. Export your SSH private key from Bitwarden
+1. Export your SSH private key from Bitwarden (an SSH agent alone is insufficient)
 2. Derive the age key (command above)
 3. Verify the public key matches `.sops.yaml`:
    ```bash
@@ -161,7 +162,12 @@ sops updatekeys secrets/github-token.yaml
 
 ### Current Secrets
 
-- `secrets/github-token.yaml` — GitHub personal access token for MCP integration
+- `github_token` — GitHub personal access token for the local GitHub MCP server
+- `context7_token` — Context7 API key
+
+Both values are encrypted in `secrets/github-token.yaml`; sops-nix materializes them with
+mode `0400` below `~/.config/agent-mcp`. On a new Linux or macOS host, create the age key at
+`~/.config/sops/age/keys.txt` before the first system activation.
 
 ## Common Commands
 
@@ -171,7 +177,7 @@ Apply the configuration:
 sudo nixos-rebuild switch --flake .#pc-fixe
 ```
 
-Apply the macOS configuration after completing `docs/MACOS_BOOTSTRAP.md`:
+Apply the macOS configuration:
 
 ```bash
 sudo darwin-rebuild switch --flake .#macbook-pro
@@ -213,6 +219,19 @@ If you want to remove a feature, change the relevant host composition under `hos
   MacBook Pro.
 - `docs/MACOS_NIX_RESEARCH.md` records the researched nix-darwin, Home Manager, and Homebrew design
   and migration plan.
-- `docs/MACOS_BOOTSTRAP.md` is the reviewed first-build, activation, validation, and rollback
-  runbook.
-- `docs/MACOS_MIGRATION.md` is the one-item-at-a-time migration ledger and test checklist.
+
+## Shared Agent Setup
+
+`modules/agents/` is the declarative home for cross-agent tools and shared Agent Skills.
+
+- Add a skill once in `modules/agents/skills.nix` through `custom.agentSetup.skills`; Home Manager installs it under the Agent Skills
+  standard path, `~/.agents/skills`, which Codex, Cursor, and OpenCode discover natively.
+- MCPs are deliberately written in each client's native schema: Cursor's global
+  `~/.cursor/mcp.json` lives in `modules/agents/cursor.nix`, Codex's lower-precedence
+  `/etc/codex/config.toml` lives in `modules/agents/codex.nix`, and OpenCode's `settings.mcp` lives in
+  `modules/agents/opencode.nix`.
+- File-backed MCP credentials stay outside the Nix store and are decrypted by sops-nix.
+- Executable MCPs use pinned Nix packages.
+
+The shared setup currently installs Papercuts, RTK, Grill Me, `reference-repository`, Context7
+guidance, and Plannotator's skills.

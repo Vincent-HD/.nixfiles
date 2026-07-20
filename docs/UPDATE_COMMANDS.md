@@ -47,6 +47,27 @@ nix run github:Mic92/nix-update -- --flake codex --use-github-releases --version
 nix run github:Mic92/nix-update -- --flake lightjj
 ```
 
+### arch-ops-server
+
+- **File**: `packages/arch-ops-server/default.nix`
+- **Pattern**: `python3Packages.buildPythonApplication` + universal PyPI wheel
+- **Flake output**: `.#arch-ops-server`
+- **Note**: The wheel avoids the sdist's strict, older `uv_build` constraint.
+
+```bash
+nix run github:Mic92/nix-update -- --flake arch-ops-server --use-update-script
+```
+
+### papercuts
+
+- **File**: `packages/papercuts/default.nix`
+- **Pattern**: `stdenvNoCC.mkDerivation` + `fetchFromGitHub` tagged source compiled with Bun
+- **Flake output**: `.#papercuts`
+
+```bash
+nix run github:Mic92/nix-update -- --flake papercuts --use-github-releases
+```
+
 ### jj-ryu
 
 - **File**: `packages/jj-ryu/default.nix`

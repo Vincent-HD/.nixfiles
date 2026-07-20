@@ -7,6 +7,48 @@ let
   mkCodexSettings =
     { pkgs, lib }:
     let
+      homeDirectory =
+        if pkgs.stdenv.hostPlatform.isDarwin then
+          "/Users/${config.flake.username}"
+        else
+          "/home/${config.flake.username}";
+      archOpsPackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.arch-ops-server;
+      context7TokenPath = "${homeDirectory}/.config/agent-mcp/context7-token";
+      githubTokenPath = "${homeDirectory}/.config/agent-mcp/github-token";
+
+      # Codex cannot interpolate a token file into a local MCP environment.
+      # Use fail-closed wrappers so secrets never enter the generated TOML.
+      context7Mcp = pkgs.writeShellScript "codex-context7-mcp" ''
+        set -eu
+        token_file=${lib.escapeShellArg context7TokenPath}
+        if [ ! -r "$token_file" ]; then
+          printf 'Context7 MCP token is not readable: %s\n' "$token_file" >&2
+          exit 1
+        fi
+        CONTEXT7_API_KEY="$("${pkgs.coreutils}/bin/cat" "$token_file")"
+        if [ -z "$CONTEXT7_API_KEY" ]; then
+          printf 'Context7 MCP token is empty: %s\n' "$token_file" >&2
+          exit 1
+        fi
+        export CONTEXT7_API_KEY
+        exec ${lib.getExe pkgs.context7-mcp}
+      '';
+
+      githubMcp = pkgs.writeShellScript "codex-github-mcp" ''
+        set -eu
+        token_file=${lib.escapeShellArg githubTokenPath}
+        if [ ! -r "$token_file" ]; then
+          printf 'GitHub MCP token is not readable: %s\n' "$token_file" >&2
+          exit 1
+        fi
+        GITHUB_PERSONAL_ACCESS_TOKEN="$("${pkgs.coreutils}/bin/cat" "$token_file")"
+        if [ -z "$GITHUB_PERSONAL_ACCESS_TOKEN" ]; then
+          printf 'GitHub MCP token is empty: %s\n' "$token_file" >&2
+          exit 1
+        fi
+        export GITHUB_PERSONAL_ACCESS_TOKEN
+        exec ${lib.getExe pkgs.github-mcp-server} stdio
+      '';
       plannotatorPackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.plannotator;
     in
     {
@@ -52,28 +94,25 @@ let
         requires_openai_auth = false;
       };
 
+      # Define Codex's native MCP TOML shape explicitly instead of normalizing
+      # another client's schema through an intermediate registry.
       mcp_servers = {
         arch-ops = {
-          command = "uvx";
-          args = [ "arch-ops-server" ];
+          command = lib.getExe archOpsPackage;
           enabled = true;
         };
-
         context7 = {
-          url = "https://mcp.context7.com/mcp";
+          command = "${context7Mcp}";
           enabled = true;
         };
-
-        # GitHub MCP uses a PAT; Codex turns this env var into Authorization: Bearer <token>.
         github = {
-          url = "https://api.githubcopilot.com/mcp/";
+          command = "${githubMcp}";
           enabled = true;
-          bearer_token_env_var = "CODEX_GITHUB_MCP_TOKEN";
         };
       }
       // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
         nixos = {
-          command = "mcp-nixos";
+          command = lib.getExe pkgs.mcp-nixos;
           enabled = true;
         };
       };
@@ -87,7 +126,7 @@ let
     });
 in
 {
-  config.flake.modules.darwin.codex =
+  config.flake.modules.darwin.agentCodex =
     { pkgs, lib, ... }:
     {
       # codex = CLI binary, codex-app = Codex.app desktop application.
@@ -103,7 +142,7 @@ in
       };
     };
 
-  config.flake.modules.nixos.codex =
+  config.flake.modules.nixos.agentCodex =
     { pkgs, lib, ... }:
     {
       # System-level Codex defaults shared by the CLI, app, and IDE extension.
@@ -113,7 +152,7 @@ in
       };
     };
 
-  config.flake.modules.homeManager.codex =
+  config.flake.modules.homeManager.agentCodex =
     {
       pkgs,
       lib,
@@ -123,14 +162,13 @@ in
     let
       codexHome = "${config.home.homeDirectory}/.codex";
       codexLbHome = "${config.home.homeDirectory}/.codex-lb";
-      githubTokenPath = "${config.home.homeDirectory}/.config/opencode/github-token";
       # On Linux, use the pinned package from packages/codex. On macOS, OpenAI
       # publishes the official binary via the Homebrew cask installed by
-      # darwin.codex; reference that path directly so the wrapper below still
+      # darwin.agentCodex; reference that path directly so the wrapper below still
       # applies the token bridge without introducing a second codex binary.
       codexExec =
         if pkgs.stdenv.hostPlatform.isLinux then
-          pkgs.lib.getExe (pkgs.callPackage ../packages/codex { })
+          pkgs.lib.getExe (pkgs.callPackage ../../packages/codex { })
         else
           "/opt/homebrew/bin/codex";
       opencodeAuthPath = "${config.home.homeDirectory}/.local/share/opencode/auth.json";
@@ -148,7 +186,7 @@ in
       # Bridge codex-lb's HTTP health probes into systemd's native readiness
       # and watchdog protocol. This mirrors upstream's Helm probes.
       codex-lb-watchdog = pkgs.replaceVarsWith {
-        src = ./codex/assets/codex-lb-watchdog.sh;
+        src = ../codex/assets/codex-lb-watchdog.sh;
         replacements = {
           codexLb = pkgs.lib.getExe codex-lb;
           curl = pkgs.lib.getExe pkgs.curl;
@@ -171,15 +209,11 @@ in
         fi
       '';
 
-      # Codex reads bearer tokens from environment variables, so this wrapper
-      # bridges the existing sops-managed GitHub token file into Codex at launch.
+      # Keep the OpenCode Go credential bridge in the user-facing Codex wrapper.
+      # MCP credentials are scoped to their own fail-closed server wrappers.
       codex = pkgs.lib.hiPrio (
         pkgs.writeShellScriptBin "codex" ''
           set -euo pipefail
-
-          if [ -r "${githubTokenPath}" ]; then
-            export CODEX_GITHUB_MCP_TOKEN="$(<"${githubTokenPath}")"
-          fi
 
           . ${codexOpenCodeGoEnv}
 
@@ -214,9 +248,6 @@ in
             codex-lb
             pkgs.jq
             pkgs.uv
-          ]
-          ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
-            pkgs.mcp-nixos
           ];
 
           home.file.".codex/.keep".text = "";

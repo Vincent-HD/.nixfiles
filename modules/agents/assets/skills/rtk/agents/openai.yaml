@@ -1,0 +1,4 @@
+interface:
+  display_name: "RTK"
+  short_description: "Run token-optimized shell commands"
+  default_prompt: "Use $rtk to run shell commands with token-optimized output."
