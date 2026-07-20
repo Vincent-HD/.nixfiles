@@ -1,0 +1,4 @@
+interface:
+  display_name: "Create Minecraft Schematic"
+  short_description: "Generate and validate Minecraft schematic files"
+  default_prompt: "Use $create-minecraft-schematic to create and validate a real Minecraft .litematic and .schem build."

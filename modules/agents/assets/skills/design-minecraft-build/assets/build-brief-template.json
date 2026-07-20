@@ -1,0 +1,27 @@
+{
+  "project": "Untitled Minecraft build",
+  "edition": "java",
+  "minecraft_version": "1.20.1",
+  "data_version": 3465,
+  "mods": [],
+  "deliverable": "plan",
+  "coordinate_system": {
+    "origin": "front-left-bottom",
+    "front_direction": "-Z",
+    "axes": {"x": "right", "y": "up", "z": "depth"}
+  },
+  "envelope": {"width": 1, "height": 1, "depth": 1},
+  "style": {
+    "keywords": [],
+    "observations": [],
+    "viewing_distance": "medium"
+  },
+  "palette": [],
+  "zones": [],
+  "features": [],
+  "interfaces": [],
+  "constraints": [],
+  "assumptions": [],
+  "construction_stages": [],
+  "acceptance_checks": []
+}

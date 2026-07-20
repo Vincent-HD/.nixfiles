@@ -100,6 +100,8 @@
         # Add a portable skill here once; all three agents discover the same directory.
         custom.agentSetup.skills = {
           context7-mcp = ./agents/assets/skills/context7-mcp;
+          create-minecraft-schematic = ./agents/assets/skills/create-minecraft-schematic;
+          design-minecraft-build = ./agents/assets/skills/design-minecraft-build;
           grill-me = ./agents/assets/skills/grill-me;
           papercuts = ./agents/assets/skills/papercuts;
           reference-repository = ./agents/assets/skills/reference-repository;

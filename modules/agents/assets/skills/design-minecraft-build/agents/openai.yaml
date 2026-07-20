@@ -1,0 +1,4 @@
+interface:
+  display_name: "Design Minecraft Build"
+  short_description: "Plan Minecraft dimensions, palette, form, and direction"
+  default_prompt: "Use $design-minecraft-build to turn my idea or reference images into a precise Minecraft build specification."

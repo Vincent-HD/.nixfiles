@@ -236,5 +236,6 @@ If you want to remove a feature, change the relevant host composition under `hos
 - File-backed MCP credentials stay outside the Nix store and are decrypted by sops-nix.
 - Executable MCPs use pinned Nix packages.
 
-The shared setup currently installs Papercuts, RTK, Grill Me, `reference-repository`, Context7
-guidance, and Plannotator's skills.
+The shared setup currently installs Papercuts, RTK, Grill Me,
+`reference-repository`, Context7 guidance, the Minecraft design/schematic skills, and
+Plannotator's skills.
