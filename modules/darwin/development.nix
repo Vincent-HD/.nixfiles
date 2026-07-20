@@ -31,7 +31,6 @@
           wgen = "pnpm -F backend exec doppler run -- pnpm codegen";
           wfb = "pnpm -F backend -F frontend --parallel exec doppler run -- pnpm dev";
           wformat = "pnpm -r lint && pnpm -r format";
-          nixswitch = "sudo darwin-rebuild switch --flake ${config.home.homeDirectory}/.nixfiles#macbook-pro";
         };
 
         initContent = ''

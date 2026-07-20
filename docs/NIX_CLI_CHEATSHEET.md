@@ -17,7 +17,7 @@ NIX_EVAL_FEATURES='extra-experimental-features = nix-command flakes dynamic-deri
 ```
 
 Current config already provides `nil`, `nixfmt`, `jujutsu`/`jj`, `comma`,
-`direnv` + `nix-direnv`, `mcp-nixos` on Linux, `nixswitch`, and general CLI
+`direnv` + `nix-direnv`, `mcp-nixos` on Linux, and general CLI
 helpers such as `rg`, `fd`, `bat`, `jaq`, `yq`, `delta`, and `lazygit`.
 
 The shared command-line module also installs Nix-oriented tools: `nh`, `nvd`,
@@ -34,7 +34,7 @@ them.
   --dry-run`, `deadnix --fail`, and repo-configured `statix check`.
 - Prefer one-off tools with `nix shell nixpkgs#<pkg> -c <cmd>` until the user
   asks to install them permanently.
-- Avoid `switch`, `nixswitch`, `nh clean`, `nix flake update`, `nix flake lock
+- Avoid `switch`, `nh clean`, `nix flake update`, `nix flake lock
   --update-input`, `nix-update`, `statix fix`, `deadnix --edit`, and `direnv
   allow` unless the task explicitly calls for that mutation.
 - Use `--no-link` for validation builds so no `result` symlink is created.
@@ -113,13 +113,12 @@ asked for an apply/test, not as routine validation.
 
 ```bash
 cd "$REPO" && sudo nixos-rebuild test --flake ".#$HOST"
-cd "$REPO" && sudo nixos-rebuild switch --flake ".#$HOST"
-cd "$REPO" && sudo darwin-rebuild switch --flake ".#$DARWIN_HOST"
-nixswitch
+cd "$REPO" && nh os switch ".#$HOST"
+cd "$REPO" && nh darwin switch ".#$DARWIN_HOST"
 ```
 
-`nixswitch` is this repo's wrapper: Linux switches `pc-fixe`; macOS switches
-`macbook-pro`.
+Use `nh` for activation on both hosts; it resolves the selected host from the
+flake reference.
 
 ## Requested Tool Cheats
 
@@ -336,4 +335,4 @@ These are already configured and are useful during Nix work:
 5. Validate with `nix eval`, then `nix build --dry-run` or `--no-link`.
 6. Use `nvd`/`nom` for reviewability when the build output or closure delta
    matters.
-7. Apply with `test`, `switch`, `nh os switch`, or `nixswitch` only on request.
+7. Apply with `test` or `nh ... switch` only on request.
