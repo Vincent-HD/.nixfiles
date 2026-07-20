@@ -1,6 +1,6 @@
 { inputs, config, ... }:
 {
-  # NixOS: Niri compositor, portals, greetd session (matches references/neoelectron-nixfiles).
+  # NixOS: Niri compositor, portals, greetd session (matches ~/.references/neolectron_nixfiles).
   config.flake.modules.nixos.niri =
     { pkgs, ... }:
     {
@@ -181,7 +181,7 @@
             }
           ];
 
-          # Must stay in sync with home.pointerCursor in modules/cursor-pointer.nix (see references/neoelectron-nixfiles).
+          # Must stay in sync with home.pointerCursor in modules/cursor-pointer.nix (see ~/.references/neolectron_nixfiles).
           cursor = {
             theme = lib.mkDefault "Adwaita";
             size = lib.mkDefault 24;

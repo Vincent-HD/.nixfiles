@@ -2,7 +2,7 @@
 {
   # Dual-boot: NTFS Windows volume(s) + optional WSL ext4.vhdx via qemu-nbd.
   #
-  # Reference: references/neoelectron-nixfiles (hardware + wsl-mount.nix).
+  # Reference: ~/.references/neolectron_nixfiles (hardware + wsl-mount.nix).
   #
   # 1) NTFS: optional fstab mounts at boot — uses systemd automount so a missing/wrong/hibernated
   #    Windows disk does not block boot or nixos-rebuild switch. Accessing the mountpoint triggers
