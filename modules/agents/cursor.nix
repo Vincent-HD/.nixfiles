@@ -75,5 +75,14 @@
           ];
         };
       };
+
+      xdg.configFile = lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
+        # Cursor's Linux sandbox requires AppArmor support, which this host does not provide.
+        "cursor/cli-config.json".text = builtins.toJSON {
+          approvalMode = "allowlist";
+          sandbox.mode = "disabled";
+          version = 1;
+        };
+      };
     };
 }
