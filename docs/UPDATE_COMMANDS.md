@@ -32,9 +32,10 @@ These packages use the `finalAttrs` pattern and are wired so `nix-update` can bu
 - **Pattern**: `stdenv.mkDerivation` + `fetchurl` from GitHub releases
 - **Flake output**: `.#codex`
 - **Note**: The release tag is `rust-v<version>`, so keep `version` as the bare semver.
+- **Release lookup**: Limit discovery to the newest 100 releases (one GitHub API page).
 
 ```bash
-nix run github:Mic92/nix-update -- --flake codex --use-github-releases --version-regex 'rust-v(.*)'
+nix run github:Mic92/nix-update -- --flake codex --use-github-releases --github-releases-limit 100 --version-regex 'rust-v(.*)'
 ```
 
 ### lightjj

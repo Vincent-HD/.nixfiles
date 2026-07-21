@@ -15,6 +15,8 @@
         "--flake",
         "codex",
         "--use-github-releases",
+        "--github-releases-limit",
+        "100",
         "--version-regex",
         "rust-v(.*)"
       ]
