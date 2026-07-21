@@ -22,6 +22,20 @@
       ]
     },
     {
+      "name": "opencodex",
+      "type": "nix-update",
+      "description": "OpenCodex npm release tarball, lockfile, and Bun dependency closure",
+      "command": [
+        "nix",
+        "run",
+        "github:Mic92/nix-update",
+        "--",
+        "--flake",
+        "opencodex",
+        "--use-update-script"
+      ]
+    },
+    {
       "name": "lightjj",
       "type": "nix-update",
       "description": "lightjj release tarball",

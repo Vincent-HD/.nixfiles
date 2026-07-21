@@ -317,6 +317,23 @@ Purpose: inspect the rendered value of a single Home Manager option or nested at
 
 Use `--json` for booleans and attrsets; reserve `--raw` for strings and store paths.
 
+### Validate a Home Manager user service after activation
+
+```bash
+systemctl --user status <service-name> --no-pager
+systemctl --user show <service-name> --property=ExecStart --property=MainPID --property=SubState --no-pager
+```
+
+Purpose: confirm the activated unit is running the expected Nix-store wrapper and has a live main process.
+
+For a service with a loopback HTTP health endpoint, add:
+
+```bash
+curl --fail --silent --show-error http://127.0.0.1:<port>/<health-path>
+```
+
+Use after `nixos-rebuild switch` or a Home Manager activation, before testing clients against the service.
+
 ## NixOS Host Evaluation
 
 ### Evaluate a specific NixOS option subtree

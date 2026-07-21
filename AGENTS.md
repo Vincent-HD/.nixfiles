@@ -12,6 +12,7 @@ auto-imported by `import-tree`. The Linux host runs **KDE Plasma 6** on **NVIDIA
 - `INVESTIGATION_COMMANDS.md` — reusable shell, eval, validation, and debugging command patterns
 - `.agents/skills/` — project-scoped Agent Skills discovered natively by Codex, Cursor, and OpenCode
 - `.agents/skills/update-investigation-commands/SKILL.md` — project skill for maintaining the investigation command reference
+- `reference-repos.md` — only tracks other people's Nix/NixOS/nix-darwin/Home Manager configuration repositories; do not add general upstream application projects.
 
 ---
 

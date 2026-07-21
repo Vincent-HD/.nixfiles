@@ -34,6 +34,7 @@
         cursor-agent = unfreePkgs.callPackage ../packages/cursor-agent { };
         jj-ryu = pkgs.callPackage ../packages/jj-ryu { };
         lightjj = pkgs.callPackage ../packages/lightjj { };
+        opencodex = pkgs.callPackage ../packages/opencodex { };
         papercuts = pkgs.callPackage ../packages/papercuts { };
         plannotator = pkgs.callPackage ../packages/plannotator { };
       }

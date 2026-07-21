@@ -1,9 +1,5 @@
 { inputs, config, ... }:
 let
-  codexLbVersion = "1.21.0b3";
-  codexLbHealthLiveUrl = "http://127.0.0.1:2455/health/live";
-  codexLbHealthReadyUrl = "http://127.0.0.1:2455/health/ready";
-  codexLbHealthStartupUrl = "http://127.0.0.1:2455/health/startup";
   mkCodexSettings =
     { pkgs, lib }:
     let
@@ -53,7 +49,8 @@ let
     in
     {
       model = "gpt-5.5";
-      model_provider = "codex-lb";
+      # Route Codex's built-in OpenAI provider through the local OpenCodex proxy.
+      openai_base_url = "http://127.0.0.1:10100/v1";
       model_reasoning_effort = "high";
       model_reasoning_summary = "concise";
       model_verbosity = "low";
@@ -74,14 +71,6 @@ let
           ];
         }
       ];
-
-      model_providers.codex-lb = {
-        name = "openai";
-        base_url = "http://127.0.0.1:2455/backend-api/codex";
-        wire_api = "responses";
-        supports_websockets = true;
-        requires_openai_auth = true;
-      };
 
       # OpenCode Go exposes an OpenAI-compatible Responses endpoint. The API key
       # is exported by the Home Manager wrapper from OpenCode's own auth store.
@@ -161,7 +150,7 @@ in
     }:
     let
       codexHome = "${config.home.homeDirectory}/.codex";
-      codexLbHome = "${config.home.homeDirectory}/.codex-lb";
+      opencodexPackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.opencodex;
       # On Linux, use the pinned package from packages/codex. On macOS, OpenAI
       # publishes the official binary via the Homebrew cask installed by
       # darwin.agentCodex; reference that path directly so the wrapper below still
@@ -172,33 +161,6 @@ in
         else
           "/opt/homebrew/bin/codex";
       opencodeAuthPath = "${config.home.homeDirectory}/.local/share/opencode/auth.json";
-      # codex-lb upstream recommends uvx for non-Docker installs. Pin the PyPI
-      # version here while keeping the runtime-managed virtualenv outside /nix/store.
-      codex-lb = pkgs.writeShellScriptBin "codex-lb" ''
-        set -euo pipefail
-
-        mkdir -p "${codexLbHome}"
-        export UV_CACHE_DIR="''${UV_CACHE_DIR:-${config.home.homeDirectory}/.cache/uv}"
-        export UV_TOOL_DIR="''${UV_TOOL_DIR:-${config.home.homeDirectory}/.local/share/uv/tools}"
-        exec ${pkgs.lib.getExe pkgs.uv} tool run --from codex-lb==${codexLbVersion} codex-lb "$@"
-      '';
-
-      # Bridge codex-lb's HTTP health probes into systemd's native readiness
-      # and watchdog protocol. This mirrors upstream's Helm probes.
-      codex-lb-watchdog = pkgs.replaceVarsWith {
-        src = ../codex/assets/codex-lb-watchdog.sh;
-        replacements = {
-          codexLb = pkgs.lib.getExe codex-lb;
-          curl = pkgs.lib.getExe pkgs.curl;
-          livenessUrl = codexLbHealthLiveUrl;
-          readinessUrl = codexLbHealthReadyUrl;
-          startupUrl = codexLbHealthStartupUrl;
-          systemdNotify = "${pkgs.systemd}/bin/systemd-notify";
-        };
-        name = "codex-lb-watchdog";
-        isExecutable = true;
-      };
-
       # Share the OpenCode Go API key with Codex without copying secrets into
       # Nix-managed files. OpenCode writes this credential after `/connect`.
       codexOpenCodeGoEnv = pkgs.writeShellScript "codex-opencode-go-env" ''
@@ -221,20 +183,6 @@ in
         ''
       );
 
-      codexLbEnvironment = {
-        CODEX_LB_DATABASE_URL = "sqlite+aiosqlite:///${codexLbHome}/store.db";
-        CODEX_LB_DATABASE_MIGRATE_ON_STARTUP = "true";
-        CODEX_LB_DATABASE_SQLITE_PRE_MIGRATE_BACKUP_ENABLED = "true";
-        CODEX_LB_DATABASE_SQLITE_PRE_MIGRATE_BACKUP_MAX_FILES = "5";
-        CODEX_LB_DASHBOARD_AUTH_MODE = "standard";
-        CODEX_LB_FIREWALL_TRUSTED_PROXY_CIDRS = "127.0.0.1/32,::1/128";
-        CODEX_LB_OAUTH_REDIRECT_URI = "http://localhost:1455/auth/callback";
-        CODEX_LB_OAUTH_CALLBACK_HOST = "127.0.0.1";
-        CODEX_LB_OAUTH_CALLBACK_PORT = "1455";
-        CODEX_LB_UPSTREAM_STREAM_TRANSPORT = "websocket";
-        SSL_CERT_FILE = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
-        REQUESTS_CA_BUNDLE = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
-      };
     in
     {
       imports = [
@@ -245,13 +193,12 @@ in
         {
           home.packages = [
             codex
-            codex-lb
+            opencodexPackage
             pkgs.jq
-            pkgs.uv
           ];
 
           home.file.".codex/.keep".text = "";
-          home.file.".codex-lb/.keep".text = "";
+          home.file.".opencodex/.keep".text = "";
         }
 
         (lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
@@ -262,39 +209,36 @@ in
             cliPackage = codex;
           };
 
-          # Start the codex-lb dashboard/proxy for local Codex app-compatible clients.
-          systemd.user.services.codex-lb = {
+          # Start the normal OpenCodex proxy for Codex CLI and the desktop app.
+          systemd.user.services.opencodex = {
             Unit = {
-              Description = "Codex account load balancer";
+              Description = "OpenCodex provider proxy";
               After = [ "network-online.target" ];
-              StartLimitIntervalSec = 300;
-              StartLimitBurst = 5;
             };
             Service = {
-              Type = "notify";
-              ExecStart = codex-lb-watchdog;
-              Environment = lib.mapAttrsToList (name: value: "${name}=${value}") codexLbEnvironment;
-              LimitNOFILE = 65536;
-              NotifyAccess = "all";
+              ExecStart = "${pkgs.lib.getExe opencodexPackage} start --port 10100";
               Restart = "on-failure";
               RestartSec = "5";
-              TimeoutStartSec = "90";
-              WatchdogSec = "90";
-              WorkingDirectory = codexLbHome;
+              WorkingDirectory = config.home.homeDirectory;
             };
             Install.WantedBy = [ "default.target" ];
           };
+
         })
 
         (lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
-          launchd.agents.codex-lb = {
+          launchd.agents.opencodex = {
             enable = true;
             config = {
-              ProgramArguments = [ "${pkgs.lib.getExe codex-lb}" ];
-              EnvironmentVariables = codexLbEnvironment;
+              ProgramArguments = [
+                "${pkgs.lib.getExe opencodexPackage}"
+                "start"
+                "--port"
+                "10100"
+              ];
               KeepAlive = true;
               RunAtLoad = true;
-              WorkingDirectory = codexLbHome;
+              WorkingDirectory = config.home.homeDirectory;
             };
           };
         })
