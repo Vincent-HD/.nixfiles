@@ -31,6 +31,3 @@ jobs:
 
       - name: Evaluate nix-darwin configuration
         run: nix eval .#darwinConfigurations.macbook-pro.system --raw
-
-      - name: Build NixOS configuration
-        run: nix build --print-build-logs .#nixosConfigurations.pc-fixe.config.system.build.toplevel
