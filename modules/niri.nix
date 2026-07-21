@@ -306,9 +306,9 @@
               "Mod+T".action.spawn = "ghostty";
               "Mod+Q".action.close-window = [ ];
 
-              # Focus movement on arrows.
-              "Mod+Left".action.focus-column-left = [ ];
-              "Mod+Right".action.focus-column-right = [ ];
+              # Move through columns, then focus the adjacent monitor at the edge.
+              "Mod+Left".action.focus-column-or-monitor-left = [ ];
+              "Mod+Right".action.focus-column-or-monitor-right = [ ];
               "Mod+Up".action.focus-window-or-workspace-up = [ ];
               "Mod+Down".action.focus-window-or-workspace-down = [ ];
 
@@ -354,7 +354,7 @@
               "Mod+Shift+Left".action.move-window-to-monitor-left = [ ];
               "Mod+Shift+Right".action.move-window-to-monitor-right = [ ];
 
-              # Focus the adjacent monitor.
+              # Keep alternate monitor-focus shortcuts for convenience.
               "Mod+Alt+Left".action.spawn-sh = runNiriActions [
                 "focus-monitor-left"
               ];
