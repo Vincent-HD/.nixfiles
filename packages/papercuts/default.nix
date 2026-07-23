@@ -9,13 +9,13 @@
 
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "papercuts";
-  version = "0.1.0";
+  version = "0.1.1";
 
   src = fetchFromGitHub {
     owner = "claylevering";
     repo = "papercuts";
     rev = "v${finalAttrs.version}";
-    hash = "sha256-ZxPpToVSABiUh2PU9brD+IICM1s9Dd8X+GZub7zbRyY=";
+    hash = "sha256-0ocxkraUjGNtffx0FNeQj4O5zUSvDUXh8TUBn0eTJn4=";
   };
 
   nativeBuildInputs = [

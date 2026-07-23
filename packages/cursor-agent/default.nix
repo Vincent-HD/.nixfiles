@@ -10,29 +10,29 @@ let
     "x86_64-linux" = {
       platform = "linux";
       architecture = "x64";
-      hash = "sha256-G9iyPPVXvKljWPhkznRM0HGV3Evr2lNOG/qi7sSP98M=";
+      hash = "sha256-bp8XJH/+tfj34iRrS81rsmyy1an5pLABLJqA2GjtJbQ=";
     };
     "aarch64-linux" = {
       platform = "linux";
       architecture = "arm64";
-      hash = "sha256-gnmXeF8NjOk6WvfDstTosGS6hUP6z87vmBxurU0njYw=";
+      hash = "sha256-KYYVKyg8cKZmsBUDWy6ZqW0Tr9JmClh7hjlBfP3RR/s=";
     };
     "x86_64-darwin" = {
       platform = "darwin";
       architecture = "x64";
-      hash = "sha256-bf361rzCPLuq1KBv5C122vE7T8qTQ/JtayrdpFmf3/k=";
+      hash = "sha256-5F7XyF4gCAMQd4/1onBQyWF5iNxeda0/rwCvgeT34BE=";
     };
     "aarch64-darwin" = {
       platform = "darwin";
       architecture = "arm64";
-      hash = "sha256-ISP5Nre+duoMEvfrsFfK6460buRBi3GFdiT/4S5eBUY=";
+      hash = "sha256-18Xuna0+L872ki9eGvxlvZxh3AdxL2RY4GalK+UrBy0=";
     };
   };
   source = sources.${stdenvNoCC.hostPlatform.system};
 in
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "cursor-agent";
-  version = "2026.07.17-3e2a980";
+  version = "2026.07.20-8cc9c0b";
 
   # Cursor publishes one self-contained Agent CLI archive per OS/architecture.
   src = fetchurl {
