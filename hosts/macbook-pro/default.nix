@@ -29,6 +29,7 @@ in
             hm.agentCursor
             hm.agentCodex
             hm.agentOpenCode
+            hm.executor
             hm.plannotator
             hm.commandLine
             hm.comma

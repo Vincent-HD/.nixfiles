@@ -9,9 +9,7 @@
     }:
     let
       opencode-bin = "${pkgs.opencode}/bin/opencode";
-      archOpsPackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.arch-ops-server;
-      context7TokenPath = "${config.home.homeDirectory}/.config/agent-mcp/context7-token";
-      githubTokenPath = "${config.home.homeDirectory}/.config/agent-mcp/github-token";
+      executorPackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.executor;
 
       # Bare `opencode` attaches to the running service with the current
       # directory. Any subcommand is passed through to the real binary.
@@ -22,34 +20,14 @@
         exec ${opencode-bin} attach http://localhost:4096 --dir "$PWD"
       '';
 
-      # OpenCode's native MCP schema uses command arrays and supports file
-      # interpolation for local-server environment variables.
+      # OpenCode connects once to Executor, which supplies the shared MCP catalog.
       opencodeMcpServers = {
-        arch-ops = {
-          type = "local";
-          command = [ (lib.getExe archOpsPackage) ];
-          enabled = true;
-        };
-        context7 = {
-          type = "local";
-          command = [ (lib.getExe pkgs.context7-mcp) ];
-          environment.CONTEXT7_API_KEY = "{file:${context7TokenPath}}";
-          enabled = true;
-        };
-        github = {
+        executor = {
           type = "local";
           command = [
-            (lib.getExe pkgs.github-mcp-server)
-            "stdio"
+            (lib.getExe executorPackage)
+            "mcp"
           ];
-          environment.GITHUB_PERSONAL_ACCESS_TOKEN = "{file:${githubTokenPath}}";
-          enabled = true;
-        };
-      }
-      // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
-        nixos = {
-          type = "local";
-          command = [ (lib.getExe pkgs.mcp-nixos) ];
           enabled = true;
         };
       };

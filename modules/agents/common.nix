@@ -8,7 +8,6 @@
       ...
     }:
     let
-      archOpsPackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.arch-ops-server;
       papercutsPackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.papercuts;
 
       # Papercuts defaults to a macOS-specific path upstream; keep one XDG path
@@ -53,14 +52,8 @@
       config = {
         home = {
           packages = [
-            archOpsPackage
             papercuts
-            pkgs.context7-mcp
-            pkgs.github-mcp-server
             pkgs.rtk
-          ]
-          ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
-            pkgs.mcp-nixos
           ];
 
           sessionVariables.PAPERCUTS_HOME = "${config.xdg.dataHome}/papercuts";

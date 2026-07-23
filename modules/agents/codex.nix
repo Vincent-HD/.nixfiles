@@ -8,44 +8,8 @@ let
           "/Users/${config.flake.username}"
         else
           "/home/${config.flake.username}";
-      archOpsPackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.arch-ops-server;
-      context7TokenPath = "${homeDirectory}/.config/agent-mcp/context7-token";
-      githubTokenPath = "${homeDirectory}/.config/agent-mcp/github-token";
-
-      # Codex cannot interpolate a token file into a local MCP environment.
-      # Use fail-closed wrappers so secrets never enter the generated TOML.
-      context7Mcp = pkgs.writeShellScript "codex-context7-mcp" ''
-        set -eu
-        token_file=${lib.escapeShellArg context7TokenPath}
-        if [ ! -r "$token_file" ]; then
-          printf 'Context7 MCP token is not readable: %s\n' "$token_file" >&2
-          exit 1
-        fi
-        CONTEXT7_API_KEY="$("${pkgs.coreutils}/bin/cat" "$token_file")"
-        if [ -z "$CONTEXT7_API_KEY" ]; then
-          printf 'Context7 MCP token is empty: %s\n' "$token_file" >&2
-          exit 1
-        fi
-        export CONTEXT7_API_KEY
-        exec ${lib.getExe pkgs.context7-mcp}
-      '';
-
-      githubMcp = pkgs.writeShellScript "codex-github-mcp" ''
-        set -eu
-        token_file=${lib.escapeShellArg githubTokenPath}
-        if [ ! -r "$token_file" ]; then
-          printf 'GitHub MCP token is not readable: %s\n' "$token_file" >&2
-          exit 1
-        fi
-        GITHUB_PERSONAL_ACCESS_TOKEN="$("${pkgs.coreutils}/bin/cat" "$token_file")"
-        if [ -z "$GITHUB_PERSONAL_ACCESS_TOKEN" ]; then
-          printf 'GitHub MCP token is empty: %s\n' "$token_file" >&2
-          exit 1
-        fi
-        export GITHUB_PERSONAL_ACCESS_TOKEN
-        exec ${lib.getExe pkgs.github-mcp-server} stdio
-      '';
       plannotatorPackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.plannotator;
+      executorPackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.executor;
     in
     {
       model = "gpt-5.5";
@@ -83,25 +47,11 @@ let
         requires_openai_auth = false;
       };
 
-      # Define Codex's native MCP TOML shape explicitly instead of normalizing
-      # another client's schema through an intermediate registry.
+      # Executor is the single local MCP endpoint; it owns the upstream catalog.
       mcp_servers = {
-        arch-ops = {
-          command = lib.getExe archOpsPackage;
-          enabled = true;
-        };
-        context7 = {
-          command = "${context7Mcp}";
-          enabled = true;
-        };
-        github = {
-          command = "${githubMcp}";
-          enabled = true;
-        };
-      }
-      // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
-        nixos = {
-          command = lib.getExe pkgs.mcp-nixos;
+        executor = {
+          command = lib.getExe executorPackage;
+          args = [ "mcp" ];
           enabled = true;
         };
       };

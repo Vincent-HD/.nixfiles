@@ -36,6 +36,20 @@
       ]
     },
     {
+      "name": "executor",
+      "type": "nix-update",
+      "description": "Executor's platform-specific npm binaries",
+      "command": [
+        "nix",
+        "run",
+        "github:Mic92/nix-update",
+        "--",
+        "--flake",
+        "executor",
+        "--use-update-script"
+      ]
+    },
+    {
       "name": "lightjj",
       "type": "nix-update",
       "description": "lightjj release tarball",

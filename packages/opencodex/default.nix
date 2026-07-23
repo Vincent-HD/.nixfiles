@@ -35,7 +35,9 @@ let
     buildPhase = ''
       runHook preBuild
 
-      bun install --frozen-lockfile --production --backend=copyfile
+      # Nix supplies Bun at runtime; do not run the npm `bun` package's
+      # postinstall, which tries to download another platform binary.
+      bun install --frozen-lockfile --production --backend=copyfile --ignore-scripts
 
       runHook postBuild
     '';
@@ -46,6 +48,7 @@ let
       # The Nix wrapper supplies Bun, so do not retain upstream's unused npm
       # copy of the Bun runtime or Bun's install cache.
       rm -rf node_modules/.cache node_modules/bun node_modules/@oven
+      rm -f node_modules/.bin/bun node_modules/.bin/bunx
       mkdir -p "$out"
       cp -r node_modules "$out/node_modules"
 

@@ -32,6 +32,7 @@
       packages = {
         arch-ops-server = pkgs.callPackage ../packages/arch-ops-server { };
         cursor-agent = unfreePkgs.callPackage ../packages/cursor-agent { };
+        executor = pkgs.callPackage ../packages/executor { };
         jj-ryu = pkgs.callPackage ../packages/jj-ryu { };
         lightjj = pkgs.callPackage ../packages/lightjj { };
         opencodex = pkgs.callPackage ../packages/opencodex { };

@@ -59,6 +59,17 @@ nix run github:Mic92/nix-update -- --flake lightjj
 nix run github:Mic92/nix-update -- --flake opencodex --use-update-script
 ```
 
+### executor
+
+- **File**: `packages/executor/default.nix`
+- **Pattern**: platform-selected npm binary archives
+- **Flake output**: `.#executor`
+- **Note**: The updater reads npm's published integrity metadata for Linux and macOS, on both x64 and ARM64.
+
+```bash
+nix run github:Mic92/nix-update -- --flake executor --use-update-script
+```
+
 ### arch-ops-server
 
 - **File**: `packages/arch-ops-server/default.nix`
