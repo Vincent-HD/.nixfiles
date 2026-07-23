@@ -59,6 +59,26 @@
           env = { };
         }
         {
+          slug = "chrome-devtools";
+          name = "Chrome DevTools";
+          description = "Chrome browser automation, debugging, and performance analysis.";
+          transport = "stdio";
+          # npx fetches the current upstream server on demand; Executor uses
+          # Nix's Node binary so its user service does not rely on FNM's PATH.
+          command = "${pkgs.nodejs}/bin/npx";
+          # Keep browser telemetry and external CrUX lookups disabled by default.
+          args = [
+            "-y"
+            "chrome-devtools-mcp@latest"
+            # Attach only to the Chrome instance the user explicitly exposes.
+            "--browser-url=http://127.0.0.1:9222"
+            "--no-usage-statistics"
+            "--no-performance-crux"
+          ];
+          # The upstream server should not independently poll for updates.
+          env.CHROME_DEVTOOLS_MCP_NO_UPDATE_CHECKS = "true";
+        }
+        {
           slug = "context7";
           name = "Context7";
           description = "Up-to-date library documentation and code examples.";
