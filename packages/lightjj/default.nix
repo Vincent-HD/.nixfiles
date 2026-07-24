@@ -14,7 +14,7 @@ let
   sources = {
     "aarch64-darwin" = {
       artifact = "lightjj-macos-arm64";
-      hash = "sha256-bk0xEdTA2QXIyj/aniux4BCh809ssOMu+shvGESdH4c=";
+      hash = "sha256-/Qt5E8VRCxO8/DpTfyr6CWD2YdfQGdErkBjrZ+TJfws=";
     };
     "x86_64-linux" = {
       artifact = "lightjj-linux-x86_64";
