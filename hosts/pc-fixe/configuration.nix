@@ -12,7 +12,7 @@
       boot.loader.systemd-boot.configurationLimit = 10;
 
       networking.hostName = "pc-fixe";
-      networking.enableIPv6 = false;
+      networking.enableIPv6 = true;
       networking.hosts."192.168.1.254" = [ "mabbox.bytel.fr" ];
       networking.networkmanager.enable = true;
 
