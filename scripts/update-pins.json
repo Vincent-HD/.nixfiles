@@ -65,7 +65,7 @@
     {
       "name": "localsend",
       "type": "nix-update",
-      "description": "LocalSend Linux AppImage release",
+      "description": "LocalSend Linux AppImage and macOS DMG releases",
       "command": [
         "nix",
         "run",
@@ -73,7 +73,7 @@
         "--",
         "--flake",
         "localsend",
-        "--use-github-releases"
+        "--use-update-script"
       ]
     },
     {

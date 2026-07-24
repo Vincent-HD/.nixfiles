@@ -8,10 +8,11 @@
       networking.firewall.allowedUDPPorts = [ 53317 ];
     };
 
-  # Home Manager: install LocalSend's wrapped upstream AppImage for the logged-in user.
+  # Home Manager: install LocalSend's wrapped upstream release for the logged-in user.
   config.flake.modules.homeManager.localSend =
     { pkgs, ... }:
     {
+      # macOS uses the existing Home Manager copyApps target for .app bundles.
       home.packages = [ (pkgs.callPackage ../packages/localsend { }) ];
     };
 }

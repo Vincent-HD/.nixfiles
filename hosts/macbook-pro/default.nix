@@ -38,6 +38,7 @@ in
             hm.jq
             hm.lazydocker
             hm.work
+            hm.localSend
           ];
 
           home.username = username;
