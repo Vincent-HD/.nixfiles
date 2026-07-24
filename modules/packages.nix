@@ -43,6 +43,7 @@
         codex = pkgs.callPackage ../packages/codex { };
         curseforge = pkgs.callPackage ../packages/curseforge { };
         crosspipe = pkgs.callPackage ../packages/crosspipe { };
+        localsend = pkgs.callPackage ../packages/localsend { };
       };
 
       apps = {

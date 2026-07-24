@@ -48,6 +48,17 @@ nix run github:Mic92/nix-update -- --flake codex --use-github-releases --github-
 nix run github:Mic92/nix-update -- --flake lightjj
 ```
 
+### localsend
+
+- **File**: `packages/localsend/default.nix`
+- **Pattern**: `appimageTools.wrapType2` + `fetchurl` from GitHub releases
+- **Flake output**: `.#localsend`
+- **Note**: This deliberately consumes the upstream Linux AppImage instead of compiling LocalSend's Flutter source.
+
+```bash
+nix run github:Mic92/nix-update -- --flake localsend --use-github-releases
+```
+
 ### opencodex
 
 - **File**: `packages/opencodex/default.nix`

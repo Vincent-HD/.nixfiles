@@ -63,6 +63,20 @@
       ]
     },
     {
+      "name": "localsend",
+      "type": "nix-update",
+      "description": "LocalSend Linux AppImage release",
+      "command": [
+        "nix",
+        "run",
+        "github:Mic92/nix-update",
+        "--",
+        "--flake",
+        "localsend",
+        "--use-github-releases"
+      ]
+    },
+    {
       "name": "arch-ops-server",
       "type": "nix-update",
       "description": "Arch Ops MCP universal PyPI wheel",

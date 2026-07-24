@@ -24,6 +24,7 @@ in
       nixos.sunshine
       nixos.gaming
       nixos.deskflow
+      nixos.localSend
 
       # ── Home Manager integration ─────────────────────────
       inputs.home-manager.nixosModules.home-manager
@@ -63,6 +64,7 @@ in
             hm.work
             hm.kdeConnect
             hm.deskflow
+            hm.localSend
           ];
 
           home.packages = [ inputs.self.packages.x86_64-linux.crosspipe ];
