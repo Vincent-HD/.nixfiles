@@ -17,6 +17,12 @@
         exec ${lib.getExe papercutsPackage} "$@"
       '';
 
+      # rtk 0.43.0's own test suite denies two unused-code warnings on Darwin.
+      # Its release binary builds successfully, so skip only that broken test phase.
+      rtk = pkgs.rtk.overrideAttrs (_previousAttrs: {
+        doCheck = false;
+      });
+
       skillFiles = lib.mapAttrs' (
         name: source:
         lib.nameValuePair ".agents/skills/${name}" {
@@ -53,7 +59,7 @@
         home = {
           packages = [
             papercuts
-            pkgs.rtk
+            rtk
           ];
 
           sessionVariables.PAPERCUTS_HOME = "${config.xdg.dataHome}/papercuts";
@@ -66,7 +72,7 @@
 
               @${config.home.homeDirectory}/.codex/RTK.md
             '';
-            ".codex/RTK.md".source = "${pkgs.rtk.src}/hooks/codex/rtk-awareness.md";
+            ".codex/RTK.md".source = "${rtk.src}/hooks/codex/rtk-awareness.md";
 
           };
         };

@@ -10,6 +10,11 @@
     let
       executorPackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.executor;
 
+      # Keep Cursor's hook on the same test-free rtk build as the common agent setup.
+      rtk = pkgs.rtk.overrideAttrs (_previousAttrs: {
+        doCheck = false;
+      });
+
       # Cursor connects once to Executor; its upstream MCP catalog is shared.
       cursorMcpServers = {
         executor = {
@@ -31,7 +36,7 @@
           version = 1;
           hooks.preToolUse = [
             {
-              command = "${lib.getExe pkgs.rtk} hook cursor";
+              command = "${lib.getExe rtk} hook cursor";
               matcher = "Shell";
             }
           ];
