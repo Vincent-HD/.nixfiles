@@ -38,6 +38,16 @@ nix eval --impure --expr '(builtins.getFlake "git+file:///home/vincent/.nixfiles
 
 ## Package / Derivation Inspection
 
+### Determine the executing Nix platform
+
+```bash
+nix eval --raw --impure --expr builtins.currentSystem
+```
+
+Purpose: identify the platform whose package source or release artifact an update command should refresh.
+
+Use when updating a package with platform-selected source hashes. Run the update on the target platform; do not synchronize hashes for other systems.
+
 ### Read a package version and source position from the evaluated package set
 
 ```bash

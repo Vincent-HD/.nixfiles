@@ -178,9 +178,13 @@ changes, validate `.#darwinConfigurations.macbook-pro`.
   for the reference pattern.
 - **Every new pinned package or flake input must be added to the update automation registry.** For
   packages, make the derivation `nix-update` compatible (including a package-specific
-  `passthru.updateScript` when upstream metadata or multiple platform hashes need custom handling),
+  `passthru.updateScript` only when upstream metadata or coupled non-platform artifacts need custom handling),
   expose it as a flake package, add its command to `scripts/update-pins.json`, and document it in
   `docs/UPDATE_COMMANDS.md`. For flake inputs, add a `flake-input` entry to that JSON registry.
+- **Update only the current platform's release artifact.** Do not write an update script solely to
+  synchronize Linux/macOS or architecture-specific hashes; run `nix-update` on each target platform
+  when that target needs updating. Keep custom scripts only for genuinely coupled sources such as
+  lockfiles, generated dependency closures, or shared version-matched assets.
 - **See `docs/UPDATE_COMMANDS.md`** for the full list of nix-update-compatible pinned packages,
   flake inputs, and their exact update commands.
 - When adding a new external flake input, add `inputs.<name>.follows = "nixpkgs"` when the input

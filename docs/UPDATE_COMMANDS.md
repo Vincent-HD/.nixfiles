@@ -53,10 +53,10 @@ nix run github:Mic92/nix-update -- --flake lightjj
 - **File**: `packages/localsend/default.nix`
 - **Pattern**: `appimageTools.wrapType2` on Linux and `undmg` on macOS, both using GitHub release artifacts
 - **Flake output**: `.#localsend`
-- **Note**: This deliberately consumes upstream AppImage/DMG releases instead of compiling LocalSend's Flutter source. The update script refreshes both platform hashes together.
+- **Note**: This deliberately consumes upstream AppImage/DMG releases instead of compiling LocalSend's Flutter source. Run the update on the target platform; it refreshes only that platform's artifact.
 
 ```bash
-nix run github:Mic92/nix-update -- --flake localsend --use-update-script
+nix run github:Mic92/nix-update -- --flake localsend --use-github-releases
 ```
 
 ### opencodex
@@ -75,7 +75,7 @@ nix run github:Mic92/nix-update -- --flake opencodex --use-update-script
 - **File**: `packages/executor/default.nix`
 - **Pattern**: platform-selected npm binary archives
 - **Flake output**: `.#executor`
-- **Note**: The updater reads npm's published integrity metadata for Linux and macOS, on both x64 and ARM64.
+- **Note**: The updater reads npm's published integrity metadata only for the platform where it runs.
 
 ```bash
 nix run github:Mic92/nix-update -- --flake executor --use-update-script
@@ -140,7 +140,7 @@ nix run .#update-curseforge -- --check
 - **File**: `packages/cursor-agent/default.nix`
 - **Pattern**: `stdenvNoCC.mkDerivation` + Cursor's versioned multi-architecture archives
 - **Flake output**: `.#cursor-agent`
-- **Note**: Cursor publishes the current version through its installer and provides separate hashes for Linux/macOS and x64/arm64; use the package update script so all four sources stay aligned.
+- **Note**: Cursor publishes the current version through its installer. The package update script refreshes only the archive for the platform where it runs.
 
 ```bash
 nix run github:Mic92/nix-update -- --flake cursor-agent --use-update-script
@@ -151,7 +151,7 @@ nix run github:Mic92/nix-update -- --flake cursor-agent --use-update-script
 - **File**: `packages/plannotator/default.nix`
 - **Pattern**: `stdenvNoCC.mkDerivation` + platform-selected release binary and tagged shared Agent Skills
 - **Flake output**: `.#plannotator`
-- **Note**: The update script refreshes all Linux/macOS release checksums and the tagged source hash that supplies the Codex/Cursor-compatible skills.
+- **Note**: The update script refreshes the current platform's release checksum and the tagged source hash that supplies the Codex/Cursor-compatible skills.
 
 ```bash
 nix run github:Mic92/nix-update -- --flake plannotator --use-update-script

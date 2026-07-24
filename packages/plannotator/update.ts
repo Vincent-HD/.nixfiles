@@ -18,6 +18,10 @@ function commandOutput(command: string[], cwd?: string): string {
   return new TextDecoder().decode(result.stdout).trim();
 }
 
+function currentSystem(): string {
+  return commandOutput(["nix", "eval", "--raw", "--impure", "--expr", "builtins.currentSystem"]);
+}
+
 async function fetchText(url: string): Promise<string> {
   const response = await fetch(url);
   if (!response.ok) {
@@ -54,15 +58,20 @@ console.log(`plannotator current: ${currentVersion}`);
 console.log(`plannotator latest:  ${version}`);
 
 const releaseBase = `https://github.com/backnotprop/plannotator/releases/download/${tag}`;
-for (const [system, source] of Object.entries(sources)) {
-  const checksumUrl = `${releaseBase}/${source.artifact}.sha256`;
-  const hash = checksumToSri(await fetchText(checksumUrl), checksumUrl);
-  const block = new RegExp(`("${system}" = \\{[\\s\\S]*?hash = ")[^"]+(";)`);
-  if (!block.test(packageText)) {
-    throw new Error(`Could not find the ${system} source block in ${packageFile}`);
-  }
-  packageText = packageText.replace(block, `$1${hash}$2`);
+const system = currentSystem();
+const source = sources[system];
+if (source === undefined) {
+  throw new Error(`Plannotator does not publish a release binary for ${system}`);
 }
+console.log(`plannotator system:  ${system}`);
+
+const checksumUrl = `${releaseBase}/${source.artifact}.sha256`;
+const hash = checksumToSri(await fetchText(checksumUrl), checksumUrl);
+const block = new RegExp(`("${system}" = \\{[\\s\\S]*?hash = ")[^"]+(")`);
+if (!block.test(packageText)) {
+  throw new Error(`Could not find the ${system} source block in ${packageFile}`);
+}
+packageText = packageText.replace(block, `$1${hash}$2`);
 
 const sourceUrl = `https://github.com/backnotprop/plannotator/archive/refs/tags/${tag}.tar.gz`;
 const sourcePrefetch = JSON.parse(

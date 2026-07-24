@@ -1,6 +1,5 @@
 {
   appimageTools,
-  bun,
   fetchurl,
   lib,
   makeBinaryWrapper,
@@ -15,11 +14,6 @@ let
     appImage = "sha256-waHnvHu37r32w2WjDO8NS6Pmu3mWHDuU7fkYkg+ONvA=";
     dmg = "sha256-/fGkLuE+uf3WrpTcWIOYHooJWZ51i94j9uZ3xPq1yTw=";
   };
-  packageUpdateScript = [
-    (lib.getExe bun)
-    ./update.ts
-  ];
-
   linux =
     let
       finalAttrs = {
@@ -39,7 +33,6 @@ let
             src = finalAttrs.src;
           };
           extracted = appimageContents;
-          updateScript = packageUpdateScript;
         };
 
         extraInstallCommands = ''
@@ -93,8 +86,6 @@ let
 
       runHook postInstall
     '';
-
-    passthru.updateScript = packageUpdateScript;
 
     meta = {
       description = "Open source cross-platform alternative to AirDrop";

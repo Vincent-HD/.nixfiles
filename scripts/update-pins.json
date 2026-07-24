@@ -38,7 +38,7 @@
     {
       "name": "executor",
       "type": "nix-update",
-      "description": "Executor's platform-specific npm binaries",
+      "description": "Executor's current-platform npm binary",
       "command": [
         "nix",
         "run",
@@ -65,7 +65,7 @@
     {
       "name": "localsend",
       "type": "nix-update",
-      "description": "LocalSend Linux AppImage and macOS DMG releases",
+      "description": "LocalSend's current-platform GitHub release artifact",
       "command": [
         "nix",
         "run",
@@ -73,7 +73,7 @@
         "--",
         "--flake",
         "localsend",
-        "--use-update-script"
+        "--use-github-releases"
       ]
     },
     {
@@ -135,7 +135,7 @@
     {
       "name": "cursor-agent",
       "type": "nix-update",
-      "description": "Cursor Agent CLI release archives and architecture-specific hashes",
+      "description": "Cursor Agent CLI current-platform release archive",
       "command": [
         "nix",
         "run",
@@ -149,7 +149,7 @@
     {
       "name": "plannotator",
       "type": "nix-update",
-      "description": "Plannotator release binaries and shared Agent Skills",
+      "description": "Plannotator current-platform release binary and shared Agent Skills",
       "command": [
         "nix",
         "run",

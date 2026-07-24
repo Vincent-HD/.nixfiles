@@ -18,6 +18,10 @@ function commandOutput(command: string[], cwd?: string): string {
   return new TextDecoder().decode(result.stdout).trim();
 }
 
+function currentSystem(): string {
+  return commandOutput(["nix", "eval", "--raw", "--impure", "--expr", "builtins.currentSystem"]);
+}
+
 async function prefetchHash(url: string, root: string): Promise<string> {
   const output = commandOutput(["nix", "store", "prefetch-file", "--json", url], root);
   const parsed = JSON.parse(output) as { hash?: string };
@@ -47,25 +51,30 @@ if (currentVersion === undefined) {
   throw new Error("Could not read the current version from " + packageFile);
 }
 
+const system = currentSystem();
+const source = sources[system];
+if (source === undefined) {
+  throw new Error("Cursor Agent does not publish a release archive for " + system);
+}
+
 console.log("cursor-agent current: " + currentVersion);
 console.log("cursor-agent latest:  " + version);
+console.log("cursor-agent system:  " + system);
 
-for (const [system, source] of Object.entries(sources)) {
-  const url =
-    "https://downloads.cursor.com/lab/" +
-    version +
-    "/" +
-    source.platform +
-    "/" +
-    source.architecture +
-    "/agent-cli-package.tar.gz";
-  const hash = await prefetchHash(url, root);
-  const block = new RegExp('("' + system + '" = \\{[\\s\\S]*?hash = ")[^"]+(";)');
-  if (!block.test(packageText)) {
-    throw new Error("Could not find the " + system + " source block in " + packageFile);
-  }
-  packageText = packageText.replace(block, "$1" + hash + "$2");
+const url =
+  "https://downloads.cursor.com/lab/" +
+  version +
+  "/" +
+  source.platform +
+  "/" +
+  source.architecture +
+  "/agent-cli-package.tar.gz";
+const hash = await prefetchHash(url, root);
+const block = new RegExp('("' + system + '" = \\{[\\s\\S]*?hash = ")[^"]+(";)');
+if (!block.test(packageText)) {
+  throw new Error("Could not find the " + system + " source block in " + packageFile);
 }
+packageText = packageText.replace(block, "$1" + hash + "$2");
 
 packageText = packageText.replace(
   /^(  version = ")[^"]+(";)$/m,

@@ -17,6 +17,14 @@ const sources: Record<string, Source> = {
   "aarch64-darwin": { platform: "darwin", architecture: "arm64" },
 };
 
+function currentSystem(): string {
+  const result = Bun.spawnSync(["nix", "eval", "--raw", "--impure", "--expr", "builtins.currentSystem"]);
+  if (!result.success) {
+    throw new Error("Could not determine the current system");
+  }
+  return new TextDecoder().decode(result.stdout).trim();
+}
+
 async function fetchNpmPackage(name: string): Promise<NpmPackage> {
   const response = await fetch(`https://registry.npmjs.org/${name}`);
   if (!response.ok) {
@@ -43,23 +51,28 @@ if (currentVersion === undefined) {
   throw new Error(`Could not read the current version from ${packageFile}`);
 }
 
+const system = currentSystem();
+const source = sources[system];
+if (source === undefined) {
+  throw new Error(`Executor does not publish a release binary for ${system}`);
+}
+
 console.log(`executor current: ${currentVersion}`);
 console.log(`executor latest:  ${latest.version}`);
+console.log(`executor system:  ${system}`);
 
-for (const [system, source] of Object.entries(sources)) {
-  const platformVersion = `${latest.version}-${source.platform}-${source.architecture}`;
-  const metadata = await fetchNpmPackage(`executor/${platformVersion}`);
-  const integrity = metadata.dist?.integrity;
-  if (integrity === undefined || !integrity.startsWith("sha")) {
-    throw new Error(`Could not read the release integrity hash for executor@${platformVersion}`);
-  }
-
-  const block = new RegExp(`("${system}" = \\{[\\s\\S]*?hash = ")[^"]+(")`);
-  if (!block.test(packageText)) {
-    throw new Error(`Could not find the ${system} source block in ${packageFile}`);
-  }
-  packageText = packageText.replace(block, `$1${integrity}$2`);
+const platformVersion = `${latest.version}-${source.platform}-${source.architecture}`;
+const metadata = await fetchNpmPackage(`executor/${platformVersion}`);
+const integrity = metadata.dist?.integrity;
+if (integrity === undefined || !integrity.startsWith("sha")) {
+  throw new Error(`Could not read the release integrity hash for executor@${platformVersion}`);
 }
+
+const block = new RegExp(`("${system}" = \\{[\\s\\S]*?hash = ")[^"]+(")`);
+if (!block.test(packageText)) {
+  throw new Error(`Could not find the ${system} source block in ${packageFile}`);
+}
+packageText = packageText.replace(block, `$1${integrity}$2`);
 
 packageText = packageText.replace(
   /^(  version = ")[^"]+(";)$/m,
