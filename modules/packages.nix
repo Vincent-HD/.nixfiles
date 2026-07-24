@@ -35,7 +35,6 @@
         executor = pkgs.callPackage ../packages/executor { };
         jj-ryu = pkgs.callPackage ../packages/jj-ryu { };
         lightjj = pkgs.callPackage ../packages/lightjj { };
-        localsend = pkgs.callPackage ../packages/localsend { };
         opencodex = pkgs.callPackage ../packages/opencodex { };
         papercuts = pkgs.callPackage ../packages/papercuts { };
         plannotator = pkgs.callPackage ../packages/plannotator { };

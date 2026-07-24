@@ -48,17 +48,6 @@ nix run github:Mic92/nix-update -- --flake codex --use-github-releases --github-
 nix run github:Mic92/nix-update -- --flake lightjj
 ```
 
-### localsend
-
-- **File**: `packages/localsend/default.nix`
-- **Pattern**: `appimageTools.wrapType2` on Linux and `undmg` on macOS, both using GitHub release artifacts
-- **Flake output**: `.#localsend`
-- **Note**: This deliberately consumes upstream AppImage/DMG releases instead of compiling LocalSend's Flutter source. Run the update on the target platform; it refreshes only that platform's artifact.
-
-```bash
-nix run github:Mic92/nix-update -- --flake localsend --use-github-releases
-```
-
 ### opencodex
 
 - **File**: `packages/opencodex/default.nix`
