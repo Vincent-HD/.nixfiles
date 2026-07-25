@@ -48,6 +48,13 @@
         exec ${lib.getExe pkgs.github-mcp-server} stdio
       '';
 
+      # Keep the update-check opt-out out of Executor's auth-template discovery.
+      chromeDevtoolsMcp = pkgs.writeShellScript "executor-chrome-devtools-mcp" ''
+        set -eu
+        export CHROME_DEVTOOLS_MCP_NO_UPDATE_CHECKS=true
+        exec ${pkgs.nodejs}/bin/npx "$@"
+      '';
+
       mcpServers = [
         {
           slug = "arch-ops";
@@ -63,20 +70,20 @@
           name = "Chrome DevTools";
           description = "Chrome browser automation, debugging, and performance analysis.";
           transport = "stdio";
-          # npx fetches the current upstream server on demand; Executor uses
-          # Nix's Node binary so its user service does not rely on FNM's PATH.
-          command = "${pkgs.nodejs}/bin/npx";
+          # The wrapper keeps Executor from mistaking the update-check opt-out
+          # for an integration credential.
+          command = "${chromeDevtoolsMcp}";
           # Keep browser telemetry and external CrUX lookups disabled by default.
           args = [
             "-y"
             "chrome-devtools-mcp@latest"
-            # Attach only to the Chrome instance the user explicitly exposes.
-            "--browser-url=http://127.0.0.1:9222"
+            # The inspect-page remote-debugging flow exposes this stable
+            # WebSocket endpoint but not the legacy /json/version discovery API.
+            "--ws-endpoint=ws://127.0.0.1:9222/devtools/browser"
             "--no-usage-statistics"
             "--no-performance-crux"
           ];
-          # The upstream server should not independently poll for updates.
-          env.CHROME_DEVTOOLS_MCP_NO_UPDATE_CHECKS = "true";
+          env = { };
         }
         {
           slug = "context7";

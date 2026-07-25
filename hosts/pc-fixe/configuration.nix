@@ -10,6 +10,8 @@
       boot.loader.systemd-boot.enable = true;
       boot.loader.efi.canTouchEfiVariables = true;
       boot.loader.systemd-boot.configurationLimit = 10;
+      # CPUID-fault emulation needs UMIP disabled on this Zen 3 host.
+      boot.kernelParams = [ "clearcpuid=umip" ];
 
       networking.hostName = "pc-fixe";
       networking.enableIPv6 = true;

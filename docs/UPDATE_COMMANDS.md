@@ -162,6 +162,21 @@ git ls-remote https://github.com/pinpox/Crosspipe.git
 nix-prefetch-git https://github.com/pinpox/Crosspipe.git --rev <rev>
 ```
 
+### cpuid-fault-emulation
+
+- **File**: `packages/cpuid-fault-emulation/default.nix`
+- **Source**: locally vendored `source/` tree extracted from `cpuid_fault_emulation.zip`
+- **Flake output**: `.#cpuid-fault-emulation`
+- **Why**: the source archive is attached to a forum post that blocks unattended downloads, so it cannot be safely updated through `nix-update`.
+- **How**: manually download, inspect, and replace the archive only after confirming the source and intended version. Then build the module and evaluate the Linux host before switching.
+
+```bash
+rm -rf packages/cpuid-fault-emulation/source
+nix shell nixpkgs#unzip -c unzip <verified-local-archive> -d packages/cpuid-fault-emulation/source
+nix build .#cpuid-fault-emulation
+nix eval .#nixosConfigurations.pc-fixe.config.system.build.toplevel.drvPath --raw
+```
+
 ## Custom Flake Inputs
 
 These are updated with `nix flake lock`, not `nix-update`.

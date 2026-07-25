@@ -190,6 +190,22 @@
         "--rev",
         "<rev>"
       ]
+    },
+    {
+      "name": "cpuid-fault-emulation",
+      "type": "manual",
+      "description": "Vendored cpuid_fault_emulation source tree; replace only after auditing a manually downloaded update",
+      "enabled": false,
+      "command": [
+        "nix",
+        "shell",
+        "nixpkgs#unzip",
+        "-c",
+        "unzip",
+        "<verified-local-archive>",
+        "-d",
+        "packages/cpuid-fault-emulation/source"
+      ]
     }
   ],
   "validations": {

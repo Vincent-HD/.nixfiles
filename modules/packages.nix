@@ -41,6 +41,7 @@
       }
       // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
         codex = pkgs.callPackage ../packages/codex { };
+        cpuid-fault-emulation = pkgs.callPackage ../packages/cpuid-fault-emulation { };
         curseforge = pkgs.callPackage ../packages/curseforge { };
         crosspipe = pkgs.callPackage ../packages/crosspipe { };
       };
