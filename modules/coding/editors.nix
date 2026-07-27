@@ -7,15 +7,28 @@
       ...
     }:
     let
-      # Re-evaluate code-cursor-nix with this flake's package set so Cursor
-      # stays aligned with the rest of the host configuration.
-      cursorPkg = pkgs.callPackage "${inputs.code-cursor-nix}/package.nix" { };
+      # Cursor's upstream Nix input currently serves an old macOS ARM bundle.
+      # Use the locally pinned release there while retaining the upstream package on Linux.
+      cursorPkg =
+        if pkgs.stdenv.hostPlatform.isAarch64 && pkgs.stdenv.hostPlatform.isDarwin then
+          pkgs.callPackage ../../packages/cursor { }
+        else
+          pkgs.callPackage "${inputs.code-cursor-nix}/package.nix" { };
+
+      # The macOS package is an application bundle without a `bin/cursor` entrypoint.
+      cursorCli =
+        if pkgs.stdenv.hostPlatform.isDarwin then
+          pkgs.writeShellScriptBin "cursor" ''
+            exec ${cursorPkg}/Applications/Cursor.app/Contents/MacOS/Cursor "$@"
+          ''
+        else
+          cursorPkg;
 
       # `pkgs.vscode` also installs `bin/code`. A higher-priority wrapper makes
       # every `code` invocation run Cursor without relying on shell aliases.
       codeCliWrapsCursor = pkgs.lib.hiPrio (
         pkgs.writeShellScriptBin "code" ''
-          exec ${pkgs.lib.getExe cursorPkg} "$@"
+          exec ${pkgs.lib.getExe cursorCli} "$@"
         ''
       );
 
@@ -30,7 +43,8 @@
           cursorPkg
           pkgs.neovim
           pkgs.vim
-        ];
+        ]
+        ++ lib.optional pkgs.stdenv.hostPlatform.isDarwin cursorCli;
       }
 
       (lib.mkIf pkgs.stdenv.hostPlatform.isLinux {

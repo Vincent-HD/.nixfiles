@@ -133,6 +133,20 @@
       ]
     },
     {
+      "name": "cursor",
+      "type": "nix-update",
+      "description": "Cursor macOS ARM app bundle from the stable update API",
+      "command": [
+        "nix",
+        "run",
+        "github:Mic92/nix-update",
+        "--",
+        "--flake",
+        "cursor",
+        "--use-update-script"
+      ]
+    },
+    {
       "name": "plannotator",
       "type": "nix-update",
       "description": "Plannotator current-platform release binary and shared Agent Skills",
