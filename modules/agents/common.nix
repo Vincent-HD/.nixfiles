@@ -44,6 +44,15 @@
         - Never review transcripts automatically.
         <!-- papercuts:end -->
       '';
+
+      nixEnvironmentInstructions = ''
+        ## Nix environment
+
+        This machine is managed by Nix. When a command-line tool is not available,
+        run it temporarily with `comma` (for example, `, jq`) or use
+        `nix run nixpkgs#jq -- <arguments>`. Do not install a tool globally just
+        to complete a task.
+      '';
     in
     {
       options.custom.agentSetup.skills = lib.mkOption {
@@ -65,10 +74,15 @@
           sessionVariables.PAPERCUTS_HOME = "${config.xdg.dataHome}/papercuts";
 
           file = skillFiles // {
+            # Keep portable environment guidance available to every AGENTS-aware client.
+            "AGENTS.md".text = nixEnvironmentInstructions;
+
             # Codex receives the portable Papercuts instructions and RTK's
             # official awareness document; RTK has no programmatic Codex hook.
             ".codex/AGENTS.md".text = ''
               ${papercutsInstructions}
+
+              ${nixEnvironmentInstructions}
 
               @${config.home.homeDirectory}/.codex/RTK.md
             '';

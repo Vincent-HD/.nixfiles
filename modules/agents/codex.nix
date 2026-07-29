@@ -148,6 +148,23 @@ in
 
           home.file.".codex/.keep".text = "";
           home.file.".opencodex/.keep".text = "";
+
+          # Opt into Cursor's native tools only after OpenCodex owns the provider setup.
+          home.activation.opencodexCursorNativeExec = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+            config_directory="${config.home.homeDirectory}/.opencodex"
+            config_path="$config_directory/config.json"
+
+            if [ -f "$config_path" ] && ${lib.getExe pkgs.jq} -e '.providers.cursor? | type == "object"' "$config_path" > /dev/null; then
+              config_tmp="$(${pkgs.coreutils}/bin/mktemp "$config_directory/config.json.XXXXXX")"
+              trap 'rm -f "$config_tmp"' EXIT
+              if ${lib.getExe pkgs.jq} '.providers.cursor.nativeLocalExec = "on"' "$config_path" > "$config_tmp"; then
+                mv "$config_tmp" "$config_path"
+              else
+                exit 1
+              fi
+              trap - EXIT
+            fi
+          '';
         }
 
         (lib.mkIf pkgs.stdenv.hostPlatform.isLinux {

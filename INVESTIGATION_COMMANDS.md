@@ -327,6 +327,15 @@ Purpose: inspect the rendered value of a single Home Manager option or nested at
 
 Use `--json` for booleans and attrsets; reserve `--raw` for strings and store paths.
 
+### Inspect a rendered Home Manager activation step
+
+```bash
+cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" \
+nix eval '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$USER"'.home.activation.<name>.data' --raw
+```
+
+Purpose: review the exact shell script Home Manager will execute for a named activation step before applying a switch. Use the equivalent `darwinConfigurations` path for macOS hosts.
+
 ### Validate a Home Manager user service after activation
 
 ```bash

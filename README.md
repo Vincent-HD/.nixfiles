@@ -232,6 +232,9 @@ If you want to remove a feature, change the relevant host composition under `hos
   `modules/agents/opencode.nix`.
 - File-backed MCP credentials stay outside the Nix store and are decrypted by sops-nix.
 - Executable MCPs use pinned Nix packages.
+- A home-level `AGENTS.md` gives every AGENTS-aware client the same Nix environment guidance. If a
+  command is missing, run it ephemerally with `, <command>` (comma) or
+  `nix run nixpkgs#<package> -- <arguments>` instead of installing it globally.
 
 The shared setup currently installs Papercuts, RTK, Grill Me, `reference-repository`, Context7
 guidance, and Plannotator's skills.
