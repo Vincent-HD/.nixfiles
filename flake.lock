@@ -222,6 +222,26 @@
         "type": "github"
       }
     },
+    "iris": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1785250801,
+        "narHash": "sha256-fZRpc6pfLztaP64ffU+G9KmC8kmagaKEHiN5LLKQLYc=",
+        "owner": "versenilvis",
+        "repo": "iris",
+        "rev": "69fb77910deab604ae16d1f4752ccb0972c70a8f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "versenilvis",
+        "repo": "iris",
+        "type": "github"
+      }
+    },
     "jjui": {
       "inputs": {
         "flake-parts": [
@@ -549,6 +569,7 @@
         "home-manager": "home-manager",
         "home-manager-darwin": "home-manager-darwin",
         "import-tree": "import-tree",
+        "iris": "iris",
         "jjui": "jjui",
         "niri": "niri",
         "nix-darwin": "nix-darwin",

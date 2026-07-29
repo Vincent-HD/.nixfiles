@@ -30,6 +30,8 @@
         pkgs.gping
         inputs.herdr.packages.${pkgs.stdenv.hostPlatform.system}.default
         pkgs.hyperfine
+        # IRIS provides TTY-native command suggestions on Linux and macOS.
+        inputs.iris.packages.${pkgs.stdenv.hostPlatform.system}.default
         pkgs.jaq
         pkgs.just
         pkgs.lazygit

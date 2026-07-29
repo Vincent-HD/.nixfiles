@@ -169,6 +169,17 @@
       ]
     },
     {
+      "name": "iris",
+      "type": "flake-input",
+      "description": "IRIS terminal command suggestion tool flake input",
+      "command": [
+        "nix",
+        "flake",
+        "update",
+        "iris"
+      ]
+    },
+    {
       "name": "crosspipe",
       "type": "manual",
       "description": "Pinned to a specific Crosspipe commit; update only after manually choosing the target revision",
