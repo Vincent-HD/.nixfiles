@@ -71,13 +71,6 @@
         enable = true;
         taps = [ "deskflow/tap" ];
         casks = [ "deskflow/tap/deskflow" ];
-
-        onActivation = {
-          cleanup = "none";
-          autoUpdate = false;
-          upgrade = false;
-          extraEnv.HOMEBREW_NO_ANALYTICS = "1";
-        };
       };
 
       # Homebrew requires explicit trust before it will load third-party casks.

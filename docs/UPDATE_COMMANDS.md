@@ -135,17 +135,6 @@ nix run .#update-curseforge -- --check
 nix run github:Mic92/nix-update -- --flake cursor-agent --use-update-script
 ```
 
-### cursor
-
-- **File**: `packages/cursor/default.nix`
-- **Pattern**: Cursor stable macOS ARM disk image selected from Cursor's update API
-- **Flake output**: `.#cursor` on Apple Silicon macOS
-- **Note**: The update script refreshes only the current platform's release URL commit and source hash.
-
-```bash
-nix run github:Mic92/nix-update -- --flake cursor --use-update-script
-```
-
 ### plannotator
 
 - **File**: `packages/plannotator/default.nix`

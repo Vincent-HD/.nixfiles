@@ -19,6 +19,15 @@ in
         "flakes"
       ];
 
+      # Let nix-darwin refresh Homebrew and upgrade its managed packages on activation.
+      homebrew.onActivation = {
+        cleanup = "none";
+        autoUpdate = true;
+        upgrade = true;
+        extraEnv.HOMEBREW_NO_ANALYTICS = "1";
+      };
+      homebrew.greedyCasks = true;
+
       # The official multi-user Nix installer prepended its daemon snippet to
       # these stock macOS files. Authorize exactly those current files so the
       # first nix-darwin activation can adopt their ownership.

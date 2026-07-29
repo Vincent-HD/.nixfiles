@@ -43,9 +43,6 @@
         codex = pkgs.callPackage ../packages/codex { };
         curseforge = pkgs.callPackage ../packages/curseforge { };
         crosspipe = pkgs.callPackage ../packages/crosspipe { };
-      }
-      // lib.optionalAttrs (pkgs.stdenv.hostPlatform.isAarch64 && pkgs.stdenv.hostPlatform.isDarwin) {
-        cursor = unfreePkgs.callPackage ../packages/cursor { };
       };
 
       apps = {

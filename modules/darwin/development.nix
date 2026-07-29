@@ -4,7 +4,6 @@
     { pkgs, config, ... }:
     {
       home.packages = [
-        pkgs.jujutsu
         pkgs.neovim
         pkgs.nil
         pkgs.nixfmt
@@ -118,16 +117,5 @@
         };
       };
 
-      programs.jujutsu = {
-        enable = true;
-        settings = {
-          user = {
-            name = "Vincent-HD";
-            email = "vincenthoudan@gmail.com";
-          };
-          ui."conflict-marker-style" = "git";
-          remotes.origin."auto-track-bookmarks" = "*";
-        };
-      };
     };
 }

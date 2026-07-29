@@ -68,10 +68,9 @@ in
   config.flake.modules.darwin.agentCodex =
     { pkgs, lib, ... }:
     {
-      # codex = CLI binary, codex-app = Codex.app desktop application.
+      # Install the official Codex CLI; the codex-app cask is deprecated upstream.
       homebrew.casks = [
         "codex"
-        "codex-app"
       ];
 
       # System-level Codex defaults shared by the CLI, app, and IDE extension.

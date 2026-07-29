@@ -18,6 +18,8 @@
             email = "vincenthoudan@gmail.com";
           };
           ui."conflict-marker-style" = "git";
+          # Match astahmer: default new revisions to "wip" instead of an empty description.
+          templates.new_description = ''"wip"'';
           remotes.origin."auto-track-bookmarks" = "*";
         };
       };
