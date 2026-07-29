@@ -193,6 +193,8 @@
           find = "fd";
           grep = "rg";
           help = "tldr";
+          # Start the Nix-managed IRIS command-suggestion session.
+          i = "iris";
           la = "eza --all --long --git --icons=auto";
           ll = "eza --long --git --icons=auto";
           ls = "eza --icons=auto";
@@ -257,5 +259,23 @@
           source "${config.home.homeDirectory}/.orbstack/shell/init.zsh" 2>/dev/null || :
         '';
       };
+
+      # Route IRIS's optional AI command suggestions through the local OpenCodex proxy.
+      xdg.configFile."iris/config.toml".text = ''
+        [ai]
+        enabled = true
+        provider = "opencodex"
+        debounce_ms = 400
+        min_interval_ms = 1000
+
+        [ai.providers.opencodex]
+        inherited_from = "openai"
+        endpoint = "http://127.0.0.1:10100/v1"
+        model = "gpt-5.6-luna"
+        timeout_ms = 3000
+
+        [ai.providers.opencodex.extra_request_body]
+        reasoning_effort = "low"
+      '';
     };
 }
