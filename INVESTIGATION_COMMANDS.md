@@ -616,6 +616,15 @@ Purpose: check whether a user service is running and filter the current boot log
 
 Use when a Home Manager or NixOS-managed user service starts but fails at runtime.
 
+### Inspect a nix-darwin user LaunchAgent
+
+```bash
+launchctl print gui/$(id -u)/<label>
+plutil -p "$HOME/Library/LaunchAgents/<label>.plist"
+```
+
+Purpose: confirm the exact launchd label is loaded and inspect the Nix-managed plist that launchd is using.
+
 ### Inspect Sunshine display and input mapping logs
 
 ```bash

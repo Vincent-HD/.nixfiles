@@ -67,6 +67,10 @@ in
 {
   config.flake.modules.darwin.agentCodex =
     { pkgs, lib, ... }:
+    let
+      homeDirectory = "/Users/${config.flake.username}";
+      opencodexPackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.opencodex;
+    in
     {
       # Install the official Codex CLI; the codex-app cask is deprecated upstream.
       homebrew.casks = [
@@ -77,6 +81,20 @@ in
       environment.etc."codex/config.toml".source = mkCodexConfig {
         pkgs = pkgs;
         lib = lib;
+      };
+
+      # Match OpenCodex's native launchd label so its health checks recognize it.
+      launchd.user.agents.opencodex = {
+        command = "${pkgs.lib.getExe opencodexPackage} start --port 10100";
+        environment.OCX_SERVICE = "1";
+        serviceConfig = {
+          Label = "com.opencodex.proxy";
+          KeepAlive = true;
+          RunAtLoad = true;
+          StandardOutPath = "${homeDirectory}/.opencodex/service.log";
+          StandardErrorPath = "${homeDirectory}/.opencodex/service.log";
+          WorkingDirectory = homeDirectory;
+        };
       };
     };
 
@@ -175,14 +193,15 @@ in
             cliPackage = codex;
           };
 
-          # Start the normal OpenCodex proxy for Codex CLI and the desktop app.
-          systemd.user.services.opencodex = {
+          # Match OpenCodex's native unit name so its health checks recognize it.
+          systemd.user.services."opencodex-proxy" = {
             Unit = {
               Description = "OpenCodex provider proxy";
               After = [ "network-online.target" ];
             };
             Service = {
               ExecStart = "${pkgs.lib.getExe opencodexPackage} start --port 10100";
+              Environment = "OCX_SERVICE=1";
               Restart = "on-failure";
               RestartSec = "5";
               WorkingDirectory = config.home.homeDirectory;
@@ -192,22 +211,6 @@ in
 
         })
 
-        (lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
-          launchd.agents.opencodex = {
-            enable = true;
-            config = {
-              ProgramArguments = [
-                "${pkgs.lib.getExe opencodexPackage}"
-                "start"
-                "--port"
-                "10100"
-              ];
-              KeepAlive = true;
-              RunAtLoad = true;
-              WorkingDirectory = config.home.homeDirectory;
-            };
-          };
-        })
       ];
     };
 }
