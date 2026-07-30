@@ -13,7 +13,7 @@ let
   sources = {
     "x86_64-linux" = {
       artifact = "plannotator-linux-x64";
-      hash = "sha256-6cyScQhh/1hD8XQmst/I4NKWEwxmciRBAejBUy8f2A0=";
+      hash = "sha256-eXhaNzx3312fp90UbT4s2o4H3d20PnrS8U+bORwTUyU=";
     };
     "aarch64-linux" = {
       artifact = "plannotator-linux-arm64";

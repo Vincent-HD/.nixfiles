@@ -16,6 +16,8 @@
       networking.hostName = "pc-fixe";
       networking.enableIPv6 = true;
       networking.hosts."192.168.1.254" = [ "mabbox.bytel.fr" ];
+      # Prefer Cloudflare DNS and use Google DNS if it is unavailable.
+      networking.nameservers = [ "1.1.1.1" "8.8.8.8" ];
       networking.networkmanager.enable = true;
 
       time.timeZone = "Europe/Paris";
