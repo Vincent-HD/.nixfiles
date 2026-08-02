@@ -7,6 +7,9 @@
       "name": "codex",
       "type": "nix-update",
       "description": "OpenAI Codex CLI release tarball",
+      "systems": [
+        "x86_64-linux"
+      ],
       "command": [
         "nix",
         "run",
@@ -108,6 +111,9 @@
       "name": "curseforge",
       "type": "nix-update",
       "description": "CurseForge AppImage version, build, and hash",
+      "systems": [
+        "x86_64-linux"
+      ],
       "command": [
         "nix",
         "run",
@@ -230,6 +236,9 @@
       },
       {
         "name": "curseforge build",
+        "systems": [
+          "x86_64-linux"
+        ],
         "command": [
           "nix",
           "build",

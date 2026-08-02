@@ -2,18 +2,21 @@ import { $ } from "bun";
 import { parseArgs as parseArgv } from "util";
 
 type Command = string[];
+type SystemScopedEntry = { systems?: string[] };
 
 type UpdateEntry = {
   name: string;
   type: string;
   description?: string;
   enabled?: boolean;
+  systems?: string[];
   command: Command;
 };
 
 type ValidationEntry = {
   name: string;
   command: Command;
+  systems?: string[];
 };
 
 type UpdateConfig = {
@@ -144,6 +147,18 @@ async function loadConfig(root: string): Promise<UpdateConfig> {
   return await Bun.file(configPath).json();
 }
 
+async function currentSystem(): Promise<string> {
+  return (await $`nix eval --impure --raw --expr builtins.currentSystem`.text()).trim();
+}
+
+function unsupportedSystemReason(entry: SystemScopedEntry, system: string): string | null {
+  if (entry.systems === undefined || entry.systems.includes(system)) {
+    return null;
+  }
+
+  return `unsupported on ${system}`;
+}
+
 function shellQuote(value: string): string {
   if (/^[A-Za-z0-9_./:=@%+,-]+$/.test(value)) {
     return value;
@@ -178,17 +193,21 @@ async function runCommand(name: string, command: Command, cwd: string, dryRun: b
   return { name, status: "failed", code };
 }
 
-function selectedEntries(config: UpdateConfig, options: Options): Result[] {
+function selectedEntries(config: UpdateConfig, options: Options, system: string): Result[] {
   const denylist = new Set(config.denylist ?? []);
   const skipped: Result[] = [];
 
   for (const entry of config.updates) {
+    const unsupportedReason = unsupportedSystemReason(entry, system);
+
     if (options.only !== null && !options.only.has(entry.name)) {
       skipped.push({ name: entry.name, status: "skipped", reason: "not selected" });
     } else if (options.skip.has(entry.name)) {
       skipped.push({ name: entry.name, status: "skipped", reason: "skipped by CLI" });
     } else if (entry.enabled === false) {
       skipped.push({ name: entry.name, status: "skipped", reason: "manual" });
+    } else if (unsupportedReason !== null) {
+      skipped.push({ name: entry.name, status: "skipped", reason: unsupportedReason });
     } else if (denylist.has(entry.name) && !options.includeDenylisted) {
       skipped.push({ name: entry.name, status: "skipped", reason: "denylisted" });
     }
@@ -197,13 +216,16 @@ function selectedEntries(config: UpdateConfig, options: Options): Result[] {
   return skipped;
 }
 
-function runnableEntries(config: UpdateConfig, options: Options): UpdateEntry[] {
+function runnableEntries(config: UpdateConfig, options: Options, system: string): UpdateEntry[] {
   const denylist = new Set(config.denylist ?? []);
   return config.updates.filter((entry) => {
     if (options.only !== null && !options.only.has(entry.name)) {
       return false;
     }
     if (options.skip.has(entry.name) || entry.enabled === false) {
+      return false;
+    }
+    if (unsupportedSystemReason(entry, system) !== null) {
       return false;
     }
     if (denylist.has(entry.name) && !options.includeDenylisted) {
@@ -222,7 +244,8 @@ function printList(config: UpdateConfig): void {
       entry.enabled === false ? "disabled" : null,
       denylist.has(entry.name) ? "denylisted" : null,
     ].filter((value): value is string => value !== null);
-    console.log(`- ${entry.name} (${markers.join(", ")}): ${entry.description ?? formatCommand(entry.command)}`);
+    const systems = entry.systems === undefined ? "all systems" : entry.systems.join(", ");
+    console.log(`- ${entry.name} (${markers.join(", ")}, ${systems}): ${entry.description ?? formatCommand(entry.command)}`);
   }
 
   console.log("\nValidation sets:");
@@ -273,8 +296,9 @@ async function main(): Promise<void> {
     return;
   }
 
-  const results: Result[] = selectedEntries(config, options);
-  for (const entry of runnableEntries(config, options)) {
+  const system = await currentSystem();
+  const results: Result[] = selectedEntries(config, options, system);
+  for (const entry of runnableEntries(config, options, system)) {
     results.push(await runCommand(entry.name, entry.command, root, options.dryRun));
   }
 
@@ -287,7 +311,12 @@ async function main(): Promise<void> {
       return;
     }
     for (const entry of validations) {
-      results.push(await runCommand(`validate:${entry.name}`, entry.command, root, options.dryRun));
+      const unsupportedReason = unsupportedSystemReason(entry, system);
+      if (unsupportedReason !== null) {
+        results.push({ name: `validate:${entry.name}`, status: "skipped", reason: unsupportedReason });
+      } else {
+        results.push(await runCommand(`validate:${entry.name}`, entry.command, root, options.dryRun));
+      }
     }
   }
 

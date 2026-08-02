@@ -48,6 +48,16 @@ Purpose: identify the platform whose package source or release artifact an updat
 
 Use when updating a package with platform-selected source hashes. Run the update on the target platform; do not synchronize hashes for other systems.
 
+### Check a package output on a target platform
+
+```bash
+SYSTEM=x86_64-linux
+nix eval --raw ".#packages.${SYSTEM}.<pkg>.pname"
+nix eval --raw ".#packages.${SYSTEM}.<pkg>.version"
+```
+
+Purpose: confirm that a flake package exists for the platform an updater is targeting before running `nix-update`. This is especially useful when the current host does not provide a Linux-only output.
+
 ### Read a package version and source position from the evaluated package set
 
 ```bash
