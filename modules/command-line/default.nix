@@ -22,7 +22,7 @@
         pkgs.deadnix
         pkgs.doggo
         pkgs.duf
-        pkgs.dust
+        pkgs.dua
         pkgs.eza
         pkgs.fd
         pkgs.fnm
@@ -61,7 +61,17 @@
         pkgs.ripdrag
       ];
 
-      home.sessionPath = lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
+      # Install the terminal inventory separately from the Nix module logic so it can evolve as a script.
+      home.file."bin/cli-tools" = {
+        source = ./assets/cli-tools;
+        executable = true;
+      };
+
+      # Put user-managed helper scripts and Darwin-only application CLIs on PATH.
+      home.sessionPath = [
+        "${config.home.homeDirectory}/bin"
+      ]
+      ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
         "${config.home.homeDirectory}/Library/Application Support/JetBrains/Toolbox/scripts"
         "${config.home.homeDirectory}/.bun/bin"
       ];
@@ -189,7 +199,7 @@
           cd = "z";
           cdg = "zi";
           df = "duf";
-          du = "dust";
+          du = "dua";
           find = "fd";
           grep = "rg";
           help = "tldr";

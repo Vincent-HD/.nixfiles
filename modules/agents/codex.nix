@@ -173,14 +173,16 @@ in
             config_path="$config_directory/config.json"
 
             if [ -f "$config_path" ] && ${lib.getExe pkgs.jq} -e '.providers.cursor? | type == "object"' "$config_path" > /dev/null; then
-              config_tmp="$(${pkgs.coreutils}/bin/mktemp "$config_directory/config.json.XXXXXX")"
-              trap 'rm -f "$config_tmp"' EXIT
-              if ${lib.getExe pkgs.jq} '.providers.cursor.nativeLocalExec = "on"' "$config_path" > "$config_tmp"; then
-                mv "$config_tmp" "$config_path"
-              else
-                exit 1
+              if ! ${lib.getExe pkgs.jq} -e '.providers.cursor.nativeLocalExec == "on"' "$config_path" > /dev/null; then
+                config_tmp="$(${pkgs.coreutils}/bin/mktemp "$config_directory/config.json.XXXXXX")"
+                trap 'rm -f "$config_tmp"' EXIT
+                if ${lib.getExe pkgs.jq} '.providers.cursor.nativeLocalExec = "on"' "$config_path" > "$config_tmp"; then
+                  mv "$config_tmp" "$config_path"
+                else
+                  exit 1
+                fi
+                trap - EXIT
               fi
-              trap - EXIT
             fi
           '';
         }

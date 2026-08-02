@@ -1,0 +1,222 @@
+#!/usr/bin/env bash
+
+# Print a quick, human-friendly inventory of the Nix-managed terminal toolkit.
+# The catalog is intentionally kept here instead of embedded in a Nix module so
+# it can be extended without changing shell-generation logic.
+
+set -u
+
+if [[ -t 1 && -z "${NO_COLOR:-}" ]]; then
+  RESET=$'\033[0m'
+  BOLD=$'\033[1m'
+  DIM=$'\033[2m'
+  RED=$'\033[31m'
+  GREEN=$'\033[32m'
+  YELLOW=$'\033[33m'
+  BLUE=$'\033[34m'
+  CYAN=$'\033[36m'
+else
+  RESET=''
+  BOLD=''
+  DIM=''
+  RED=''
+  GREEN=''
+  YELLOW=''
+  BLUE=''
+  CYAN=''
+fi
+
+show_all=0
+show_aliases=1
+show_commands=1
+
+for argument in "$@"; do
+  case "$argument" in
+    --all)
+      show_all=1
+      ;;
+    --commands-only)
+      show_aliases=0
+      ;;
+    --aliases-only)
+      show_aliases=1
+      show_commands=0
+      ;;
+    -h|--help)
+      cat <<'USAGE'
+Usage: cli-tools [OPTION]
+
+Print the available Nix-managed terminal tools, their purpose, and a quick example.
+
+Options:
+  --all              Include catalog entries that are not available on this host.
+  --commands-only    Hide the shell aliases and helper functions section.
+  --aliases-only     Print only aliases and helper functions.
+  -h, --help         Show this help.
+
+Set NO_COLOR=1 to disable ANSI colors.
+USAGE
+      exit 0
+      ;;
+    *)
+      printf '%bUnknown option:%b %s\n' "$RED" "$RESET" "$argument" >&2
+      printf 'Try %scli-tools --help%s.\n' "$CYAN" "$RESET" >&2
+      exit 2
+      ;;
+  esac
+done
+
+print_heading() {
+  printf '\n%b%s%b\n' "$BLUE$BOLD" "$1" "$RESET"
+}
+
+print_command() {
+  local category="$1"
+  local command_name="$2"
+  local description="$3"
+  local example="$4"
+  local command_path
+
+  command_path="$(command -v "$command_name" 2>/dev/null || true)"
+  if [[ -n "$command_path" ]]; then
+    printf '  %b✓%b %b%-18s%b %s\n' "$GREEN" "$RESET" "$BOLD" "$command_name" "$RESET" "$description"
+    printf '      %bExample:%b %s\n' "$DIM" "$RESET" "$example"
+    available_count=$((available_count + 1))
+  elif [[ "$show_all" -eq 1 ]]; then
+    printf '  %b-%b %b%-18s%b %s\n' "$YELLOW" "$RESET" "$DIM" "$command_name" "$RESET" "$description"
+    printf '      %bExample:%b %s\n' "$DIM" "$RESET" "$example"
+    missing_count=$((missing_count + 1))
+  fi
+}
+
+available_count=0
+missing_count=0
+current_category=''
+
+if [[ "$show_aliases" -eq 1 ]]; then
+  print_heading 'Shell aliases and helper functions'
+  cat <<'ALIASES'
+  cat       -> bat                         Read files with syntax highlighting.
+  cd        -> z                           Jump to a frequently used directory.
+  cdg       -> zi                          Interactively choose a directory with zoxide.
+  df        -> duf                         Show filesystem usage in a readable table.
+  du        -> dua                         Explore disk usage interactively.
+  find      -> fd                          Find files with a fast, friendly interface.
+  grep      -> rg                          Search text recursively with ripgrep.
+  help      -> tldr                        Show concise command examples.
+  i         -> iris                        Start the Nix-managed command-suggestion session.
+  la        -> eza --all --long --git      List all files with details and Git state.
+  ll        -> eza --long --git            List files with details and Git state.
+  ls        -> eza --icons=auto            List files with icons.
+  lt        -> eza --tree --level=2        Show a two-level directory tree.
+  ping      -> gping                       Ping a host with a live terminal graph.
+  pkill     -> pik                         Interactively choose a process to terminate.
+  ps        -> procs                       Show processes in a readable table.
+  top       -> btop                        Monitor CPU, memory, disks, and processes.
+  tree      -> eza --tree                  Show a directory tree.
+  y         -> yazi                         Open the terminal file manager.
+  md        -> glow / bat                  View Markdown in a terminal, with a pipe-safe fallback.
+  img       -> catimg / cat                View images in a terminal, with a pipe-safe fallback.
+  view      -> glow / catimg / bat         Pick a viewer based on the file type.
+ALIASES
+fi
+
+if [[ "$show_commands" -eq 1 ]]; then
+  print_heading 'Available commands'
+fi
+
+if [[ "$show_commands" -eq 1 ]]; then
+  while IFS='|' read -r category command_name description example; do
+    [[ -z "$category" || "$category" == \#* ]] && continue
+    if [[ "$category" != "$current_category" ]]; then
+      print_heading "$category"
+      current_category="$category"
+    fi
+    print_command "$category" "$command_name" "$description" "$example"
+  done <<'CATALOG'
+Navigation & files|bat|Read files with syntax highlighting and paging|bat README.md
+Navigation & files|eza|List files with icons, Git state, or a directory tree|eza --tree --level=2
+Navigation & files|fd|Find files and directories with a simple fast syntax|fd '\\.nix$' modules
+Navigation & files|fzf|Interactively filter files, history, or any piped list|rg --files | fzf
+Navigation & files|glow|Render Markdown beautifully in the terminal|glow README.md
+Navigation & files|rg|Search text recursively with smart defaults (ripgrep)|rg 'TODO' modules
+Navigation & files|sd|Replace text in files using a friendlier sed syntax|sd 'old-name' 'new-name' file.txt
+Navigation & files|yazi|Browse and manage files in a terminal file manager|yazi .
+Navigation & files|zoxide|Jump to directories by frecency from the z/zi helpers|zoxide query nixfiles
+Disk & system|btm|Monitor system resources interactively (bottom)|btm
+Disk & system|btop|Monitor CPU, memory, disks, and processes|btop
+Disk & system|duf|Show mounted filesystem usage in a readable table|duf
+Disk & system|dua|Explore disk usage and find large directories|dua interactive
+Disk & system|fastfetch|Display a compact system summary|fastfetch
+Disk & system|procs|Show processes with readable columns and search|procs --watch 1
+Disk & system|tokei|Count lines of code by language|tokei .
+Git & projects|git|Track changes and work with repositories|git status
+Git & projects|gh|Work with GitHub issues, PRs, and repositories|gh pr list
+Git & projects|lazygit|Use Git through a terminal UI|lazygit
+Git & projects|jj|Use Jujutsu for version control|jj status
+Git & projects|just|Run project commands from a Justfile|just --list
+Git & projects|onefetch|Show a visual repository summary|onefetch
+Git & projects|delta|Render Git diffs with side-by-side syntax highlighting|git diff
+Networking & data|curl|Transfer data over common network protocols|curl -I https://example.com
+Networking & data|doggo|Query DNS records from the terminal|doggo example.com
+Networking & data|gping|Ping hosts with a live terminal graph|gping example.com
+Networking & data|jaq|Filter and transform JSON with a jq-compatible command|jaq '.items[]' data.json
+Networking & data|jq|Filter and transform JSON data|jq '.items[]' data.json
+Networking & data|xh|Send HTTP requests with a friendly curl-like interface|xh get https://api.github.com/repos/NixOS/nixpkgs
+Networking & data|yq|Filter and transform YAML, JSON, and XML|yq '.services' config.yaml
+Nix & configuration|deadnix|Find unused Nix bindings|deadnix modules
+Nix & configuration|nil|Provide Nix language-server support to editors|nil --help
+Nix & configuration|nix|Build, inspect, and manage Nix flakes and stores|nix flake check
+Nix & configuration|nh|Run NixOS, Darwin, or Home Manager actions|nh os test
+Nix & configuration|nom|Render Nix build output in a compact readable view (nix-output-monitor)|nix build .#nixosConfigurations.pc-fixe.config.system.build.toplevel |& nom
+Nix & configuration|nurl|Generate Nix fetcher expressions from URLs|nurl https://github.com/NixOS/nixpkgs/archive/refs/heads/master.tar.gz
+Nix & configuration|nvd|Compare generations and show package changes|nvd diff /nix/var/nix/profiles/system-*
+Nix & configuration|statix|Lint Nix code and suggest improvements|statix check modules
+Nix & configuration|nixfmt|Format Nix expressions|nixfmt modules/command-line/default.nix
+Nix & configuration|mcp-nixos|Inspect NixOS options and packages through MCP|mcp-nixos --help
+Development|ast-grep|Search and rewrite source code structurally|ast-grep --pattern 'console.log($$$)' src
+Development|carapace|Provide shell completions for many command-line tools|carapace _carapace zsh
+Development|choose|Pick columns or fields from piped text|printf 'one two\\nthree four\\n' | choose 1
+Development|fnm|Manage and switch Node.js versions|fnm install --lts
+Development|herdr|Run commands with the Herdr developer workflow|herdr --help
+Development|hyperfine|Benchmark shell commands|hyperfine 'fd -e nix'
+Development|mise|Manage project runtimes, tasks, and environment variables|mise ls
+Development|sad|Search and replace across files interactively|sad 'old' 'new' src/
+Development|starship|Show the configured shell prompt|starship explain
+Development|starship-jj|Add Jujutsu repository state to Starship|starship-jj starship prompt
+Development|vivid|Generate LS_COLORS themes|vivid generate catppuccin-mocha
+Development|direnv|Load project-specific environment variables automatically|direnv allow
+Development|lazydocker|Manage Docker containers through a terminal UI|lazydocker
+Development|nvim|Edit files with Neovim|nvim README.md
+Development|vim|Edit files with Vim|vim README.md
+Development|jjui|Use Jujutsu repositories through a terminal UI|jjui
+Development|lightjj|Inspect Jujutsu history in a terminal UI|lightjj
+Development|jj-ryu|Use the jj-ryu Jujutsu helper|jj-ryu --help
+Terminal helpers|atuin|Search and sync shell history locally|atuin search nix
+Terminal helpers|iris|Start terminal-native command suggestions|iris
+Terminal helpers|pay-respects|Suggest corrections after a failed command|pay-respects
+Terminal helpers|pik|Interactively select and kill a process|pik
+Terminal helpers|tldr|Show concise practical command examples (tealdeer)|tldr tar
+Terminal helpers|ouch|Compress and decompress archives with one interface|ouch compress folder archive.tar.gz
+Terminal helpers|catimg|Display images in a terminal|catimg screenshot.png
+Terminal helpers|ghostty|Launch the configured Ghostty terminal emulator|ghostty
+Terminal helpers|ripdrag|Drag files from the terminal into GUI applications|ripdrag file.txt
+Terminal helpers|rtk|Compact verbose command output for agent workflows|rtk git status
+Terminal helpers|papercuts|Record small workflow-friction observations|papercuts add --stdin --source codex
+Terminal helpers|executor|Run the shared local MCP command catalog|executor mcp
+Terminal helpers|plannotator|Review and annotate agent plans|plannotator --help
+Terminal helpers|,|Run a command from Nixpkgs without installing it permanently|, jq --version
+Terminal helpers|code|Open a project in Visual Studio Code|code .
+Terminal helpers|cursor-agent|Start the Cursor coding agent|cursor-agent
+Terminal helpers|opencode|Start the configured OpenCode coding agent|opencode
+Terminal helpers|codex|Start the Codex coding agent|codex
+CATALOG
+  fi
+
+if [[ "$show_commands" -eq 1 ]]; then
+  printf '\n%b%s%b\n' "$DIM" "Available: $available_count command(s)" "$RESET"
+  if [[ "$show_all" -eq 1 ]]; then
+    printf '%bMissing from PATH: %s command(s)%b\n' "$DIM" "$missing_count" "$RESET"
+  fi
+fi
+printf '%bTip: run cli-tools --all to audit entries on another host.%b\n' "$DIM" "$RESET"
