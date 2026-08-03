@@ -116,6 +116,43 @@ in
         pkgs = pkgs;
         lib = lib;
       };
+
+      # Linux Computer Use uses AT-SPI for application trees and prefers direct
+      # uinput access, with ydotool, portals, and X11/EWMH tools as fallbacks.
+      # Keep the complete host-side runtime setup next to the Codex module so
+      # enabling the desktop client also makes its supported input paths usable.
+      assertions = [
+        {
+          assertion = lib.versionAtLeast pkgs.ydotool.version "1.0.3";
+          message = "Linux Computer Use requires ydotool 1.0.3 or newer.";
+        }
+      ];
+
+      services.gnome.at-spi2-core.enable = true;
+
+      hardware.uinput.enable = true;
+
+      programs.ydotool = {
+        enable = true;
+        group = "ydotool";
+      };
+
+      users.users.${config.flake.username}.extraGroups = [
+        "uinput"
+        "ydotool"
+      ];
+
+      # Keep the KDE portal available when this host is launched into Plasma;
+      # the Niri module supplies its GNOME/GTK portal implementations as well.
+      xdg.portal.enable = true;
+      xdg.portal.extraPortals = [ pkgs.kdePackages.xdg-desktop-portal-kde ];
+
+      # These are only fallback helpers for X11/EWMH windows and XTEST input.
+      environment.systemPackages = [
+        pkgs.wmctrl
+        pkgs.xdotool
+        pkgs.xprop
+      ];
     };
 
   config.flake.modules.homeManager.agentCodex =
@@ -197,31 +234,48 @@ in
           '';
         }
 
-        (lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
-          # OpenAI does not publish a Linux Codex app yet; use the community
-          # module and point it at the local CLI wrapper for graphical launches.
-          programs.codexDesktopLinux = {
-            enable = true;
-            cliPackage = codex;
-          };
-
-          # Match OpenCodex's native unit name so its health checks recognize it.
-          systemd.user.services."opencodex-proxy" = {
-            Unit = {
-              Description = "OpenCodex provider proxy";
-              After = [ "network-online.target" ];
+        (lib.mkIf pkgs.stdenv.hostPlatform.isLinux (
+          let
+            codexDesktopComputerUsePackage =
+              inputs.codex-desktop-linux.packages.${pkgs.stdenv.hostPlatform.system}.codex-desktop-computer-use-ui;
+            codexComputerUseLinux = pkgs.writeShellScriptBin "codex-computer-use-linux" ''
+              exec ${codexDesktopComputerUsePackage}/opt/codex-desktop/resources/plugins/openai-bundled/plugins/computer-use/bin/codex-computer-use-linux "$@"
+            '';
+          in
+          {
+            # OpenAI does not publish a Linux Codex app yet; use the community
+            # module and point it at the local CLI wrapper for graphical launches.
+            programs.codexDesktopLinux = {
+              enable = true;
+              computerUseUi.enable = true;
+              cliPackage = codex;
             };
-            Service = {
-              ExecStart = "${pkgs.lib.getExe opencodexPackage} start --port 10100";
-              Environment = "OCX_SERVICE=1";
-              Restart = "on-failure";
-              RestartSec = "5";
-              WorkingDirectory = config.home.homeDirectory;
-            };
-            Install.WantedBy = [ "default.target" ];
-          };
 
-        })
+            # Keep the AT-SPI fallback used by the backend's setup command
+            # enabled declaratively for GTK applications in every new session.
+            dconf.settings."org/gnome/desktop/interface".toolkit-accessibility = true;
+
+            # Keep the bundled doctor/setup/apps/windows/screenshot commands
+            # available without exposing the app's internal Nix store layout.
+            home.packages = [ codexComputerUseLinux ];
+
+            # Match OpenCodex's native unit name so its health checks recognize it.
+            systemd.user.services."opencodex-proxy" = {
+              Unit = {
+                Description = "OpenCodex provider proxy";
+                After = [ "network-online.target" ];
+              };
+              Service = {
+                ExecStart = "${pkgs.lib.getExe opencodexPackage} start --port 10100";
+                Environment = "OCX_SERVICE=1";
+                Restart = "on-failure";
+                RestartSec = "5";
+                WorkingDirectory = config.home.homeDirectory;
+              };
+              Install.WantedBy = [ "default.target" ];
+            };
+          }
+        ))
 
       ];
     };

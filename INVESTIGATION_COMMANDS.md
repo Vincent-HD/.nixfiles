@@ -751,6 +751,20 @@ nix eval '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$USER"'.xd
 
 Purpose: useful when a config is split across includes and you need to validate them together.
 
+### Verify Nix-managed Codex Linux Computer Use
+
+```bash
+codex-computer-use-linux doctor
+codex-computer-use-linux setup
+codex-computer-use-linux windows
+codex-computer-use-linux screenshot
+```
+
+Purpose: inspect the active session's AT-SPI, portal, compositor, uinput, and
+fallback input readiness after the NixOS configuration has been activated.
+`setup` changes the current user's accessibility-session state; restart
+already-running target applications if their AT-SPI tree remains empty.
+
 ### Session-specific smoke tests with visible effects
 
 ```bash
