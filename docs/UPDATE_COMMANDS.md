@@ -152,6 +152,17 @@ nix run github:Mic92/nix-update -- --flake cursor-agent --use-update-script
 nix run github:Mic92/nix-update -- --flake plannotator --use-update-script
 ```
 
+### moonshine
+
+- **File**: `packages/moonshine/default.nix`
+- **Pattern**: `stdenv.mkDerivation` + `fetchurl` from the upstream Linux release archive
+- **Flake output**: `.#moonshine`
+- **Note**: This is intentionally the prebuilt `x86_64-linux` release; it avoids compiling Moonshine's Rust workspace.
+
+```bash
+nix run github:Mic92/nix-update -- --flake moonshine
+```
+
 ## Branch-Pinned Packages
 
 These packages are packaged in a `nix-update`-friendly shape, but the upstream tracking model means the naive command is not necessarily correct.

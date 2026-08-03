@@ -18,6 +18,16 @@ let
       model_reasoning_effort = "high";
       model_reasoning_summary = "concise";
       model_verbosity = "low";
+      # Make Max available in the Codex desktop reasoning picker.
+      desktop = {
+        "enabled-reasoning-efforts" = [
+          "low"
+          "medium"
+          "high"
+          "xhigh"
+          "max"
+        ];
+      };
       file_opener = "cursor";
       personality = "pragmatic";
 

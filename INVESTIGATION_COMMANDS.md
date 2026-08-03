@@ -374,6 +374,21 @@ nix eval '.#nixosConfigurations.'"$HOST"'.config.<option.path>' --json
 
 Purpose: inspect the rendered value of a single NixOS option or nested attrset, such as `services.pipewire` or `home-manager.users.<user>`.
 
+### Realize a generated service configuration file without a full system build
+
+```bash
+cd "$REPO" && nix build --impure --no-link --print-out-paths --expr '
+let
+  flake = builtins.getFlake "git+file:///home/vincent/.nixfiles";
+  pkgs = flake.nixosConfigurations.<host>.pkgs;
+  settings = flake.nixosConfigurations.<host>.config.<service-option>;
+in
+  (pkgs.formats.toml { }).generate "<service-config>.toml" settings
+'
+```
+
+Purpose: realize the exact store-backed TOML configuration passed to a NixOS service so it can be inspected or used for a runtime smoke test without building the entire system closure.
+
 Related portal checks:
 
 ```bash

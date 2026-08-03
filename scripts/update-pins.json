@@ -153,6 +153,22 @@
       ]
     },
     {
+      "name": "moonshine",
+      "type": "nix-update",
+      "description": "Moonshine prebuilt Linux release archive",
+      "systems": [
+        "x86_64-linux"
+      ],
+      "command": [
+        "nix",
+        "run",
+        "github:Mic92/nix-update",
+        "--",
+        "--flake",
+        "moonshine"
+      ]
+    },
+    {
       "name": "codex-desktop-linux",
       "type": "flake-input",
       "description": "ChatGPT/Codex Desktop Linux flake input",

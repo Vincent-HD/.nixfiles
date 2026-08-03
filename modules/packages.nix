@@ -44,6 +44,7 @@
         cpuid-fault-emulation = pkgs.callPackage ../packages/cpuid-fault-emulation { };
         curseforge = pkgs.callPackage ../packages/curseforge { };
         crosspipe = pkgs.callPackage ../packages/crosspipe { };
+        moonshine = pkgs.callPackage ../packages/moonshine { };
       };
 
       apps = {

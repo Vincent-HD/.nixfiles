@@ -21,7 +21,7 @@ in
       nixos.printing
       nixos.gparted
       nixos.windowsMounts
-      nixos.sunshine
+      nixos.moonshine
       nixos.gaming
       nixos.deskflow
       nixos.localSend
