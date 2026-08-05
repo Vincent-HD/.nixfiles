@@ -275,6 +275,22 @@ Purpose: inspect the effective bar widget settings as Nix renders them, especial
 
 ## Home Manager / Config Evaluation
 
+### Inspect rendered shell initialization and managed config text
+
+```bash
+cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" \
+nix eval '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$USER"'.programs.zsh.initContent' --raw
+
+cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" \
+nix eval '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$USER"'.xdg.configFile."<relative-path>".text' --raw
+```
+
+Purpose: inspect the exact shell startup script or text-based XDG configuration Home Manager will render, including ordering-sensitive integrations and generated service/client settings.
+
+Use when:
+- a shell integration, keybinding, or autostart hook may be ordered relative to another integration
+- checking whether a secret-free config is rendered as intended before activation
+
 ### Evaluate the generated Niri config
 
 ```bash

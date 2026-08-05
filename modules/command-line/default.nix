@@ -11,6 +11,7 @@
     let
       fdCommand = "${pkgs.fd}/bin/fd --hidden --follow --exclude .git";
       batPreview = "${pkgs.bat}/bin/bat --color=always --style=numbers --line-range=:200 {} 2>/dev/null || true";
+      irisPackage = inputs.iris.packages.${pkgs.stdenv.hostPlatform.system}.default;
     in
     {
       home.packages = [
@@ -31,7 +32,7 @@
         inputs.herdr.packages.${pkgs.stdenv.hostPlatform.system}.default
         pkgs.hyperfine
         # IRIS provides TTY-native command suggestions on Linux and macOS.
-        inputs.iris.packages.${pkgs.stdenv.hostPlatform.system}.default
+        irisPackage
         pkgs.jaq
         pkgs.just
         pkgs.lazygit
@@ -87,19 +88,6 @@
           window-decoration = false
           window-show-tab-bar = never
         '';
-      };
-
-      programs.atuin = {
-        enable = true;
-        enableBashIntegration = true;
-        enableZshIntegration = true;
-        flags = [ "--disable-up-arrow" ];
-        settings = {
-          auto_sync = false;
-          enter_accept = true;
-          filter_mode = "host";
-          style = "compact";
-        };
       };
 
       programs.bat = {
@@ -191,7 +179,6 @@
       programs.zsh = {
         enable = true;
         enableCompletion = true;
-        autosuggestion.enable = true;
         syntaxHighlighting.enable = true;
 
         shellAliases = {
@@ -203,8 +190,6 @@
           find = "fd";
           grep = "rg";
           help = "tldr";
-          # Start the Nix-managed IRIS command-suggestion session.
-          i = "iris";
           la = "eza --all --long --git --icons=auto";
           ll = "eza --long --git --icons=auto";
           ls = "eza --icons=auto";
@@ -216,61 +201,70 @@
           tree = "eza --tree --icons=auto";
         };
 
-        initContent = ''
-          # Use Nix-managed helpers for shell features that Home Manager does not configure directly.
-          eval "$(${pkgs.pay-respects}/bin/pay-respects zsh --alias)"
-          eval "$(${pkgs.fnm}/bin/fnm env --use-on-cd --shell zsh)"
-          export LS_COLORS="$(${pkgs.vivid}/bin/vivid generate catppuccin-mocha)"
+        initContent = lib.mkMerge [
+          (lib.mkOrder 1000 (
+            ''
+              # Use Nix-managed helpers for shell features that Home Manager does not configure directly.
+              eval "$(${pkgs.pay-respects}/bin/pay-respects zsh --alias)"
+              eval "$(${pkgs.fnm}/bin/fnm env --use-on-cd --shell zsh)"
+              export LS_COLORS="$(${pkgs.vivid}/bin/vivid generate catppuccin-mocha)"
 
-          md() {
-            if (( $# == 0 )); then
-              if [[ -t 1 ]]; then
-                command glow
-              else
-                command cat
-              fi
-            elif [[ -t 1 ]]; then
-              command glow -p "$@"
-            else
-              command bat "$@"
-            fi
-          }
+              md() {
+                if (( $# == 0 )); then
+                  if [[ -t 1 ]]; then
+                    command glow
+                  else
+                    command cat
+                  fi
+                elif [[ -t 1 ]]; then
+                  command glow -p "$@"
+                else
+                  command bat "$@"
+                fi
+              }
 
-          img() {
-            if [[ -t 1 ]]; then
-              command catimg "$@"
-            else
-              command cat "$@"
-            fi
-          }
+              img() {
+                if [[ -t 1 ]]; then
+                  command catimg "$@"
+                else
+                  command cat "$@"
+                fi
+              }
 
-          view() {
-            if [[ ! -t 1 || $# -ne 1 || ! -f $1 ]]; then
-              command bat "$@"
-              return
-            fi
+              view() {
+                if [[ ! -t 1 || $# -ne 1 || ! -f $1 ]]; then
+                  command bat "$@"
+                  return
+                fi
 
-            local lower="''${1:l}"
-            case "$lower" in
-              (*.md|*.mdown|*.markdown|*.markdn|*.mkd)
-                command glow -p "$1"
-                ;;
-              (*.png|*.jpg|*.jpeg|*.gif)
-                command catimg "$1"
-                ;;
-              *)
-                command bat "$1"
-                ;;
-            esac
-          }
-        ''
-        + lib.optionalString pkgs.stdenv.hostPlatform.isDarwin ''
+                local lower="''${1:l}"
+                case "$lower" in
+                  (*.md|*.mdown|*.markdown|*.markdn|*.mkd)
+                    command glow -p "$1"
+                    ;;
+                  (*.png|*.jpg|*.jpeg|*.gif)
+                    command catimg "$1"
+                    ;;
+                  *)
+                    command bat "$1"
+                    ;;
+                esac
+              }
+            ''
+            + lib.optionalString pkgs.stdenv.hostPlatform.isDarwin ''
 
-          source "${config.home.homeDirectory}/.orbstack/shell/init.zsh" 2>/dev/null || :
-        '';
+              source "${config.home.homeDirectory}/.orbstack/shell/init.zsh" 2>/dev/null || :
+            ''
+          ))
+          (lib.mkOrder 1500 ''
+            # Start IRIS automatically after the other Zsh integrations have initialized.
+            eval "$(${irisPackage}/bin/iris init zsh)"
+          '')
+        ];
       };
 
       # Route IRIS's optional AI command suggestions through the local OpenCodex proxy.
+      # The local endpoint accepts keyless requests, so no API credential is stored in Git.
       xdg.configFile."iris/config.toml".text = ''
         [ai]
         enabled = true

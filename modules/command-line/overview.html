@@ -738,16 +738,6 @@
           </article>
 
           <article class="card">
-            <div class="card-header"><span class="tool">atuin</span><span class="replaces">shell history</span></div>
-            <p>Structured shell history with compact UI and Ctrl-R ownership across Bash and Zsh.</p>
-            <div class="tag-row"><span class="tag">history</span><span class="tag">local</span></div>
-            <div class="source-row">
-              <a class="source-link detail-link" href="#tool-atuin">Cheatsheet</a>
-              <a class="source-link" href="https://github.com/atuinsh/atuin" target="_blank" rel="noreferrer">GitHub</a>
-            </div>
-          </article>
-
-          <article class="card">
             <div class="card-header"><span class="tool">delta</span><span class="replaces">plain git diff</span></div>
             <p>Side-by-side diffs with line numbers and navigation, wired into Git integration.</p>
             <div class="tag-row"><span class="tag">git</span><span class="tag">review</span></div>
@@ -875,7 +865,6 @@
           <a class="index-link" href="#tool-ripgrep">ripgrep</a>
           <a class="index-link" href="#tool-fd">fd</a>
           <a class="index-link" href="#tool-fzf">fzf</a>
-          <a class="index-link" href="#tool-atuin">atuin</a>
           <a class="index-link" href="#tool-delta">delta</a>
           <a class="index-link" href="#tool-yazi">yazi</a>
           <a class="index-link" href="#tool-monitors">btop + bottom</a>
@@ -1093,39 +1082,6 @@ CTRL-J/K  # move</code></pre>
               <figure class="media-card">
                 <img loading="lazy" src="https://raw.githubusercontent.com/junegunn/i/master/fzf-preview.png" alt="fzf README preview screenshot" />
                 <figcaption>README screenshot: fzf with a live preview window.</figcaption>
-              </figure>
-            </div>
-          </article>
-
-          <article class="tool-page" id="tool-atuin">
-            <div class="page-title">
-              <h3>atuin</h3>
-              <div class="source-row">
-                <a class="source-link" href="https://github.com/atuinsh/atuin" target="_blank" rel="noreferrer">GitHub</a>
-                <a class="source-link" href="https://docs.atuin.sh" target="_blank" rel="noreferrer">Docs</a>
-              </div>
-            </div>
-            <p class="tool-lede">Structured shell history in SQLite, with command context such as exit code, cwd, hostname, duration, and optional encrypted sync.</p>
-            <div class="page-layout">
-              <div class="cheat-grid">
-                <article class="cheat-card">
-                  <h4>Search history</h4>
-                  <pre><code>atuin search make
-atuin search --exit 0 make
-atuin search --after "yesterday 3pm" make
-atuin stats</code></pre>
-                </article>
-                <article class="cheat-card">
-                  <h4>In-shell workflow</h4>
-                  <pre><code>CTRL-R    # full-screen history UI
-Enter     # execute selected command
-Tab       # edit selected command
-Alt-\\    # quick jump</code></pre>
-                </article>
-              </div>
-              <figure class="media-card">
-                <img loading="lazy" src="https://raw.githubusercontent.com/atuinsh/atuin/main/demo.gif" alt="Atuin README demo" />
-                <figcaption>README demo: command history with context-rich search.</figcaption>
               </figure>
             </div>
           </article>
@@ -1694,7 +1650,7 @@ ripdrag path/to/file</code></pre>
             <h3>Linux: pc-fixe</h3>
             <p>
               Ghostty is installed from nixpkgs as part of the shared module. The same Zsh,
-              Starship, Zoxide, Atuin, FZF, Yazi, Delta, and modern CLI packages are enabled through
+              Starship, Zoxide, IRIS, FZF, Yazi, Delta, and modern CLI packages are enabled through
               Home Manager.
             </p>
           </article>
