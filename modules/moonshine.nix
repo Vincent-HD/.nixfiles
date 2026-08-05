@@ -50,20 +50,42 @@ in
         openFirewall = lib.mkOption {
           type = lib.types.bool;
           default = false;
-          description = "Open Moonshine's GameStream ports in the firewall.";
+          description = "Open Moonshine's ports to the trusted LAN IPv4 subnet.";
+        };
+
+        trustedNetwork = lib.mkOption {
+          type = lib.types.str;
+          default = "192.168.1.0/24";
+          description = "IPv4 CIDR allowed to reach Moonshine when openFirewall is enabled.";
         };
       };
 
       config = lib.mkMerge [
-        { services.moonshine.enable = true; }
+        {
+          services.moonshine.enable = true;
+          # Expose the GameStream ports on the trusted LAN/VPN firewall interface.
+          services.moonshine.openFirewall = true;
+        }
         (lib.mkIf cfg.enable {
           # Replace upstream's /usr/bin/steam default with NixOS paths and expose
           # the locally installed Steam and Lutris libraries to Moonlight.
           services.moonshine.settings = lib.mkDefault {
+            name = "PC-FIXE NIXOS";
             application = [
               {
                 title = "Steam";
                 command = [ "/run/current-system/sw/bin/steam" "-bigpicture" ];
+              }
+              {
+                title = "Niri Desktop (Noctalia)";
+                # Moonshine already provides the outer headless compositor. Start Niri
+                # without --session so it nests inside that compositor, and include the
+                # Home Manager profile so Niri can start the user's Noctalia shell.
+                command = [
+                  "/run/current-system/sw/bin/env"
+                  "PATH=/etc/profiles/per-user/${cfg.user}/bin:/run/current-system/sw/bin:/run/wrappers/bin"
+                  "/run/current-system/sw/bin/niri"
+                ];
               }
             ];
             application_scanner = [
@@ -118,18 +140,30 @@ in
             };
           };
 
-          networking.firewall = lib.mkIf cfg.openFirewall {
-            allowedTCPPorts = [
-              (cfg.settings.webserver.port_https or 47984)
-              (cfg.settings.webserver.port or 47989)
-              (cfg.settings.stream.port or 48010)
-            ];
-            allowedUDPPorts = [
-              (cfg.settings.stream.video.port or 47998)
-              (cfg.settings.stream.control.port or 47999)
-              (cfg.settings.stream.audio.port or 48000)
-            ];
-          };
+          # Restrict GameStream and mDNS access to the trusted LAN. Do not use
+          # allowedTCPPorts/allowedUDPPorts here: those rules would also permit
+          # the globally routable IPv6 address on the physical interface.
+          networking.firewall.extraCommands = lib.mkIf cfg.openFirewall ''
+            iptables -A nixos-fw -s ${cfg.trustedNetwork} -p tcp -m multiport --dports ${
+              lib.concatStringsSep "," (
+                map toString [
+                  (cfg.settings.webserver.port_https or 47984)
+                  (cfg.settings.webserver.port or 47989)
+                  (cfg.settings.stream.port or 48010)
+                ]
+              )
+            } -j nixos-fw-accept
+            iptables -A nixos-fw -s ${cfg.trustedNetwork} -p udp -m multiport --dports ${
+              lib.concatStringsSep "," (
+                map toString [
+                  5353
+                  (cfg.settings.stream.video.port or 47998)
+                  (cfg.settings.stream.control.port or 47999)
+                  (cfg.settings.stream.audio.port or 48000)
+                ]
+              )
+            } -j nixos-fw-accept
+          '';
         })
       ];
     };

@@ -61,6 +61,7 @@
       audioCfg = config.custom.niri.audioBinds;
       mediaCfg = config.custom.niri.mediaBinds;
       niriExe = lib.getExe config.programs.niri.package;
+      noctaliaExe = "${config.home.profileDirectory}/bin/noctalia-shell";
       runNiriActions =
         actions: lib.concatStringsSep "\n" (map (action: "${niriExe} msg action ${action}") actions);
     in
@@ -236,7 +237,7 @@
           };
 
           spawn-at-startup = [
-            { command = [ "noctalia-shell" ]; }
+            { command = [ noctaliaExe "--allow-duplicate" ]; }
           ];
 
           environment = {

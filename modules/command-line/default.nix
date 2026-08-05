@@ -11,7 +11,13 @@
     let
       fdCommand = "${pkgs.fd}/bin/fd --hidden --follow --exclude .git";
       batPreview = "${pkgs.bat}/bin/bat --color=always --style=numbers --line-range=:200 {} 2>/dev/null || true";
-      irisPackage = inputs.iris.packages.${pkgs.stdenv.hostPlatform.system}.default;
+      # Keep Iris resident while starting its local completion menu hidden.
+      irisPackage = inputs.iris.packages.${pkgs.stdenv.hostPlatform.system}.default.overrideAttrs (previousAttrs: {
+        postPatch = (previousAttrs.postPatch or "") + ''
+          substituteInPlace root/wrapper.go \
+            --replace-fail 'suggestionsEnabled := true' 'suggestionsEnabled := false'
+        '';
+      });
     in
     {
       home.packages = [
@@ -257,15 +263,18 @@
             ''
           ))
           (lib.mkOrder 1500 ''
-            # Start IRIS automatically after the other Zsh integrations have initialized.
+            # Keep IRIS resident, but let its menu be shown only on demand.
             eval "$(${irisPackage}/bin/iris init zsh)"
           '')
         ];
       };
 
-      # Route IRIS's optional AI command suggestions through the local OpenCodex proxy.
-      # The local endpoint accepts keyless requests, so no API credential is stored in Git.
+      # Keep Iris's local autocomplete dormant until the user toggles it on.
       xdg.configFile."iris/config.toml".text = ''
+        [keybindings]
+        # Ctrl+Space toggles Iris's local autocomplete menu; Tab still accepts a suggestion.
+        toggle-menu = "ctrl+space"
+
         [ai]
         enabled = true
         provider = "opencodex"
@@ -279,7 +288,7 @@
         timeout_ms = 3000
 
         [ai.providers.opencodex.extra_request_body]
-        reasoning_effort = "low"
+        reasoning_effort = "none"
       '';
     };
 }
