@@ -18,6 +18,7 @@ in
       nixos.memoryPressure
       nixos.coding
       nixos.agentCodex
+      nixos.portless
       nixos.printing
       nixos.gparted
       nixos.windowsMounts

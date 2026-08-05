@@ -97,6 +97,16 @@ nix run github:Mic92/nix-update -- --flake arch-ops-server --use-update-script
 nix run github:Mic92/nix-update -- --flake papercuts --use-github-releases
 ```
 
+### portless
+
+- **File**: `packages/portless/default.nix`
+- **Pattern**: self-contained npm release tarball executed with Nix's Node.js 24 runtime
+- **Flake output**: `.#portless`
+
+```bash
+nix run github:Mic92/nix-update -- --flake portless --use-update-script
+```
+
 ### jj-ryu
 
 - **File**: `packages/jj-ryu/default.nix`

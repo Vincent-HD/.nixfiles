@@ -94,6 +94,20 @@
       ]
     },
     {
+      "name": "portless",
+      "type": "nix-update",
+      "description": "Portless npm release tarball",
+      "command": [
+        "nix",
+        "run",
+        "github:Mic92/nix-update",
+        "--",
+        "--flake",
+        "portless",
+        "--use-update-script"
+      ]
+    },
+    {
       "name": "jj-ryu",
       "type": "nix-update",
       "description": "jj-ryu alpha release tarballs",

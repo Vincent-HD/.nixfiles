@@ -11,6 +11,7 @@ in
       inputs.sops-nix.darwinModules.sops
       darwin.secrets
       darwin.agentCodex
+      darwin.portless
       darwin.deskflow
       darwin.rustdesk
 

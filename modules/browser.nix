@@ -8,6 +8,12 @@
         pkgs.brave
       ];
 
+      # Cursor runs terminals inside an FHS sandbox that includes its own Google Chrome
+      # and hides the host Brave desktop entry; make CLI URL openers use Brave explicitly.
+      home.sessionVariables = lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
+        BROWSER = lib.getExe pkgs.brave;
+      };
+
       # Default browser for xdg-open (editors, Cursor links, etc.): use Brave from nixpkgs
       # (`brave-browser.desktop` / `com.brave.Browser.desktop` under brave/share/applications)
       # Force ownership of the generated mimeapps file so stale backup files do not block HM switches.

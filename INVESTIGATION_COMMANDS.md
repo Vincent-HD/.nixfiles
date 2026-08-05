@@ -708,6 +708,19 @@ which noctalia-shell
 
 Purpose: confirm that a runtime dependency is actually available in the current user environment.
 
+### Inspect an application's sandboxed browser environment
+
+```bash
+APP_PID=<application-main-pid>
+tr '\0' '\n' < "/proc/$APP_PID/environ" | grep -E '^(BROWSER|CHROME|PATH|XDG_DATA_DIRS)='
+readlink -f "/proc/$APP_PID/root/usr/bin/xdg-open"
+for desktop in brave-browser.desktop google-chrome.desktop; do
+  find "/proc/$APP_PID/root" -path "*/share/applications/$desktop" -print
+done
+```
+
+Purpose: determine whether a sandboxed application sees the host browser desktop entry and which browser-related environment variables or fallback `xdg-open` it can use. An explicit absolute `BROWSER` executable takes precedence over `xdg-open`'s fallback browser list.
+
 ## Session-Specific / Less Reusable Commands
 
 These were useful in this session, but are more situational.

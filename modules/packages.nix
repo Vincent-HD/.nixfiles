@@ -37,6 +37,7 @@
         lightjj = pkgs.callPackage ../packages/lightjj { };
         opencodex = pkgs.callPackage ../packages/opencodex { };
         papercuts = pkgs.callPackage ../packages/papercuts { };
+        portless = pkgs.callPackage ../packages/portless { };
         plannotator = pkgs.callPackage ../packages/plannotator { };
       }
       // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
