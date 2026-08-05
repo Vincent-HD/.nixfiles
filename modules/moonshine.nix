@@ -16,6 +16,17 @@ in
       configFile = settingsFormat.generate "moonshine-config.toml" cfg.settings;
       runtimeDir = "/run/user/${toString cfg.uid}";
       package = pkgs.callPackage ../packages/moonshine { };
+      moonshineTcpPorts = [
+        (cfg.settings.webserver.port_https or 47984)
+        (cfg.settings.webserver.port or 47989)
+        (cfg.settings.stream.port or 48010)
+      ];
+      moonshineUdpPorts = [
+        5353
+        (cfg.settings.stream.video.port or 47998)
+        (cfg.settings.stream.control.port or 47999)
+        (cfg.settings.stream.audio.port or 48000)
+      ];
     in
     {
       options.services.moonshine = {
@@ -140,29 +151,13 @@ in
             };
           };
 
-          # Restrict GameStream and mDNS access to the trusted LAN. Do not use
-          # allowedTCPPorts/allowedUDPPorts here: those rules would also permit
-          # the globally routable IPv6 address on the physical interface.
-          networking.firewall.extraCommands = lib.mkIf cfg.openFirewall ''
-            iptables -A nixos-fw -s ${cfg.trustedNetwork} -p tcp -m multiport --dports ${
-              lib.concatStringsSep "," (
-                map toString [
-                  (cfg.settings.webserver.port_https or 47984)
-                  (cfg.settings.webserver.port or 47989)
-                  (cfg.settings.stream.port or 48010)
-                ]
-              )
-            } -j nixos-fw-accept
-            iptables -A nixos-fw -s ${cfg.trustedNetwork} -p udp -m multiport --dports ${
-              lib.concatStringsSep "," (
-                map toString [
-                  5353
-                  (cfg.settings.stream.video.port or 47998)
-                  (cfg.settings.stream.control.port or 47999)
-                  (cfg.settings.stream.audio.port or 48000)
-                ]
-              )
-            } -j nixos-fw-accept
+          # Use NixOS's declarative nftables rules so only the trusted IPv4
+          # network can reach Moonshine. Interface-scoped allowed ports would
+          # also allow the host's globally routable IPv6 address.
+          networking.nftables.enable = true;
+          networking.firewall.extraInputRules = lib.mkIf cfg.openFirewall ''
+            ip saddr ${cfg.trustedNetwork} tcp dport { ${lib.concatStringsSep ", " (map toString moonshineTcpPorts)} } accept
+            ip saddr ${cfg.trustedNetwork} udp dport { ${lib.concatStringsSep ", " (map toString moonshineUdpPorts)} } accept
           '';
         })
       ];
