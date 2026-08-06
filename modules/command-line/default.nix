@@ -11,13 +11,7 @@
     let
       fdCommand = "${pkgs.fd}/bin/fd --hidden --follow --exclude .git";
       batPreview = "${pkgs.bat}/bin/bat --color=always --style=numbers --line-range=:200 {} 2>/dev/null || true";
-      # Keep Iris resident while starting its local completion menu hidden.
-      irisPackage = inputs.iris.packages.${pkgs.stdenv.hostPlatform.system}.default.overrideAttrs (previousAttrs: {
-        postPatch = (previousAttrs.postPatch or "") + ''
-          substituteInPlace root/wrapper.go \
-            --replace-fail 'suggestionsEnabled := true' 'suggestionsEnabled := false'
-        '';
-      });
+      irisPackage = inputs.iris.packages.${pkgs.stdenv.hostPlatform.system}.default;
     in
     {
       home.packages = [
@@ -269,12 +263,7 @@
         ];
       };
 
-      # Keep Iris's local autocomplete dormant until the user toggles it on.
       xdg.configFile."iris/config.toml".text = ''
-        [keybindings]
-        # Ctrl+Space toggles Iris's local autocomplete menu; Tab still accepts a suggestion.
-        toggle-menu = "ctrl+space"
-
         [ai]
         enabled = true
         provider = "opencodex"
