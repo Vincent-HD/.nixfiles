@@ -75,6 +75,14 @@ nix eval --json '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$US
 
 Purpose: confirm which packages are attached to the user profile and spot overrides by name.
 
+### Inspect a rendered Home Manager shell option
+
+```bash
+nix eval --raw '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$USER"'.programs.zsh.shellAliases.<alias>'
+```
+
+Purpose: verify the effective value of a shell alias or other specific Home Manager shell option after module merging.
+
 ### Inspect a specific Home Manager app package
 
 ```bash

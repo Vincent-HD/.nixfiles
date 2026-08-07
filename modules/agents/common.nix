@@ -45,13 +45,27 @@
         <!-- papercuts:end -->
       '';
 
-      nixEnvironmentInstructions = ''
+      commonAgentInstructions = ''
         ## Nix environment
 
         This machine is managed by Nix. When a command-line tool is not available,
         run it temporarily with `comma` (for example, `, jq`) or use
         `nix run nixpkgs#jq -- <arguments>`. Do not install a tool globally just
         to complete a task.
+
+        ## Response sections and feedback
+
+        When proposing work, requesting feedback, or showcasing changes:
+
+        - Use indexed items so the user can answer precisely: `1`, `2`, `3` for one
+          section; `A1`, `A2`, `B1` when there are multiple sections.
+        - Put completed or proposed changes under a clearly labeled `SHOWCASE`
+          section when presenting them for review.
+        - Add a clearly labeled `FEEDBACK NEEDED` section only when a real user
+          question or decision is needed. Put every question there, indexed, and keep
+          it separate from `SHOWCASE`; omit the section when there are no questions.
+          
+        ${papercutsInstructions}
       '';
     in
     {
@@ -74,15 +88,13 @@
           sessionVariables.PAPERCUTS_HOME = "${config.xdg.dataHome}/papercuts";
 
           file = skillFiles // {
-            # Keep portable environment guidance available to every AGENTS-aware client.
-            "AGENTS.md".text = nixEnvironmentInstructions;
+            # Keep the complete shared guidance available to every AGENTS-aware client.
+            "AGENTS.md".text = commonAgentInstructions;
 
-            # Codex receives the portable Papercuts instructions and RTK's
-            # official awareness document; RTK has no programmatic Codex hook.
+            # Codex also receives RTK's official awareness document; RTK has no
+            # programmatic Codex hook.
             ".codex/AGENTS.md".text = ''
-              ${papercutsInstructions}
-
-              ${nixEnvironmentInstructions}
+              ${commonAgentInstructions}
 
               @${config.home.homeDirectory}/.codex/RTK.md
             '';

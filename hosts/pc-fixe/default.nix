@@ -57,6 +57,7 @@ in
             hm.lazydocker
             hm.discord
             hm.browser
+            hm.thunar
             hm.spotify
             hm.vicinae
             hm.bitwarden
