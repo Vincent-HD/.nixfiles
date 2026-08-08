@@ -98,6 +98,20 @@
         };
       };
 
+      # Keep shared shell history search on Atuin's Ctrl+R widget.
+      programs.atuin = {
+        enable = true;
+        enableBashIntegration = true;
+        enableZshIntegration = true;
+        flags = [ "--disable-up-arrow" ];
+        settings = {
+          auto_sync = false;
+          enter_accept = true;
+          filter_mode = "host";
+          style = "compact";
+        };
+      };
+
       programs.btop = {
         enable = true;
         package = pkgs.btop.overrideAttrs (previousAttrs: {
@@ -264,6 +278,15 @@
       };
 
       xdg.configFile."iris/config.toml".text = ''
+        [core]
+        mode = "spec"
+        expand-alias = false
+
+        [keybindings]
+        # Iris has no documented disabled key value; unknown bindings do not match input,
+        # so Ctrl+R is passed through to Atuin instead of toggling Iris history mode.
+        toggle-mode = "disabled"
+
         [ai]
         enabled = true
         provider = "opencodex"

@@ -25,17 +25,24 @@ if (declarationsPath === undefined || dataDirectory === undefined || executorBin
 const declarations = (await Bun.file(declarationsPath).json()) as Declarations;
 const authPath = `${dataDirectory}/server-control/auth.json`;
 
+console.log(`Starting Executor MCP sync for ${declarations.servers.length} declarations`);
+
 const sleep = (milliseconds: number) => new Promise((resolve) => setTimeout(resolve, milliseconds));
 
 async function waitForDaemon(): Promise<string> {
+  console.log(`Waiting for Executor daemon at ${baseUrl}`);
   for (let attempt = 1; attempt <= 60; attempt += 1) {
     const health = await fetch(`${baseUrl}/api/health`).catch(() => null);
     const authFile = Bun.file(authPath);
     if (health?.ok && (await authFile.exists())) {
       const auth = (await authFile.json()) as { token?: unknown };
       if (typeof auth.token === "string" && auth.token !== "") {
+        console.log("Executor daemon is ready");
         return auth.token;
       }
+    }
+    if (attempt % 10 === 0) {
+      console.log(`Still waiting for Executor daemon (${attempt}/60)`);
     }
     await sleep(1_000);
   }
@@ -159,6 +166,8 @@ for (const server of declarations.servers) {
       config: desiredConfig,
     });
     console.log(`Reconciled Executor MCP server: ${server.slug}`);
+  } else {
+    console.log(`Executor MCP server already current: ${server.slug}`);
   }
 
   if (server.createConnection === false) {
@@ -184,3 +193,5 @@ for (const server of declarations.servers) {
     console.log(`Created Executor connection: ${server.slug}/default`);
   }
 }
+
+console.log("Executor MCP sync complete");
