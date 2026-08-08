@@ -6,7 +6,7 @@
     {
       "name": "codex",
       "type": "nix-update",
-      "description": "OpenAI Codex CLI release tarball",
+      "description": "OpenAI Codex package tarball (CLI + code-mode host)",
       "systems": [
         "x86_64-linux"
       ],

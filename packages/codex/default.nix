@@ -12,9 +12,12 @@ stdenv.mkDerivation (finalAttrs: {
   pname = "codex";
   version = "0.147.0";
 
+  # Use the full package archive: CLI + required codex-code-mode-host sibling.
+  # The plain `codex-*-linux-musl.tar.gz` asset only contains the CLI binary, which
+  # breaks tool execution since 0.144 (hard fail on 0.147 with code_mode_host).
   src = fetchurl {
-    url = "https://github.com/openai/codex/releases/download/rust-v${finalAttrs.version}/codex-x86_64-unknown-linux-musl.tar.gz";
-    hash = "sha256-Akbi53ODTgfw+1JJ7W660S5FkeYI+Me7l91qlpBUTDY=";
+    url = "https://github.com/openai/codex/releases/download/rust-v${finalAttrs.version}/codex-package-x86_64-unknown-linux-musl.tar.gz";
+    hash = "sha256-vXWNU9VuQdxl4EX0WJ33mgOO0ZegEa3LUqJY5q1kz9o=";
   };
 
   sourceRoot = ".";
@@ -27,13 +30,16 @@ stdenv.mkDerivation (finalAttrs: {
   installPhase = ''
     runHook preInstall
 
-    install -Dm755 codex-x86_64-unknown-linux-musl "$out/bin/codex"
-    wrapProgram "$out/bin/codex" --prefix PATH : ${
-      lib.makeBinPath [
-        ripgrep
-        bubblewrap
-      ]
-    }
+    install -Dm755 bin/codex "$out/bin/codex"
+    install -Dm755 bin/codex-code-mode-host "$out/bin/codex-code-mode-host"
+    wrapProgram "$out/bin/codex" \
+      --set CODEX_CODE_MODE_HOST_PATH "$out/bin/codex-code-mode-host" \
+      --prefix PATH : ${
+        lib.makeBinPath [
+          ripgrep
+          bubblewrap
+        ]
+      }
 
     runHook postInstall
   '';

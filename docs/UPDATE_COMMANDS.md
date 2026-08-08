@@ -37,7 +37,7 @@ These packages use the `finalAttrs` pattern and are wired so `nix-update` can bu
 - **File**: `packages/codex/default.nix`
 - **Pattern**: `stdenv.mkDerivation` + `fetchurl` from GitHub releases
 - **Flake output**: `.#codex`
-- **Note**: The release tag is `rust-v<version>`, so keep `version` as the bare semver.
+- **Note**: The release tag is `rust-v<version>`, so keep `version` as the bare semver. Fetch `codex-package-x86_64-unknown-linux-musl.tar.gz` (not the bare CLI tarball) so `codex-code-mode-host` is installed next to `codex`.
 - **Release lookup**: Limit discovery to the newest 100 releases (one GitHub API page).
 
 ```bash
