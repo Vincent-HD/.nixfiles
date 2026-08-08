@@ -18,14 +18,14 @@ let
     };
     "x86_64-linux" = {
       artifact = "lightjj-linux-x86_64";
-      hash = "sha256-lFPcspBKoPQ1K+xptyl20iK75jyoycNuE3YYbK3S8Dk=";
+      hash = "sha256-QFF8T0gwVA8uI8Bus8+Zdq5QsSNQyxeY6MekTqnDwfs=";
     };
   };
   source = sources.${stdenvNoCC.hostPlatform.system};
 in
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "lightjj";
-  version = "1.36.0";
+  version = "1.36.1";
 
   src = fetchurl {
     url = "https://github.com/chronologos/lightjj/releases/download/v${finalAttrs.version}/${source.artifact}";

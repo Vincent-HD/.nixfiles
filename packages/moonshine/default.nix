@@ -17,12 +17,12 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "moonshine";
-  version = "0.14.5";
+  version = "0.15.0";
 
   # Use the upstream x86_64 Linux release instead of compiling Moonshine's Rust workspace.
   src = fetchurl {
     url = "https://github.com/hgaiser/moonshine/releases/download/v${finalAttrs.version}/moonshine-v${finalAttrs.version}-linux-amd64.tar.zst";
-    hash = "sha256-FS9XqzqaMYpDGginjSl+7njB6Smb1ITDoku2gn6BFEE=";
+    hash = "sha256-iA6bI/uURLqRHbugo5a6l58gP/J8VPhBqfNSHPiB+d4=";
   };
 
   sourceRoot = "moonshine";

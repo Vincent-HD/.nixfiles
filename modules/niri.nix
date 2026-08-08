@@ -10,8 +10,8 @@
 
       nixpkgs.overlays = [ inputs.niri.overlays.niri ];
 
-      # Use niri-unstable so config can use `include` and `recent-windows` (need niri ≥25.11; stable is 25.08).
-      programs.niri.package = pkgs.niri-unstable;
+      # Use nixpkgs' current Niri package; niri-flake's package still references the removed libdisplay-info_0_2.
+      programs.niri.package = pkgs.niri;
 
       programs.niri.enable = true;
 
