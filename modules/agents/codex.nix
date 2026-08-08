@@ -3,11 +3,6 @@ let
   mkCodexSettings =
     { pkgs, lib }:
     let
-      homeDirectory =
-        if pkgs.stdenv.hostPlatform.isDarwin then
-          "/Users/${config.flake.username}"
-        else
-          "/home/${config.flake.username}";
       plannotatorPackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.plannotator;
       executorPackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.executor;
     in
@@ -28,6 +23,14 @@ let
           "max"
         ];
       };
+
+      # Enable parallel subagent execution with the requested default model and effort.
+      agents = {
+        enabled = true;
+        max_concurrent_threads_per_session = 100;
+        default_subagent_model = "gpt-5.6-luna";
+        default_subagent_reasoning_effort = "max";
+      };
       file_opener = "cursor";
       personality = "pragmatic";
 
@@ -46,16 +49,6 @@ let
         }
       ];
 
-      # OpenCode Go exposes an OpenAI-compatible Responses endpoint. The API key
-      # is exported by the Home Manager wrapper from OpenCode's own auth store.
-      model_providers.opencode-go = {
-        name = "OpenCode Go";
-        base_url = "https://opencode.ai/zen/go/v1";
-        env_key = "OPENCODE_API_KEY";
-        env_key_instructions = "Run `opencode auth login --provider opencode-go`, or subscribe at https://opencode.ai/go and connect OpenCode Go.";
-        wire_api = "responses";
-        requires_openai_auth = false;
-      };
 
       # Executor is the single local MCP endpoint; it owns the upstream catalog.
       mcp_servers = {
@@ -163,7 +156,6 @@ in
       ...
     }:
     let
-      codexHome = "${config.home.homeDirectory}/.codex";
       opencodexPackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.opencodex;
       # On Linux, use the pinned package from packages/codex. On macOS, OpenAI
       # publishes the official binary via the Homebrew cask installed by
@@ -174,24 +166,11 @@ in
           pkgs.lib.getExe (pkgs.callPackage ../../packages/codex { })
         else
           "/opt/homebrew/bin/codex";
-      opencodeAuthPath = "${config.home.homeDirectory}/.local/share/opencode/auth.json";
-      # Share the OpenCode Go API key with Codex without copying secrets into
-      # Nix-managed files. OpenCode writes this credential after `/connect`.
-      codexOpenCodeGoEnv = pkgs.writeShellScript "codex-opencode-go-env" ''
-        if [ -r "${opencodeAuthPath}" ]; then
-          if opencode_api_key="$(${pkgs.lib.getExe pkgs.jq} -er '."opencode-go".key // empty' "${opencodeAuthPath}" 2>/dev/null)"; then
-            export OPENCODE_API_KEY="$opencode_api_key"
-          fi
-        fi
-      '';
 
-      # Keep the OpenCode Go credential bridge in the user-facing Codex wrapper.
-      # MCP credentials are scoped to their own fail-closed server wrappers.
+      # Keep the selected Codex executable behind one user-facing wrapper.
       codex = pkgs.lib.hiPrio (
         pkgs.writeShellScriptBin "codex" ''
           set -euo pipefail
-
-          . ${codexOpenCodeGoEnv}
 
           exec ${codexExec} "$@"
         ''
