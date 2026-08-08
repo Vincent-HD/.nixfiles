@@ -63,7 +63,6 @@
           transport = "stdio";
           command = lib.getExe archOpsPackage;
           args = [ ];
-          env = { };
         }
         {
           slug = "chrome-devtools";
@@ -83,7 +82,6 @@
             "--no-usage-statistics"
             "--no-performance-crux"
           ];
-          env = { };
         }
         {
           slug = "context7";
@@ -92,7 +90,6 @@
           transport = "stdio";
           command = "${context7Mcp}";
           args = [ ];
-          env = { };
         }
         {
           slug = "github";
@@ -101,7 +98,40 @@
           transport = "stdio";
           command = "${githubMcp}";
           args = [ ];
-          env = { };
+        }
+        {
+          slug = "postgres_sql_mcp";
+          name = "Postgres SQL MCP";
+          description = "Read-only PostgreSQL database access through pgEdge MCP.";
+          transport = "stdio";
+          command = lib.getExe pkgs.docker;
+          args = [
+            "run"
+            "-i"
+            "--rm"
+            "--add-host"
+            "host.docker.internal:host-gateway"
+            "-e"
+            "PGEDGE_DB_HOST=host.docker.internal"
+            "-e"
+            "PGEDGE_DB_PORT"
+            "-e"
+            "PGEDGE_DB_NAME"
+            "-e"
+            "PGEDGE_DB_USER"
+            "-e"
+            "PGEDGE_DB_PASSWORD"
+            "ghcr.io/pgedge/postgres-mcp:latest"
+          ];
+          envVars = [
+            "PGEDGE_DB_PORT"
+            "PGEDGE_DB_NAME"
+            "PGEDGE_DB_USER"
+            "PGEDGE_DB_PASSWORD"
+          ];
+          # The connection is intentionally created manually in Executor so
+          # database credentials never get provisioned by Home Manager.
+          createConnection = false;
         }
       ]
       ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
@@ -112,7 +142,6 @@
           transport = "stdio";
           command = lib.getExe pkgs.mcp-nixos;
           args = [ ];
-          env = { };
         }
       ];
 

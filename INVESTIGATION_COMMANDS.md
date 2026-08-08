@@ -75,6 +75,16 @@ nix eval --json '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$US
 
 Purpose: confirm which packages are attached to the user profile and spot overrides by name.
 
+### List names of rendered Home Manager packages
+
+```bash
+nix eval --json '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$USER"'.home.packages' \
+  --apply 'map (package: package.name or "")'
+```
+
+Purpose: locate a generated wrapper or helper package by name before building or inspecting its
+store output, without printing the full package list.
+
 ### Inspect a rendered Home Manager shell option
 
 ```bash
@@ -127,6 +137,17 @@ nix build --no-link --print-out-paths '.#nixosConfigurations.'"$HOST"'.config.ho
 ```
 
 Purpose: build the exact HM-selected package when you already know the option path you want to verify.
+
+### Build the Home Manager activation package
+
+```bash
+cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" \
+nix build --no-link --print-out-paths \
+  '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$USER"'.home.activationPackage'
+```
+
+Purpose: realize generated Home Manager wrappers, service units, and file sources after changing a
+Home Manager module, catching shell-check or generated-file failures without switching the host.
 
 ### Prefetch a fixed-output release artifact
 
@@ -534,6 +555,12 @@ cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" nix flake check
 ```
 
 Purpose: validate the whole flake and host module graph after a configuration or input change.
+
+For an evaluation-only pass that avoids building check derivations:
+
+```bash
+cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" nix flake check --no-build
+```
 
 ## Runtime Audio Checks
 

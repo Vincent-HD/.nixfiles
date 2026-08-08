@@ -5,7 +5,8 @@ type StdioServer = {
   transport: "stdio";
   command: string;
   args: string[];
-  env: Record<string, string>;
+  envVars?: string[];
+  createConnection?: boolean;
 };
 
 type Declarations = {
@@ -111,12 +112,28 @@ async function executorCall(
 }
 
 function serverConfig(server: StdioServer) {
+  const envVars = server.envVars ?? [];
+
   return {
     transport: server.transport,
     command: server.command,
     args: server.args,
-    env: server.env,
-    authenticationTemplate: [{ slug: "none", kind: "none" }],
+    authenticationTemplate:
+      envVars.length > 0
+        ? [{ slug: "env", kind: "stdio_env", vars: envVars }]
+        : [{ slug: "none", kind: "none" }],
+  };
+}
+
+function serverPayload(server: StdioServer) {
+  return {
+    slug: server.slug,
+    name: server.name,
+    description: server.description,
+    transport: server.transport,
+    command: server.command,
+    args: server.args,
+    ...(server.envVars === undefined ? {} : { envVars: server.envVars }),
   };
 }
 
@@ -132,19 +149,21 @@ for (const server of declarations.servers) {
 
   if (existing === null || existing === undefined) {
     await executorCall(["mcp", "addServer"], {
-      ...server,
-      authenticationTemplate: [{ slug: "none", kind: "none" }],
+      ...serverPayload(server),
     }, true);
     console.log(`Registered Executor MCP server: ${server.slug}`);
   } else if (!configured) {
-    // The released CLI can add and inspect MCP servers, but not update them.
-    // Remove only this known managed slug, then recreate it with the new path.
-    await request(`/integrations/${slug}`, "DELETE");
-    await executorCall(["mcp", "addServer"], {
-      ...server,
-      authenticationTemplate: [{ slug: "none", kind: "none" }],
-    }, true);
+    // Update the stdio command in place so manually managed connections are
+    // not deleted when a Nix path or argument changes.
+    await request(`/mcp/servers/${slug}/config`, "POST", {
+      config: desiredConfig,
+    });
     console.log(`Reconciled Executor MCP server: ${server.slug}`);
+  }
+
+  if (server.createConnection === false) {
+    console.log(`Skipped Executor connection provisioning: ${server.slug}`);
+    continue;
   }
 
   const listConnections = await executorCall(

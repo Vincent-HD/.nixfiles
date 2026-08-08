@@ -237,6 +237,11 @@ This is because `import-tree` operates on the git tree, not the working director
 When a module needs to include static files (configs, scripts, etc.), organize them in a
 subdirectory:
 
+- When static instructions, configuration, or scripts become long, prefer a checked-in asset
+  file in the owning module's `assets/` directory instead of embedding a large heredoc in `.nix`.
+- Keep Nix focused on wiring and dynamic values; use Nix variables and interpolation to inject
+  those values into assets when needed.
+
 ```
 modules/coding/
 ├── default.nix              # Main module
