@@ -84,6 +84,8 @@
 
       xdg.configFile."ghostty/config" = lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
         text = ''
+          # Close Ghostty surfaces without asking for confirmation.
+          confirm-close-surface = false
           gtk-titlebar = false
           window-decoration = false
           window-show-tab-bar = never

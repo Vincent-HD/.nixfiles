@@ -93,6 +93,14 @@ nix eval --raw '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$USE
 
 Purpose: verify the effective value of a shell alias or other specific Home Manager shell option after module merging.
 
+### Inspect a rendered Home Manager config file
+
+```bash
+nix eval --raw '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$USER"'.xdg.configFile."<path>".text'
+```
+
+Purpose: verify the exact text generated for a Home Manager-managed application configuration after module merging.
+
 ### Inspect a specific Home Manager app package
 
 ```bash
