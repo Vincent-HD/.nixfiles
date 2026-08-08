@@ -10,6 +10,10 @@ let
       model = "gpt-5.5";
       # Route Codex's built-in OpenAI provider through the local OpenCodex proxy.
       openai_base_url = "http://127.0.0.1:10100/v1";
+      # Disable all interactive approval prompts, leaving Auto-review with nothing to process.
+      approval_policy = "never";
+      # Keep sandbox-boundary approval prompts with the user instead of the Auto-review agent.
+      approvals_reviewer = "user";
       model_reasoning_effort = "high";
       model_reasoning_summary = "concise";
       model_verbosity = "low";

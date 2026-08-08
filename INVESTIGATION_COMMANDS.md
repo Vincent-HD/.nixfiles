@@ -322,7 +322,17 @@ nix eval '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$USER"'.xd
 
 Purpose: inspect the final text for a specific XDG-managed file when you override or replace upstream file ownership.
 
-### Realize and inspect a generated Home Manager file source
+### Realize and inspect a generated NixOS or Home Manager file source
+
+```bash
+cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" \
+nix build --no-link --print-out-paths \
+  '.#nixosConfigurations.'"$HOST"'.config.environment.etc."<relative-path>".source'
+```
+
+Purpose: realize a generated NixOS `/etc` file before opening the returned store path.
+
+Use the Home Manager variants below for files under the user's home directory.
 
 ```bash
 cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" \
