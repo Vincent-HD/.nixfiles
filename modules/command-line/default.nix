@@ -86,6 +86,11 @@
         text = ''
           # Close Ghostty surfaces without asking for confirmation.
           confirm-close-surface = false
+          # Use Zsh-compatible Meta sequences for word movement with modified arrows.
+          keybind = alt+arrow_left=esc:b
+          keybind = alt+arrow_right=esc:f
+          keybind = ctrl+arrow_left=esc:b
+          keybind = ctrl+arrow_right=esc:f
           gtk-titlebar = false
           window-decoration = false
           window-show-tab-bar = never
@@ -285,9 +290,10 @@
         expand-alias = false
 
         [keybindings]
-        # Iris has no documented disabled key value; unknown bindings do not match input,
-        # so Ctrl+R is passed through to Atuin instead of toggling Iris history mode.
+        # Unknown bindings do not match input, so shell history keys pass through Iris.
         toggle-mode = "disabled"
+        navigate-up = "disabled"
+        navigate-down = "disabled"
 
         [ai]
         enabled = true

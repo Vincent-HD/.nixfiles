@@ -101,6 +101,14 @@ nix eval --raw '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$USE
 
 Purpose: verify the exact text generated for a Home Manager-managed application configuration after module merging.
 
+For applications with a config validator, pipe the rendered file through a process substitution:
+
+```bash
+<app> +validate-config --config-file=<(nix eval --raw '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$USER"'.xdg.configFile."<path>".text')
+```
+
+Purpose: validate generated application configuration without first activating the system.
+
 ### Inspect a specific Home Manager app package
 
 ```bash
