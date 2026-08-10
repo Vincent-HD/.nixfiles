@@ -12,7 +12,7 @@ auto-imported by `import-tree`. The Linux host runs **KDE Plasma 6** on **NVIDIA
 - `INVESTIGATION_COMMANDS.md` — reusable shell, eval, validation, and debugging command patterns
 - `.agents/skills/` — project-scoped Agent Skills discovered natively by Codex, Cursor, and OpenCode
 - `.agents/skills/update-investigation-commands/SKILL.md` — project skill for maintaining the investigation command reference
-- `reference-repos.md` — only tracks other people's Nix/NixOS/nix-darwin/Home Manager configuration repositories; do not add general upstream application projects.
+- `reference-repos.md` — only tracks other people's NixOS / nix-darwin / Home Manager configuration repositories. Never add application codebases, packaging repos, skills repos, tooling repos, or other non-config references.
 
 ---
 
@@ -201,6 +201,8 @@ changes, validate `.#darwinConfigurations.macbook-pro`.
   abstraction. Use pinned executable paths and file-backed sops secrets.
 - **Keep copied text-only third-party skills as local snapshots.** Do not add flake inputs or
   update automation for Grill Me or Reference Repository.
+- **`reference-repos.md` is NixOS-config-only.** Only list other people's NixOS / nix-darwin / Home Manager
+  configuration repositories. Never add application, packaging, skills, tooling, or template repos.
 
 ---
 

@@ -10,27 +10,21 @@
       # Re-evaluate code-cursor-nix with this flake's package set so Cursor
       # stays aligned with the rest of the host configuration.
       cursorPkg = pkgs.callPackage "${inputs.code-cursor-nix}/package.nix" { };
-
-      # `pkgs.vscode` also installs `bin/code`. A higher-priority wrapper makes
-      # every `code` invocation run Cursor without relying on shell aliases.
-      codeCliWrapsCursor = pkgs.lib.hiPrio (
-        pkgs.writeShellScriptBin "code" ''
-          exec ${pkgs.lib.getExe cursorPkg} "$@"
-        ''
-      );
-
       cursorAgentPkg = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.cursor-agent;
     in
     lib.mkMerge [
       {
         home.packages = [
-          codeCliWrapsCursor
           cursorAgentPkg
-          (pkgs.lib.lowPrio pkgs.vscode)
+          pkgs.vscode
           cursorPkg
           pkgs.neovim
           pkgs.vim
         ];
+
+        # Prefer Cursor from interactive shells without hijacking PATH for
+        # launchers that resolve bare `code` via desktop entries.
+        programs.zsh.shellAliases.code = "cursor";
       }
 
       (lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
@@ -58,6 +52,18 @@
           Exec=${pkgs.lib.getExe cursorPkg} --new-window %F
           Icon=${cursorPkg}/share/icons/hicolor/512x512/apps/cursor.png
         '';
+
+        # On Niri, VS Code cannot auto-detect an OS keyring even though
+        # gnome-keyring already provides org.freedesktop.secrets.
+        # Pin the Electron password store explicitly.
+        home.file.".vscode/argv.json" = {
+          force = true;
+          text = builtins.toJSON {
+            "enable-crash-reporter" = true;
+            "crash-reporter-id" = "eb44dfe9-2bdb-4571-8c19-d8b205ce9eba";
+            "password-store" = "gnome-libsecret";
+          };
+        };
       })
     ];
 }

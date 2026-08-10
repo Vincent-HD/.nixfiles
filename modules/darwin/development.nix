@@ -30,6 +30,7 @@
           wgen = "pnpm -F backend exec doppler run -- pnpm codegen";
           wfb = "pnpm -F backend -F frontend --parallel exec doppler run -- pnpm dev";
           wformat = "pnpm -r lint && pnpm -r format";
+          code = "cursor";
         };
 
         initContent = ''
@@ -63,7 +64,7 @@
             email = "vincenthoudan@gmail.com";
           };
           core = {
-            editor = "code --wait";
+            editor = "cursor --wait";
             autocrlf = "input";
             quotepath = false;
             pager = "less -FRX";
@@ -77,15 +78,15 @@
           };
           merge = {
             conflictstyle = "diff3";
-            tool = "code";
+            tool = "cursor";
           };
-          mergetool.code.cmd = "code --wait $MERGED";
+          mergetool.cursor.cmd = "cursor --wait $MERGED";
           diff = {
-            tool = "code";
+            tool = "cursor";
             algorithm = "histogram";
             renames = "copies";
           };
-          difftool.code.cmd = "code --wait --diff $LOCAL $REMOTE";
+          difftool.cursor.cmd = "cursor --wait --diff $LOCAL $REMOTE";
           rebase = {
             autoStash = true;
             autoSquash = true;

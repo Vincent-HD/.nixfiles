@@ -878,3 +878,28 @@ Purpose: manual experiments while discovering behavior. These are best used spar
 - Prefer validating before rebuilding whenever you touch `programs.niri.settings`, `xdg.configFile."niri/*"`, or Home Manager-managed Niri files.
 
 - When a command touches live compositor state (`niri msg action ...`, `noctalia-shell ipc call ...`), assume it has immediate visible side effects.
+
+### Inspect a Home Manager-managed desktop entry Exec line
+
+```bash
+nix build --no-link --print-out-paths '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$USER"'.home.activationPackage'
+HM_GEN=$(nix build --no-link --print-out-paths '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$USER"'.home.activationPackage')
+sed -n '1,40p' "$HM_GEN/home-path/share/applications/<entry>.desktop"
+```
+
+Purpose: verify which absolute binary a `.desktop` file will launch after Home Manager renders overrides.
+
+Use when:
+- a launcher (Vicinae, KDE, etc.) opens the wrong app despite selecting the expected desktop entry
+- a CLI wrapper such as `code` may be colliding with a packaged `Exec=` line
+
+### Confirm a PATH wrapper still resolves to the intended executable
+
+```bash
+command -v <cmd>
+readlink -f "$(command -v <cmd>)"
+head -n 20 "$(command -v <cmd>)"
+```
+
+Purpose: separate CLI wrappers from desktop-entry launch paths when both share the same command name.
+

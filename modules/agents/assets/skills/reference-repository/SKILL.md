@@ -9,6 +9,8 @@ description: Manages cloned reference repositories for pattern mining and compar
 
 Reference repos live in `~/.references/<name>` by default — shared globally so the same repo is cloned once. The only project-local file is `reference-repos.md` at the project root, which lists the references used by that project with project-specific reasons.
 
+**Hard rule for this nixfiles repo:** `reference-repos.md` may only list other people's NixOS / nix-darwin / Home Manager configuration repositories. Never add application codebases, packaging repos, skills repos, tooling repos, templates, or other non-config references.
+
 **Escape hatch**: when the user explicitly says "add locally", "project-local", or "in the repo", use `<project_root>/.references/<name>` instead.
 
 ## Adding a Reference
