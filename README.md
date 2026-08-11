@@ -237,4 +237,4 @@ If you want to remove a feature, change the relevant host composition under `hos
   `nix run nixpkgs#<package> -- <arguments>` instead of installing it globally.
 
 The shared setup currently installs Papercuts, RTK, Grill Me, `reference-repository`, Context7
-guidance, and Plannotator's skills.
+guidance, Plannotator's skills, `jj-auto-revise`, and `jj-resplit-stack`.

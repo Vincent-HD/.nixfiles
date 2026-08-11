@@ -1,10 +1,22 @@
 ## Agent workflow preferences
 
 - Prefer Jujutsu (`jj`) for local revision management when the checkout is jj-enabled. Use Git when the repository, import-tree, or a host integration requires it; do not initialize or convert a checkout just to satisfy this preference.
-- When a task calls for history changes, split the work into focused, descriptively titled `jj` revisions. Keep unrelated work separate.
 - Prefer Nix-managed configuration and packages over ad hoc local setup; use temporary Nix-backed tools for one-off diagnostics.
 - Keep communication concise and changes focused; avoid speculative abstractions.
 - Use iterative improvement passes when they directly improve tooling or startup performance.
+
+### Jujutsu revisions
+
+Keep history as **one logical change per revision**, with conventional, why-focused descriptions. Do not mash unrelated topics into `@`.
+
+Use the shared Agent Skills (installed under `~/.agents/skills`):
+
+| When | Skill | Intent |
+| ---- | ----- | ------ |
+| While implementing; finishing a chunk; “jj” / absorb / describe | `jj-auto-revise` | New rev only for a new concern; prefer `jj absorb` / `jj squash --into` for follow-ups to recent mutable ancestors; `jj split` when `@` is mixed |
+| Later cleanup; stacked PRs; squash & resplit a wip stack | `jj-resplit-stack` | Backup → squash blob → resplit by feature (prefer FE/BE split when possible) → related tests per rev → verify tests per rev |
+
+**Never push** (`git push` / `jj git push` / remote bookmark push) while following those skills. Local bookmarks only unless the user explicitly asks to publish.
 
 ## Nix environment
 
