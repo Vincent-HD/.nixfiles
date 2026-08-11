@@ -11,7 +11,7 @@
       custom.agentSetup.skills = {
         context7-mcp = ./assets/skills/context7-mcp;
         grill-me = ./assets/skills/grill-me;
-        # Day-to-day: meaningful jj revs; prefer absorb/squash-into over noisy new commits.
+        # Day-to-day: describe @ at start; commit only when a new prompt switches concern.
         jj-auto-revise = ./assets/skills/jj-auto-revise;
         # Later: backup → squash blob → resplit for stacked PRs; never push from the skill.
         jj-resplit-stack = ./assets/skills/jj-resplit-stack;
