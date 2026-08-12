@@ -4,6 +4,39 @@
   ],
   "updates": [
     {
+      "name": "context7-skills",
+      "type": "flake-input",
+      "description": "Context7's selected Agent Skill source",
+      "command": [
+        "nix",
+        "flake",
+        "update",
+        "context7-skills"
+      ]
+    },
+    {
+      "name": "mattpocock-skills",
+      "type": "flake-input",
+      "description": "Matt Pocock's selected Agent Skill source",
+      "command": [
+        "nix",
+        "flake",
+        "update",
+        "mattpocock-skills"
+      ]
+    },
+    {
+      "name": "humanlayer-skills",
+      "type": "flake-input",
+      "description": "HumanLayer's selected Agent Skill source",
+      "command": [
+        "nix",
+        "flake",
+        "update",
+        "humanlayer-skills"
+      ]
+    },
+    {
       "name": "codex",
       "type": "nix-update",
       "description": "OpenAI Codex package tarball (CLI + code-mode host)",

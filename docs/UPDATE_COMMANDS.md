@@ -233,6 +233,36 @@ nix flake update codex-desktop-linux
 nix flake update iris
 ```
 
+### context7-skills
+
+- **File**: `flake.nix`
+- **Why**: Provides only the selected upstream `context7-mcp` Agent Skill through Home Manager.
+- **How**: Refresh the locked source, then review the upstream skill changes before applying Home Manager.
+
+```bash
+nix flake update context7-skills
+```
+
+### mattpocock-skills
+
+- **File**: `flake.nix`
+- **Why**: Provides only the selected upstream `grill-me` Agent Skill through Home Manager.
+- **How**: Refresh the locked source, then review the upstream skill changes before applying Home Manager.
+
+```bash
+nix flake update mattpocock-skills
+```
+
+### humanlayer-skills
+
+- **File**: `flake.nix`
+- **Why**: Provides only the selected upstream `narrow-react-prop-types` Agent Skill through Home Manager.
+- **How**: Refresh the locked source, then review the upstream skill changes before applying Home Manager.
+
+```bash
+nix flake update humanlayer-skills
+```
+
 ## One-Shot: Update All Straightforward Compatible Packages
 
 Prefer the data-driven runner:

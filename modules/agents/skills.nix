@@ -1,4 +1,4 @@
-{ ... }:
+{ inputs, ... }:
 {
   config.flake.modules.homeManager.agentSkills =
     {
@@ -9,15 +9,19 @@
       # Codex, Cursor, and OpenCode discover that path natively. Do not also install
       # these under ~/.cursor/skills, ~/.codex/skills, or ~/.config/opencode/skills.
       custom.agentSetup.skills = {
-        context7-mcp = ./assets/skills/context7-mcp;
-        grill-me = ./assets/skills/grill-me;
+        # Select only these directories from their pinned upstream source trees.
+        context7-mcp = "${inputs.context7-skills}/plugins/claude/context7/skills/context7-mcp";
+        grill-me = "${inputs.mattpocock-skills}/skills/productivity/grilling";
+        handoff = "${inputs.mattpocock-skills}/skills/productivity/handoff";
+        research = "${inputs.mattpocock-skills}/skills/engineering/research";
+        bro = "${inputs.mattpocock-skills}/skills/productivity/wait-what";
+        narrow-react-prop-types = "${inputs.humanlayer-skills}/plugins/narrow-react-prop-types/skills/narrow-react-prop-types";
         # Day-to-day: describe @ at start; commit only when a new prompt switches concern.
         jj-auto-revise = ./assets/skills/jj-auto-revise;
         # Later: backup → squash blob → resplit for stacked PRs; never push from the skill.
         jj-resplit-stack = ./assets/skills/jj-resplit-stack;
         papercuts = ./assets/skills/papercuts;
         reference-repository = ./assets/skills/reference-repository;
-        rtk = ./assets/skills/rtk;
       };
     };
 }

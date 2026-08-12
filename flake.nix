@@ -14,6 +14,23 @@
 
     import-tree.url = "github:vic/import-tree";
 
+    # Remote Agent Skills remain reproducible through flake.lock; agentSkills
+    # links only the explicitly selected upstream skill directories.
+    context7-skills = {
+      url = "github:upstash/context7";
+      flake = false;
+    };
+
+    mattpocock-skills = {
+      url = "github:mattpocock/skills";
+      flake = false;
+    };
+
+    humanlayer-skills = {
+      url = "github:humanlayer/skills";
+      flake = false;
+    };
+
     codex-desktop-linux = {
       url = "github:ilysenko/codex-desktop-linux/main";
       inputs.nixpkgs.follows = "nixpkgs";

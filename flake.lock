@@ -60,6 +60,22 @@
         "type": "github"
       }
     },
+    "context7-skills": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1786534663,
+        "narHash": "sha256-6SayrTm2qQ0ohjWHCsPCNP0y0j3ybhuclKV6RKw+Ec0=",
+        "owner": "upstash",
+        "repo": "context7",
+        "rev": "ca15df0443ee770506fc4eb270d1efc71d483933",
+        "type": "github"
+      },
+      "original": {
+        "owner": "upstash",
+        "repo": "context7",
+        "type": "github"
+      }
+    },
     "flake-parts": {
       "inputs": {
         "nixpkgs-lib": "nixpkgs-lib"
@@ -211,6 +227,22 @@
         "type": "github"
       }
     },
+    "humanlayer-skills": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1786308517,
+        "narHash": "sha256-13OR6Qw7JDJDmAyrpzL8RMCgQ6iIkDh2InjjQac7z68=",
+        "owner": "humanlayer",
+        "repo": "skills",
+        "rev": "d3138e5898ff1bd98aeaf11c79a8c5880e917a52",
+        "type": "github"
+      },
+      "original": {
+        "owner": "humanlayer",
+        "repo": "skills",
+        "type": "github"
+      }
+    },
     "import-tree": {
       "locked": {
         "lastModified": 1784254960,
@@ -268,6 +300,22 @@
       "original": {
         "owner": "idursun",
         "repo": "jjui",
+        "type": "github"
+      }
+    },
+    "mattpocock-skills": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1786045791,
+        "narHash": "sha256-pseSJJb5nBBGPzpxA1GzjGLB9OrT+u0At1saJ4NqZ1E=",
+        "owner": "mattpocock",
+        "repo": "skills",
+        "rev": "84fdeffd12f2ee307994d1eb6feb48173b6e0502",
+        "type": "github"
+      },
+      "original": {
+        "owner": "mattpocock",
+        "repo": "skills",
         "type": "github"
       }
     },
@@ -584,14 +632,17 @@
       "inputs": {
         "code-cursor-nix": "code-cursor-nix",
         "codex-desktop-linux": "codex-desktop-linux",
+        "context7-skills": "context7-skills",
         "flake-parts": "flake-parts",
         "flake-utils": "flake-utils_2",
         "herdr": "herdr",
         "home-manager": "home-manager",
         "home-manager-darwin": "home-manager-darwin",
+        "humanlayer-skills": "humanlayer-skills",
         "import-tree": "import-tree",
         "iris": "iris",
         "jjui": "jjui",
+        "mattpocock-skills": "mattpocock-skills",
         "niri": "niri",
         "nix-darwin": "nix-darwin",
         "nix-homebrew": "nix-homebrew",
