@@ -53,7 +53,6 @@ let
         }
       ];
 
-
       # Executor is the single local MCP endpoint; it owns the upstream catalog.
       mcp_servers = {
         executor = {
@@ -161,6 +160,14 @@ in
     }:
     let
       opencodexPackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.opencodex;
+      # Export the enabled OpenCodex catalog in VS Code's custom endpoint format.
+      opencodexModelsVscode = pkgs.writeShellApplication {
+        name = "opencodex-models-vscode";
+        runtimeInputs = [ pkgs.bun ];
+        text = ''
+          exec ${lib.getExe pkgs.bun} ${./assets/opencodex-models-vscode.ts} "$@"
+        '';
+      };
       # On Linux, use the pinned package from packages/codex. On macOS, OpenAI
       # publishes the official binary via the Homebrew cask installed by
       # darwin.agentCodex; reference that path directly so the wrapper below still
@@ -191,6 +198,7 @@ in
           home.packages = [
             codex
             opencodexPackage
+            opencodexModelsVscode
             pkgs.jq
           ];
 
