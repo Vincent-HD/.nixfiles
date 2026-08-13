@@ -256,7 +256,7 @@ nix flake update context7-skills
 ### mattpocock-skills
 
 - **File**: `flake.nix`
-- **Why**: Provides only the selected upstream `grill-me` Agent Skill through Home Manager.
+- **Why**: Provides the selected upstream `grill-me`, `handoff`, and `research` Agent Skills through Home Manager. `bro` is a local snapshot.
 - **How**: Refresh the locked source, then review the upstream skill changes before applying Home Manager.
 
 ```bash

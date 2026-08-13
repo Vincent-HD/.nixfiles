@@ -201,7 +201,8 @@ changes, validate `.#darwinConfigurations.macbook-pro`.
   abstraction. Use pinned executable paths and file-backed sops secrets.
 - **Keep copied third-party skills as local snapshots** when they are not a versioned upstream
   repository. Do not add flake inputs or update automation for Grill Me, Reference Repository,
-  or Antislop (CLI + skill copied from astahmer's nixfiles).
+  Antislop (CLI + skill copied from astahmer's nixfiles), or Bro (wait-what snapshot from
+  mattpocock/skills, without CONTEXT.md).
 - **`reference-repos.md` is NixOS-config-only.** Only list other people's NixOS / nix-darwin / Home Manager
   configuration repositories. Never add application, packaging, skills, tooling, or template repos.
 

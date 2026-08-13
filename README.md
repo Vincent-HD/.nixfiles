@@ -236,5 +236,5 @@ If you want to remove a feature, change the relevant host composition under `hos
   command is missing, run it ephemerally with `, <command>` (comma) or
   `nix run nixpkgs#<package> -- <arguments>` instead of installing it globally.
 
-The shared setup currently installs Papercuts, Antislop, RTK, Grill Me, `reference-repository`, Context7
+The shared setup currently installs Papercuts, Antislop, RTK, Grill Me, Bro, `reference-repository`, Context7
 guidance, Plannotator's skills, `jj-auto-revise`, and `jj-resplit-stack`.

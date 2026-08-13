@@ -14,7 +14,8 @@
         grill-me = "${inputs.mattpocock-skills}/skills/productivity/grilling";
         handoff = "${inputs.mattpocock-skills}/skills/productivity/handoff";
         research = "${inputs.mattpocock-skills}/skills/engineering/research";
-        bro = "${inputs.mattpocock-skills}/skills/productivity/wait-what";
+        # Local snapshot of mattpocock wait-what, renamed bro for /bro. No CONTEXT.md.
+        bro = ./assets/skills/bro;
         narrow-react-prop-types = "${inputs.humanlayer-skills}/plugins/narrow-react-prop-types/skills/narrow-react-prop-types";
         # Day-to-day: describe @ at start; commit only when a new prompt switches concern.
         jj-auto-revise = ./assets/skills/jj-auto-revise;
