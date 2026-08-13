@@ -21,6 +21,8 @@
         # Later: backup → squash blob → resplit for stacked PRs; never push from the skill.
         jj-resplit-stack = ./assets/skills/jj-resplit-stack;
         papercuts = ./assets/skills/papercuts;
+        # Local snapshot of astahmer's antislop skill; CLI lives in assets/antislop.
+        antislop = ./assets/skills/antislop;
         reference-repository = ./assets/skills/reference-repository;
       };
     };

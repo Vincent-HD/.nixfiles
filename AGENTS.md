@@ -199,8 +199,9 @@ changes, validate `.#darwinConfigurations.macbook-pro`.
   `modules/agents/cursor.nix`, Codex in `modules/agents/codex.nix`, and OpenCode in
   `modules/agents/opencode.nix`. Repeating the small server list is preferred over a normalizing
   abstraction. Use pinned executable paths and file-backed sops secrets.
-- **Keep copied text-only third-party skills as local snapshots.** Do not add flake inputs or
-  update automation for Grill Me or Reference Repository.
+- **Keep copied third-party skills as local snapshots** when they are not a versioned upstream
+  repository. Do not add flake inputs or update automation for Grill Me, Reference Repository,
+  or Antislop (CLI + skill copied from astahmer's nixfiles).
 - **`reference-repos.md` is NixOS-config-only.** Only list other people's NixOS / nix-darwin / Home Manager
   configuration repositories. Never add application, packaging, skills, tooling, or template repos.
 

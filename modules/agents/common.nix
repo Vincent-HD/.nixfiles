@@ -17,6 +17,16 @@
         exec ${lib.getExe papercutsPackage} "$@"
       '';
 
+      # Local snapshot of astahmer's antislop CLI. Upstream is a Node TypeScript
+      # file; run it with bun so we do not depend on Node's strip-types flag.
+      antislop = pkgs.writeShellApplication {
+        name = "antislop";
+        runtimeInputs = [ pkgs.bun ];
+        text = ''
+          exec ${lib.getExe pkgs.bun} ${./assets/antislop/antislop.ts} "$@"
+        '';
+      };
+
       # rtk 0.43.0's own test suite denies two unused-code warnings on Darwin.
       # Its release binary builds successfully, so skip only that broken test phase.
       rtk = pkgs.rtk.overrideAttrs (_previousAttrs: {
@@ -46,6 +56,7 @@
       config = {
         home = {
           packages = [
+            antislop
             papercuts
             rtk
           ];

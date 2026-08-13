@@ -116,3 +116,14 @@ pnpm fmt
 - Continue the primary task if capture fails, and never record that failure as another papercut.
 - Never review transcripts automatically.
 <!-- papercuts:end -->
+
+<!-- antislop:begin v1 -->
+## Antislop
+
+- When you fix or refactor a clear anti-pattern, file a rule so later sessions avoid it.
+- Keep the rule to one sentence: what to avoid, and what to do instead.
+- Use the repository `.antislop.jsonl` for repo-specific patterns. Use `--global` for language or tooling rules (`~/.antislop.jsonl`).
+- Record with `antislop add "Avoid X, prefer Y instead" --tag <area>`. Add `--pattern` and `--pattern-lang` when a linter can catch it.
+- Continue the primary task if filing fails, and never record that failure as another rule.
+- Check open rules at the start of a session with `antislop list --format md`.
+<!-- antislop:end -->
