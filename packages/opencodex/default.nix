@@ -8,11 +8,11 @@
 
 let
   pname = "opencodex";
-  version = "2.11.1";
+  version = "2.14.2";
 
   src = fetchurl {
     url = "https://registry.npmjs.org/@bitkyc08/opencodex/-/opencodex-${version}.tgz";
-    hash = "sha256-owITPZOuNV0NgBV0HTaWF0+s77uiHrK1pL/zXm0vXyI=";
+    hash = "sha256-KmS6D7LD1yOcuINPzVvDaI9urZSMokvXFo67BEQ9Lbc=";
   };
 
   bunLock = fetchurl {
