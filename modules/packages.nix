@@ -30,6 +30,7 @@
     in
     {
       packages = {
+        agent-browser = pkgs.callPackage ../packages/agent-browser { };
         arch-ops-server = pkgs.callPackage ../packages/arch-ops-server { };
         cursor-agent = unfreePkgs.callPackage ../packages/cursor-agent { };
         executor = pkgs.callPackage ../packages/executor { };

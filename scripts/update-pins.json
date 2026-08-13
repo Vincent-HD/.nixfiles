@@ -4,6 +4,20 @@
   ],
   "updates": [
     {
+      "name": "agent-browser",
+      "type": "nix-update",
+      "description": "Agent Browser current-platform native release binary",
+      "command": [
+        "nix",
+        "run",
+        "github:Mic92/nix-update",
+        "--",
+        "--flake",
+        "agent-browser",
+        "--use-update-script"
+      ]
+    },
+    {
       "name": "context7-skills",
       "type": "flake-input",
       "description": "Context7's selected Agent Skill source",

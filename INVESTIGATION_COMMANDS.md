@@ -434,6 +434,18 @@ curl --fail --silent --show-error http://127.0.0.1:<port>/<health-path>
 
 Use after `nixos-rebuild switch` or a Home Manager activation, before testing clients against the service.
 
+### Probe a local Streamable HTTP MCP proxy
+
+```bash
+curl --fail --silent --show-error --max-time 15 \
+  -X POST "http://127.0.0.1:<port>/mcp" \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json, text/event-stream' \
+  --data '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"probe","version":"1"}}}'
+```
+
+Purpose: verify that a supervised stdio MCP child is reachable through its local Streamable HTTP proxy and that the proxy returns an MCP initialize response.
+
 ## NixOS Host Evaluation
 
 ### Evaluate a specific NixOS option subtree
@@ -902,4 +914,3 @@ head -n 20 "$(command -v <cmd>)"
 ```
 
 Purpose: separate CLI wrappers from desktop-entry launch paths when both share the same command name.
-

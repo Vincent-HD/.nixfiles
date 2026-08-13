@@ -1,16 +1,27 @@
-type StdioServer = {
+type CommonServer = {
   slug: string;
   name: string;
   description: string;
+  createConnection?: boolean;
+};
+
+type StdioServer = CommonServer & {
   transport: "stdio";
   command: string;
   args: string[];
   envVars?: string[];
-  createConnection?: boolean;
 };
 
+type RemoteServer = CommonServer & {
+  transport: "remote";
+  endpoint: string;
+  remoteTransport?: "auto" | "sse" | "streamable-http";
+};
+
+type Server = StdioServer | RemoteServer;
+
 type Declarations = {
-  servers: StdioServer[];
+  servers: Server[];
 };
 
 const declarationsPath = process.env.EXECUTOR_DECLARATIONS;
@@ -118,7 +129,16 @@ async function executorCall(
   return JSON.parse(stdout) as Record<string, unknown>;
 }
 
-function serverConfig(server: StdioServer) {
+function serverConfig(server: Server) {
+  if (server.transport === "remote") {
+    return {
+      transport: server.transport,
+      endpoint: server.endpoint,
+      remoteTransport: server.remoteTransport ?? "auto",
+      authenticationTemplate: [{ slug: "none", kind: "none" }],
+    };
+  }
+
   const envVars = server.envVars ?? [];
 
   return {
@@ -132,12 +152,25 @@ function serverConfig(server: StdioServer) {
   };
 }
 
-function serverPayload(server: StdioServer) {
-  return {
+function serverPayload(server: Server) {
+  const payload = {
     slug: server.slug,
     name: server.name,
     description: server.description,
     transport: server.transport,
+  };
+
+  if (server.transport === "remote") {
+    return {
+      ...payload,
+      endpoint: server.endpoint,
+      remoteTransport: server.remoteTransport ?? "auto",
+      authenticationTemplate: [{ slug: "none", kind: "none" }],
+    };
+  }
+
+  return {
+    ...payload,
     command: server.command,
     args: server.args,
     ...(server.envVars === undefined ? {} : { envVars: server.envVars }),
@@ -160,8 +193,8 @@ for (const server of declarations.servers) {
     }, true);
     console.log(`Registered Executor MCP server: ${server.slug}`);
   } else if (!configured) {
-    // Update the stdio command in place so manually managed connections are
-    // not deleted when a Nix path or argument changes.
+    // Update the managed integration in place so its existing connection is
+    // preserved when a Nix path, endpoint, or argument changes.
     await request(`/mcp/servers/${slug}/config`, "POST", {
       config: desiredConfig,
     });

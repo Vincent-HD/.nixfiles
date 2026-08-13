@@ -65,6 +65,16 @@ nix run github:Mic92/nix-update -- --flake lightjj
 nix run github:Mic92/nix-update -- --flake opencodex --use-update-script
 ```
 
+### agent-browser
+
+- **File**: `packages/agent-browser/default.nix`
+- **Pattern**: platform-selected native GitHub release binaries
+- **Flake output**: `.#agent-browser`
+
+```bash
+nix run github:Mic92/nix-update -- --flake agent-browser --use-update-script
+```
+
 ### executor
 
 - **File**: `packages/executor/default.nix`

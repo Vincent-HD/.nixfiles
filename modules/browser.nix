@@ -3,15 +3,24 @@
   # Home Manager side: web browser
   config.flake.modules.homeManager.browser =
     { pkgs, lib, ... }:
+    let
+      # chrome://inspect/#remote-debugging is session-only and does not survive a
+      # Brave restart. Keep a localhost CDP port on every launch so Agent Browser
+      # `--auto-connect` can rediscover it. nixpkgs only forwards commandLineArgs
+      # on Linux; the Homebrew cask on Darwin still needs a manual inspect toggle.
+      brave = pkgs.brave.override {
+        commandLineArgs = "--remote-debugging-port=9222 --remote-allow-origins=*";
+      };
+    in
     {
       home.packages = [
-        pkgs.brave
+        brave
       ];
 
       # Cursor runs terminals inside an FHS sandbox that includes its own Google Chrome
       # and hides the host Brave desktop entry; make CLI URL openers use Brave explicitly.
       home.sessionVariables = lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
-        BROWSER = lib.getExe pkgs.brave;
+        BROWSER = lib.getExe brave;
       };
 
       # Default browser for xdg-open (editors, Cursor links, etc.): use Brave from nixpkgs

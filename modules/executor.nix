@@ -9,8 +9,10 @@
     }:
     let
       executorPackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.executor;
+      agentBrowserPackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.agent-browser;
       archOpsPackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.arch-ops-server;
       executorDataDirectory = "${config.home.homeDirectory}/.executor";
+      agentBrowserProxyPort = 4790;
       context7TokenPath = "${config.home.homeDirectory}/.config/agent-mcp/context7-token";
       githubTokenPath = "${config.home.homeDirectory}/.config/agent-mcp/github-token";
 
@@ -48,11 +50,27 @@
         exec ${lib.getExe pkgs.github-mcp-server} stdio
       '';
 
-      # Keep the update-check opt-out out of Executor's auth-template discovery.
-      chromeDevtoolsMcp = pkgs.writeShellScript "executor-chrome-devtools-mcp" ''
+      # Executor stdio MCP is still per-call (spawn, initialize, close). Each
+      # new agent-browser process re-attaches over CDP and Brave asks again to
+      # allow remote debugging. Remote MCP is pooled, so keep one stdio child
+      # behind mcp-proxy and point Executor at that HTTP endpoint.
+      # Do not bake a CDP WebSocket UUID: --auto-connect rediscovers Brave.
+      agentBrowserProxy = pkgs.writeShellScript "executor-agent-browser-mcp-proxy" ''
         set -eu
-        export CHROME_DEVTOOLS_MCP_NO_UPDATE_CHECKS=true
-        exec ${pkgs.nodejs}/bin/npx "$@"
+        exec ${lib.getExe pkgs.mcp-proxy} \
+          --host 127.0.0.1 \
+          --port ${toString agentBrowserProxyPort} \
+          --transport streamablehttp \
+          --no-stateless \
+          -e HOME ${config.home.homeDirectory} \
+          -e AGENT_BROWSER_AUTO_CONNECT 1 \
+          -e AGENT_BROWSER_IDLE_TIMEOUT_MS 0 \
+          -e AGENT_BROWSER_SESSION executor \
+          -- ${lib.getExe agentBrowserPackage} \
+            --auto-connect \
+            --session executor \
+            --idle-timeout 0 \
+            mcp
       '';
 
       mcpServers = [
@@ -65,23 +83,12 @@
           args = [ ];
         }
         {
-          slug = "chrome-devtools";
-          name = "Chrome DevTools";
-          description = "Chrome browser automation, debugging, and performance analysis.";
-          transport = "stdio";
-          # The wrapper keeps Executor from mistaking the update-check opt-out
-          # for an integration credential.
-          command = "${chromeDevtoolsMcp}";
-          # Keep browser telemetry and external CrUX lookups disabled by default.
-          args = [
-            "-y"
-            "chrome-devtools-mcp@latest"
-            # The inspect-page remote-debugging flow exposes this stable
-            # WebSocket endpoint but not the legacy /json/version discovery API.
-            "--ws-endpoint=ws://127.0.0.1:9222/devtools/browser"
-            "--no-usage-statistics"
-            "--no-performance-crux"
-          ];
+          slug = "agent-browser";
+          name = "Agent Browser";
+          description = "Fast, persistent browser automation with a compact MCP tool profile.";
+          transport = "remote";
+          endpoint = "http://127.0.0.1:${toString agentBrowserProxyPort}/mcp";
+          remoteTransport = "streamable-http";
         }
         {
           slug = "context7";
@@ -105,14 +112,32 @@
           description = "Read-only PostgreSQL database access through pgEdge MCP.";
           transport = "stdio";
           command = lib.getExe pkgs.docker;
+          # Linux: Cursor/session-manager forwards bind 127.0.0.1, which
+          # host.docker.internal (docker0) cannot reach. Host networking makes
+          # 127.0.0.1 inside the container the same loopback. Darwin Docker
+          # Desktop already maps host.docker.internal to the Mac localhost.
           args = [
             "run"
             "-i"
             "--rm"
-            "--add-host"
-            "host.docker.internal:host-gateway"
-            "-e"
-            "PGEDGE_DB_HOST=host.docker.internal"
+          ]
+          ++ (
+            if pkgs.stdenv.hostPlatform.isLinux then
+              [
+                "--network"
+                "host"
+                "-e"
+                "PGEDGE_DB_HOST=127.0.0.1"
+              ]
+            else
+              [
+                "--add-host"
+                "host.docker.internal:host-gateway"
+                "-e"
+                "PGEDGE_DB_HOST=host.docker.internal"
+              ]
+          )
+          ++ [
             "-e"
             "PGEDGE_DB_PORT"
             "-e"
@@ -121,13 +146,18 @@
             "PGEDGE_DB_USER"
             "-e"
             "PGEDGE_DB_PASSWORD"
+            "-e"
+            "PGEDGE_DB_ALLOW_WRITES"
             "ghcr.io/pgedge/postgres-mcp:latest"
           ];
+          # allow_writes is off unless the Executor connection sets
+          # PGEDGE_DB_ALLOW_WRITES to true/1/yes; pgEdge defaults to false.
           envVars = [
             "PGEDGE_DB_PORT"
             "PGEDGE_DB_NAME"
             "PGEDGE_DB_USER"
             "PGEDGE_DB_PASSWORD"
+            "PGEDGE_DB_ALLOW_WRITES"
           ];
           # The connection is intentionally created manually in Executor so
           # database credentials never get provisioned by Home Manager.
@@ -157,12 +187,26 @@
 
       executorSync = pkgs.writeShellApplication {
         name = "executor-sync";
-        runtimeInputs = [ pkgs.bun ];
+        runtimeInputs = [
+          pkgs.bun
+          pkgs.coreutils
+        ];
         text = ''
           export EXECUTOR_DATA_DIR=${lib.escapeShellArg executorDataDirectory}
           export EXECUTOR_DECLARATIONS=${lib.escapeShellArg declarations}
           export EXECUTOR_BIN=${lib.escapeShellArg (lib.getExe executorPackage)}
           export EXECUTOR_URL=http://127.0.0.1:4789
+          for attempt in $(seq 1 60); do
+            proxyStatus="$(${lib.getExe pkgs.curl} --silent --show-error --max-time 2 --output /dev/null --write-out '%{http_code}' http://127.0.0.1:${toString agentBrowserProxyPort}/mcp || true)"
+            if [ "$proxyStatus" = 200 ] || [ "$proxyStatus" = 406 ]; then
+              break
+            fi
+            if [ "$attempt" -eq 60 ]; then
+              printf 'Agent Browser MCP proxy did not become ready at 127.0.0.1:%s\n' ${toString agentBrowserProxyPort} >&2
+              exit 1
+            fi
+            sleep 1
+          done
           exec ${lib.getExe pkgs.bun} ${./executor/assets/sync.ts}
         '';
       };
@@ -178,6 +222,7 @@
       home.file.".executor/logs/.keep".text = "";
 
       home.packages = [
+        agentBrowserPackage
         executorPackage
         executorSync
       ];
@@ -199,11 +244,34 @@
         Install.WantedBy = [ "default.target" ];
       };
 
+      systemd.user.services.agent-browser-mcp-proxy = lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
+        Unit = {
+          Description = "Persistent Agent Browser MCP proxy";
+          After = [
+            "graphical-session.target"
+            "network-online.target"
+          ];
+        };
+        Service = {
+          ExecStart = "${agentBrowserProxy}";
+          Restart = "always";
+          RestartSec = "2";
+          WorkingDirectory = config.home.homeDirectory;
+        };
+        Install.WantedBy = [ "default.target" ];
+      };
+
       systemd.user.services.executor-mcp-sync = lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
         Unit = {
           Description = "Reconcile Executor MCP declarations";
-          Requires = [ "executor.service" ];
-          After = [ "executor.service" ];
+          Requires = [
+            "executor.service"
+            "agent-browser-mcp-proxy.service"
+          ];
+          After = [
+            "executor.service"
+            "agent-browser-mcp-proxy.service"
+          ];
         };
         Service = {
           Type = "oneshot";
@@ -223,6 +291,19 @@
           WorkingDirectory = config.home.homeDirectory;
           StandardOutPath = "${executorDataDirectory}/logs/daemon.log";
           StandardErrorPath = "${executorDataDirectory}/logs/daemon.error.log";
+        };
+      };
+
+      launchd.agents.agent-browser-mcp-proxy = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
+        enable = true;
+        config = {
+          ProgramArguments = [ "${agentBrowserProxy}" ];
+          ProcessType = "Background";
+          RunAtLoad = true;
+          KeepAlive = true;
+          WorkingDirectory = config.home.homeDirectory;
+          StandardOutPath = "${executorDataDirectory}/logs/agent-browser-mcp-proxy.log";
+          StandardErrorPath = "${executorDataDirectory}/logs/agent-browser-mcp-proxy.error.log";
         };
       };
 
