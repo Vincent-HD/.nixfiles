@@ -85,7 +85,10 @@ in
             application = [
               {
                 title = "Steam";
-                command = [ "/run/current-system/sw/bin/steam" "-bigpicture" ];
+                command = [
+                  "/run/current-system/sw/bin/steam"
+                  "-bigpicture"
+                ];
               }
               {
                 title = "Niri Desktop (Noctalia)";
@@ -111,7 +114,10 @@ in
               }
               {
                 type = "lutris";
-                command = [ "/run/current-system/sw/bin/lutris" "lutris:rungame/{slug}" ];
+                command = [
+                  "/run/current-system/sw/bin/lutris"
+                  "lutris:rungame/{slug}"
+                ];
               }
             ];
           };
@@ -123,7 +129,10 @@ in
           users.groups.moonshine = { };
 
           # Moonshine creates virtual keyboard, mouse, and gamepad devices.
-          boot.kernelModules = [ "uinput" "uhid" ];
+          boot.kernelModules = [
+            "uinput"
+            "uhid"
+          ];
 
           # Keep the user manager and D-Bus session available for headless launches.
           users.users.${cfg.user}.linger = true;
@@ -144,7 +153,12 @@ in
             };
             serviceConfig = {
               User = cfg.user;
-              SupplementaryGroups = [ "input" "render" "video" ];
+              SupplementaryGroups = [
+                "input"
+                "moonshine"
+                "render"
+                "video"
+              ];
               ExecStart = "${lib.getExe package} ${configFile}";
               Restart = "on-failure";
               RestartSec = 5;

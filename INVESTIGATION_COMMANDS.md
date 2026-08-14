@@ -136,6 +136,19 @@ in pkg
 
 Purpose: force a specific HM-managed package or wrapper package to build even when it has no dedicated flake output.
 
+### Build a package with a compatible dependency override
+
+```bash
+nix build --impure --no-link --print-out-paths --expr '
+let
+  flake = builtins.getFlake "git+file:///home/vincent/.nixfiles";
+  pkgs = import flake.inputs.nixpkgs { system = "x86_64-linux"; };
+in (pkgs.<package>.override { <dependency> = pkgs.<compatible-dependency>; })
+'
+```
+
+Purpose: verify a package against an older or alternate dependency when the current nixpkgs dependency has an incompatible API. Use this to test a narrow compatibility override before wiring it into a module.
+
 ### Build an unfree flake package
 
 ```bash
@@ -729,6 +742,27 @@ journalctl --user -u <service> -b -g 'Error|Fatal|Warning|display|encoder|CAP|KM
 Purpose: check whether a user service is running and filter the current boot logs for capture, permission, or initialization failures.
 
 Use when a Home Manager or NixOS-managed user service starts but fails at runtime.
+
+### Inspect a NixOS system service
+
+```bash
+systemctl status <service>.service --no-pager -l
+journalctl -u <service>.service -b --no-pager -n 160
+systemctl cat <service>.service
+systemctl show <service>.service --property=Environment --property=User --property=SupplementaryGroups --property=ExecStart --no-pager
+```
+
+Purpose: identify the actual exit error, generated service environment, and runtime credentials for a failed system service.
+
+### Compare booted and current NixOS generations
+
+```bash
+readlink -f /run/booted-system /run/current-system /nix/var/nix/profiles/system
+uname -r
+modinfo <kernel-module> | rg 'filename|version'
+```
+
+Purpose: detect userspace/kernel-module mismatches after a driver update. A reboot is required before testing services that load the newly activated driver userspace against a changed kernel module.
 
 ### Inspect a nix-darwin user LaunchAgent
 
