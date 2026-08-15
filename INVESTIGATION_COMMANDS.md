@@ -178,6 +178,19 @@ nix build --no-link --print-out-paths \
 Purpose: realize generated Home Manager wrappers, service units, and file sources after changing a
 Home Manager module, catching shell-check or generated-file failures without switching the host.
 
+### Run colocated Bun tests for a Nix-managed TypeScript asset
+
+```bash
+nix run nixpkgs#bun -- test modules/<module>/assets/<asset>/
+```
+
+Purpose: run unit and integration tests placed beside a TypeScript asset with Bun's native `bun:test` runtime.
+
+Use when:
+- a Nix module wraps a TypeScript or JavaScript helper
+- deterministic mapping logic has a unit-test fixture
+- a local service is available for a real E2E test
+
 ### Prefetch a fixed-output release artifact
 
 ```bash
@@ -446,6 +459,23 @@ curl --fail --silent --show-error http://127.0.0.1:<port>/<health-path>
 ```
 
 Use after `nixos-rebuild switch` or a Home Manager activation, before testing clients against the service.
+
+### Probe an authenticated local management endpoint
+
+```bash
+SERVICE_HOME="$HOME/.service-name"
+ADMIN_TOKEN_FILE="$SERVICE_HOME/admin-api-token"
+curl --fail --silent --show-error --max-time 10 \
+  -H "x-service-api-key: $(<"$ADMIN_TOKEN_FILE")" \
+  "http://127.0.0.1:<port>/<management-path>" | jq .
+```
+
+Purpose: inspect a local service's management or capability API while keeping the file-backed administrator token out of command output and shell history.
+
+Use when:
+- a generated client configuration depends on live service metadata
+- the public health or model endpoint omits administrative capability fields
+- you need to compare enabled rows with the service's full configured catalog
 
 ### Probe a local Streamable HTTP MCP proxy
 

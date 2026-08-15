@@ -165,7 +165,7 @@ in
         name = "opencodex-models-vscode";
         runtimeInputs = [ pkgs.bun ];
         text = ''
-          exec ${lib.getExe pkgs.bun} ${./assets/opencodex-models-vscode.ts} "$@"
+          exec ${lib.getExe pkgs.bun} ${./assets/opencodex-models-vscode/opencodex-models-vscode.ts} "$@"
         '';
       };
       # On Linux, use the pinned package from packages/codex. On macOS, OpenAI
