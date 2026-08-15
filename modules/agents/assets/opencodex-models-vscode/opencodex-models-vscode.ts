@@ -9,7 +9,7 @@ export type VscodeModel = {
   name: string;
   url: string;
   apiType: "chat-completions";
-  toolCalling?: boolean;
+  toolCalling: boolean;
   vision: boolean;
   contextWindow?: number;
   maxInputTokens?: number;
@@ -334,6 +334,9 @@ export const mapModelToVscode = ({
         && catalogModel.experimental_supported_tools.length > 0)
       ? true
       : undefined;
+  // Dynamic Cursor rows can arrive before the catalog gains a capability record. The Cursor
+  // adapter is tool-capable, while unknown providers remain conservative when metadata is absent.
+  const toolCalling = supportsToolCalling ?? providerName === "cursor";
   const displayName = nonEmptyString(catalogModel?.display_name)
     ?? nonEmptyString(model.displayName)
     ?? id;
@@ -343,7 +346,7 @@ export const mapModelToVscode = ({
     name: displayName,
     url: `${baseUrl}/v1/chat/completions`,
     apiType: "chat-completions",
-    ...(supportsToolCalling !== undefined ? { toolCalling: supportsToolCalling } : {}),
+    toolCalling,
     vision: inputModalities.includes("image"),
     ...tokenLimits,
     ...(reasoningEfforts.length > 0

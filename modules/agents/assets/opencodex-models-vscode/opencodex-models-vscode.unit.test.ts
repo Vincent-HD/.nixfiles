@@ -51,10 +51,11 @@ describe("mapModelToVscode", () => {
     });
   });
 
-  test("does not invent unsupported capability fields", () => {
+  test("keeps VS Code's required toolCalling field for dynamic Cursor rows", () => {
     const model = mapModelToVscode({
       baseUrl: "http://127.0.0.1:10100",
       model: {
+        provider: "cursor",
         id: "cursor/unknown",
         contextWindow: 50_000,
         inputModalities: ["text"],
@@ -70,6 +71,7 @@ describe("mapModelToVscode", () => {
       name: "cursor/unknown",
       url: "http://127.0.0.1:10100/v1/chat/completions",
       apiType: "chat-completions",
+      toolCalling: true,
       vision: false,
       contextWindow: 50_000,
       maxInputTokens: 34_000,
