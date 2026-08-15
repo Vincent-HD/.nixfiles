@@ -182,7 +182,7 @@ Development|hyperfine|Benchmark shell commands|hyperfine 'fd -e nix'
 Development|mise|Manage project runtimes, tasks, and environment variables|mise ls
 Development|sad|Search and replace across files interactively|sad 'old' 'new' src/
 Development|starship|Show the configured shell prompt|starship explain
-Development|starship-jj|Add Jujutsu repository state to Starship|starship-jj starship prompt
+Development|starship-jj|Add Jujutsu repository state to Starship|starship-jj --ignore-working-copy starship prompt
 Development|vivid|Generate LS_COLORS themes|vivid generate catppuccin-mocha
 Development|direnv|Load project-specific environment variables automatically|direnv allow
 Development|lazydocker|Manage Docker containers through a terminal UI|lazydocker

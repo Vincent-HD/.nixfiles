@@ -1489,7 +1489,7 @@ onefetch --image ./logo.png</code></pre>
                   <pre><code>starship explain
 starship module directory
 jj root --ignore-working-copy
-starship-jj starship prompt</code></pre>
+starship-jj --ignore-working-copy starship prompt</code></pre>
                 </article>
                 <article class="cheat-card">
                   <h4>JJ signal shown</h4>
@@ -1522,9 +1522,9 @@ starship-jj starship prompt</code></pre>
           <article class="panel">
             <h3>What the prompt knows</h3>
             <p>
-              The custom module runs <code>starship-jj starship prompt</code> when
-              <code>jj root --ignore-working-copy</code> succeeds. That keeps normal directories
-              quiet while showing useful context in JJ repos.
+              The custom module runs <code>starship-jj --ignore-working-copy starship prompt</code> when
+              <code>jj root --ignore-working-copy</code> succeeds. Snapshotting on every prompt
+              can hang in large colocated repos; skipping it keeps the shell responsive.
             </p>
             <div class="source-row">
               <a class="source-link" href="https://starship.rs" target="_blank" rel="noreferrer">Starship website</a>

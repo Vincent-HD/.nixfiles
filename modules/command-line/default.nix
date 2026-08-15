@@ -174,11 +174,12 @@
           command_timeout = 1000;
           scan_timeout = 20;
           custom.jj = {
-            command = "${pkgs.starship-jj}/bin/starship-jj starship prompt";
+            command = "${pkgs.starship-jj}/bin/starship-jj --ignore-working-copy starship prompt";
             detect_folders = [ ".jj" ];
             format = "[$output]($style) ";
             ignore_timeout = true;
             style = "bold purple";
+            use_stdin = false;
             when = "${pkgs.jujutsu}/bin/jj root --ignore-working-copy >/dev/null 2>&1";
           };
         };

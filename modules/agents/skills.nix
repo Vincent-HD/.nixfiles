@@ -21,6 +21,8 @@
         jj-auto-revise = ./assets/skills/jj-auto-revise;
         # Later: backup → squash blob → resplit for stacked PRs; never push from the skill.
         jj-resplit-stack = ./assets/skills/jj-resplit-stack;
+        # Conflicted rebase/merge: backup, oldest-first jj new + squash, running count.
+        jj-solve-conflict = ./assets/skills/jj-solve-conflict;
         papercuts = ./assets/skills/papercuts;
         # Local snapshot of astahmer's antislop skill; CLI lives in assets/antislop.
         antislop = ./assets/skills/antislop;
