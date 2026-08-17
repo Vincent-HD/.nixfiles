@@ -279,6 +279,11 @@
               source "${config.home.homeDirectory}/.orbstack/shell/init.zsh" 2>/dev/null || :
             ''
           ))
+          (lib.mkOrder 1400 ''
+            # Register Carapace with Zsh and let it reuse Inshellisense specs.
+            export CARAPACE_BRIDGES='zsh,inshellisense'
+            source <(${pkgs.carapace}/bin/carapace _carapace)
+          '')
           (lib.mkOrder 1500 ''
             # Load Inshellisense after the other shell integrations.
             [[ -f "${config.home.homeDirectory}/.inshellisense/init/zsh/init.zsh" ]] \
