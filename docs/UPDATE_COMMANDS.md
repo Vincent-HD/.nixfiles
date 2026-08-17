@@ -234,15 +234,6 @@ nix flake update codex-desktop-linux
 - **Why**: It is intentionally pinned to a specific v4 revision and should stay out of routine updates until you migrate to v5.
 - **How**: Do not update this as part of normal maintenance.
 
-### iris
-
-- **File**: `flake.nix`
-- **Why**: It follows upstream and `flake.lock` records the reproducible revision used for the Linux and macOS package.
-
-```bash
-nix flake update iris
-```
-
 ### context7-skills
 
 - **File**: `flake.nix`

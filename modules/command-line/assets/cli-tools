@@ -191,7 +191,6 @@ Development|vim|Edit files with Vim|vim README.md
 Development|jjui|Use Jujutsu repositories through a terminal UI|jjui
 Development|lightjj|Inspect Jujutsu history in a terminal UI|lightjj
 Development|jj-ryu|Use the jj-ryu Jujutsu helper|jj-ryu --help
-Terminal helpers|iris|Provide always-on terminal-native command suggestions|iris
 Terminal helpers|pay-respects|Suggest corrections after a failed command|pay-respects
 Terminal helpers|pik|Interactively select and kill a process|pik
 Terminal helpers|tldr|Show concise practical command examples (tealdeer)|tldr tar

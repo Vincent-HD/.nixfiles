@@ -30,6 +30,7 @@ in
             hm.agentCursor
             hm.agentCodex
             hm.agentOpenCode
+            hm.agentVscode
             hm.executor
             hm.plannotator
             hm.commandLine

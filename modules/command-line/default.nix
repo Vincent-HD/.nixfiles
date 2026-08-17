@@ -11,7 +11,8 @@
     let
       fdCommand = "${pkgs.fd}/bin/fd --hidden --follow --exclude .git";
       batPreview = "${pkgs.bat}/bin/bat --color=always --style=numbers --line-range=:200 {} 2>/dev/null || true";
-      irisPackage = inputs.iris.packages.${pkgs.stdenv.hostPlatform.system}.default;
+      inshellisensePackage = pkgs.inshellisense;
+      inshellisenseRoot = "${inshellisensePackage}/lib/node_modules/@microsoft/inshellisense";
     in
     {
       home.packages = [
@@ -31,8 +32,8 @@
         pkgs.gping
         inputs.herdr.packages.${pkgs.stdenv.hostPlatform.system}.default
         pkgs.hyperfine
-        # IRIS provides TTY-native command suggestions on Linux and macOS.
-        irisPackage
+        # Inshellisense provides the active shell autocomplete integration.
+        inshellisensePackage
         pkgs.jaq
         pkgs.just
         pkgs.lazygit
@@ -279,37 +280,28 @@
             ''
           ))
           (lib.mkOrder 1500 ''
-            # Keep IRIS resident, but let its menu be shown only on demand.
-            eval "$(${irisPackage}/bin/iris init zsh)"
+            # Load Inshellisense after the other shell integrations.
+            [[ -f "${config.home.homeDirectory}/.inshellisense/init/zsh/init.zsh" ]] \
+              && source "${config.home.homeDirectory}/.inshellisense/init/zsh/init.zsh"
           '')
         ];
       };
 
-      xdg.configFile."iris/config.toml".text = ''
-        [core]
-        mode = "spec"
-        expand-alias = false
+      # Generate Inshellisense's mutable shell resources when the nixpkgs package changes.
+      home.activation.inshellisenseResources = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+        inshellisense_state=${lib.escapeShellArg "${config.home.homeDirectory}/.inshellisense"}
+        inshellisense_version=${lib.escapeShellArg pkgs.inshellisense.version}
+        version_file="$inshellisense_state/.nixpkgs-version"
+        zsh_init="$inshellisense_state/init/zsh/init.zsh"
 
-        [keybindings]
-        # Unknown bindings do not match input, so shell history keys pass through Iris.
-        toggle-mode = "disabled"
-        navigate-up = "disabled"
-        navigate-down = "disabled"
-
-        [ai]
-        enabled = true
-        provider = "opencodex"
-        debounce_ms = 400
-        min_interval_ms = 1000
-
-        [ai.providers.opencodex]
-        inherited_from = "openai"
-        endpoint = "http://127.0.0.1:10100/v1"
-        model = "gpt-5.6-luna"
-        timeout_ms = 3000
-
-        [ai.providers.opencodex.extra_request_body]
-        reasoning_effort = "none"
+        if [[ ! -f "$version_file" ]] \
+          || [[ "$(< "$version_file")" != "$inshellisense_version" ]] \
+          || [[ ! -f "$zsh_init" ]]; then
+          cd ${lib.escapeShellArg inshellisenseRoot}
+          ${inshellisensePackage}/bin/is reinit >/dev/null
+          printf '%s\n' "$inshellisense_version" > "$version_file"
+        fi
       '';
+
     };
 }

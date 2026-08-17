@@ -6,8 +6,8 @@
     }:
     {
       # Portable Agent Skills: one registration → ~/.agents/skills via agentCommon.
-      # Codex, Cursor, and OpenCode discover that path natively. Do not also install
-      # these under ~/.cursor/skills, ~/.codex/skills, or ~/.config/opencode/skills.
+      # Codex, Cursor, and OpenCode discover that path natively; VS Code is pointed
+      # there by agentVscode. Do not also install these under client-specific paths.
       custom.agentSetup.skills = {
         # Select only these directories from their pinned upstream source trees.
         context7-mcp = "${inputs.context7-skills}/plugins/claude/context7/skills/context7-mcp";
