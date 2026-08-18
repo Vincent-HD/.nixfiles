@@ -21,7 +21,7 @@
         pkgs.tesseract
         pkgs.translate-shell
         # wf-recorder 0.6.0 still accesses AVCodec fields removed in FFmpeg 9.
-        (pkgs.wf-recorder.override { ffmpeg = pkgs.ffmpeg_8; })
+        pkgs.wf-recorder
         pkgs.wl-clipboard
         pkgs.zbar
         # end of screen-toolkit dependencies

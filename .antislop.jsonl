@@ -1,0 +1,1 @@
+{"kind":"rule","id":"as_eln0mew0ayf4","ts":"2026-08-18T11:12:48.054Z","agent":"unknown","text":"When overriding a nixpkgs package, verify the override argument names against the locked package source before applying the compatibility pin.","tags":["nix"],"severity":"major"}
