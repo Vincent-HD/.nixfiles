@@ -99,6 +99,7 @@ hosts/
 | `home-manager`   | `github:nix-community/home-manager`   | User-level config management         |
 | `code-cursor-nix`| `github:jacopone/code-cursor-nix`     | Cursor editor package                |
 | `nixcord`        | `github:FlameFlag/nixcord`            | Discord + Vencord (HM module)        |
+| `spicetify-nix`  | `github:Gerg-L/spicetify-nix`         | Spotify + Spicetify (HM module)      |
 | `niri`           | `github:sodiboo/niri-flake`           | Niri compositor (optional session)   |
 | `noctalia`       | `github:noctalia-dev/noctalia-shell`  | Noctalia shell + HM module           |
 

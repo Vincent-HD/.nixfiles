@@ -218,6 +218,16 @@ nix eval .#nixosConfigurations.pc-fixe.config.system.build.toplevel.drvPath --ra
 
 These are updated with `nix flake lock`, not `nix-update`.
 
+### spicetify-nix
+
+- **File**: `flake.nix`
+- **Why**: Provides the Home Manager module and pinned Spicetify apps/extensions used by the Spotify configuration.
+- **How**: Refresh the locked source, then review compatibility with the current Spotify package before applying Home Manager.
+
+```bash
+nix flake update spicetify-nix
+```
+
 ### codex-desktop-linux
 
 - **File**: `flake.nix`

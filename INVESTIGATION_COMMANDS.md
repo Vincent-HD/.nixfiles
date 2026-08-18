@@ -434,6 +434,16 @@ Purpose: inspect the rendered value of a single Home Manager option or nested at
 
 Use `--json` for booleans and attrsets; reserve `--raw` for strings and store paths.
 
+### Inspect names from a generated Home Manager list
+
+```bash
+cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" \
+nix eval --json '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$USER"'.<hm.list.option>' \
+  --apply 'builtins.map (item: item.name)'
+```
+
+Purpose: inspect package-like list options such as enabled Spicetify extensions without trying to serialize derivations and their function-valued attributes directly.
+
 ### Inspect a rendered Home Manager activation step
 
 ```bash

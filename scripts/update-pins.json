@@ -51,6 +51,17 @@
       ]
     },
     {
+      "name": "spicetify-nix",
+      "type": "flake-input",
+      "description": "Spicetify Nix/Home Manager integration and pinned extensions",
+      "command": [
+        "nix",
+        "flake",
+        "update",
+        "spicetify-nix"
+      ]
+    },
+    {
       "name": "codex",
       "type": "nix-update",
       "description": "OpenAI Codex package tarball (CLI + code-mode host)",
