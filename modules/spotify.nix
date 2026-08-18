@@ -12,8 +12,8 @@
       programs.spicetify = {
         enable = true;
 
-        # Keep Spotify's Chromium UI on native Wayland for the Niri session.
-        wayland = true;
+        # Use XWayland to avoid Spotify's broken native-Wayland title bar.
+        wayland = false;
 
         # Lyrics Plus provides synced lyrics with third-party provider fallbacks.
         enabledCustomApps = [
