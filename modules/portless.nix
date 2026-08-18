@@ -13,11 +13,7 @@ in
     let
       cfg = config.services.portless;
       package = cfg.package;
-      stateDirectory =
-        if cfg.stateDir == null then
-          "/home/${cfg.user}/.portless"
-        else
-          cfg.stateDir;
+      stateDirectory = if cfg.stateDir == null then "/home/${cfg.user}/.portless" else cfg.stateDir;
       serviceRunner = pkgs.writeShellApplication {
         name = "portless-service";
         runtimeInputs = [
@@ -42,6 +38,28 @@ in
             ${if cfg.https then "--https" else "--no-tls"} \
             --port ${toString cfg.proxyPort} \
             --tld ${lib.escapeShellArg cfg.tld} ${lib.optionalString cfg.wildcard "--wildcard"}
+        '';
+      };
+      # Brave/Chromium on Linux read ~/.pki/nssdb, not only the OpenSSL bundle.
+      nssTrust = pkgs.writeShellApplication {
+        name = "portless-trust-nss";
+        runtimeInputs = [
+          pkgs.coreutils
+          pkgs.nssTools
+        ];
+        text = ''
+          ca=${lib.escapeShellArg "${stateDirectory}/ca.pem"}
+          dbDir="$HOME/.pki/nssdb"
+          if [ ! -f "$ca" ]; then
+            echo "portless CA not found at $ca; skip NSS trust"
+            exit 0
+          fi
+          mkdir -p "$dbDir"
+          if [ ! -f "$dbDir/cert9.db" ]; then
+            certutil -d "sql:$dbDir" -N --empty-password
+          fi
+          certutil -d "sql:$dbDir" -D -n portless >/dev/null 2>&1 || true
+          certutil -d "sql:$dbDir" -A -t "C,," -n portless -i "$ca"
         '';
       };
     in
@@ -96,12 +114,34 @@ in
           default = true;
           description = "Allow the privileged proxy to maintain its /etc/hosts block.";
         };
+
+        caCertificateFile = lib.mkOption {
+          type = lib.types.nullOr lib.types.path;
+          default = null;
+          description = ''
+            Public Portless CA PEM to install into the NixOS trust store (OpenSSL,
+            curl, p11-kit). The proxy still generates certs under stateDir; this is
+            only the public CA. `portless trust` is skipped because it is not
+            NixOS-aware. Copy a regenerated ~/.portless/ca.pem here and rebuild.
+          '';
+        };
       };
 
       config = lib.mkMerge [
         { services.portless.enable = true; }
         (lib.mkIf cfg.enable {
-          environment.systemPackages = [ package ];
+          # openssl/lsof: `portless doctor`. nssTools: NSS import for Brave.
+          environment.systemPackages = [
+            package
+            pkgs.openssl
+            pkgs.lsof
+            pkgs.nssTools
+          ];
+
+          # Flake-pure trust: the PEM must be in the Nix store (host copies it).
+          security.pki.certificateFiles = lib.optional (
+            cfg.https && cfg.caCertificateFile != null
+          ) cfg.caCertificateFile;
 
           # Keep the privileged proxy alive before development apps start. The
           # wrapper mirrors upstream's root-owned service while chowning state
@@ -118,6 +158,19 @@ in
               RestartSec = 2;
               KillSignal = "SIGTERM";
               TimeoutStopSec = 5;
+            };
+          };
+
+          systemd.services.portless-trust-nss = {
+            description = "Trust the Portless local CA in the user NSS database";
+            after = [ "portless.service" ];
+            wants = [ "portless.service" ];
+            wantedBy = [ "multi-user.target" ];
+            serviceConfig = {
+              Type = "oneshot";
+              RemainAfterExit = true;
+              User = cfg.user;
+              ExecStart = lib.getExe nssTrust;
             };
           };
         })
@@ -161,7 +214,20 @@ in
       };
     in
     {
-      environment.systemPackages = [ package ];
+      environment.systemPackages = [
+        package
+        pkgs.openssl
+        pkgs.lsof
+      ];
+
+      # Portless starts with --skip-trust; install the live CA into the System
+      # keychain at activation so browsers trust https://*.localhost.
+      system.activationScripts.extraActivation.text = lib.mkAfter ''
+        ca=${lib.escapeShellArg "${stateDirectory}/ca.pem"}
+        if [ -f "$ca" ]; then
+          security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain "$ca" || true
+        fi
+      '';
 
       # Portless's upstream macOS service is a root LaunchDaemon so it can
       # bind :443/:80 and update /etc/hosts before the user logs in.

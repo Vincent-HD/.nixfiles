@@ -17,7 +17,10 @@
       networking.enableIPv6 = true;
       networking.hosts."192.168.1.254" = [ "mabbox.bytel.fr" ];
       # Prefer Cloudflare DNS and use Google DNS if it is unavailable.
-      networking.nameservers = [ "1.1.1.1" "8.8.8.8" ];
+      networking.nameservers = [
+        "1.1.1.1"
+        "8.8.8.8"
+      ];
       networking.networkmanager.enable = true;
 
       time.timeZone = "Europe/Paris";
@@ -43,6 +46,10 @@
       console.keyMap = "fr";
 
       environment.sessionVariables.NIXOS_OZONE_WL = "1";
+
+      # Public Portless CA only (not ca-key.pem). Rebuild after replacing this
+      # file if ~/.portless/ca.pem is regenerated (`portless clean`).
+      services.portless.caCertificateFile = ./portless-ca.pem;
 
       programs.zsh.enable = true;
 
