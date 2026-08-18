@@ -22,6 +22,7 @@ Companions: later squash→resplit into a stacked PR → `jj-resplit-stack`. Con
 - One open `@` per concern. Do **not** `jj commit` / `jj new` at the end of a turn that finished a sub-step of the same ask.
 - Print the **progress block** at prompt boundaries (related vs unrelated) and before/after absorb, squash, or split. Not after every file edit.
 - HEREDOC `-m` or `--use-destination-message`. Never open an editor (`nano` / `$EDITOR`).
+- No pager. Agent shells are PTYs: bare `jj status` / `jj log` / `jj diff` / `jj op *` / `jj help` / `jj bookmark list` / `jj config list` open `less` and hang forever (often with empty captured output). `timeout(1)` does not help — `less` ignores SIGTERM. Prefix **every** standalone `jj` (and `git log` / `git diff`) with `PAGER=cat GIT_PAGER=cat`. Exports do not persist across agent shell calls. Helper scripts already set this plus `ui.paginate=never`. Never `jj op show -p` unpiped — use `| head`.
 - No interactive `-i`. No push. No backup/duplicate stacks (companions own those).
 - `@` is conflicted → one sentence: stop, use `jj-solve-conflict`. Do not inline that workflow.
 - User asks to resplit history / stacked PRs / squash-blob-onto-main → one sentence: use `jj-resplit-stack`.
@@ -39,11 +40,13 @@ At each **new user prompt** (deciding related vs unrelated) and when absorbing, 
 
 If `@` is conflicted, **Action** is: stop — use `jj-solve-conflict`.
 
-Optional helper (same directory as this skill):
+Optional helper (same directory as this skill; disables the pager itself):
 
 ```bash
 bash ~/.agents/skills/jj-auto-revise/scripts/status.sh
 ```
+
+Do **not** run raw `jj status` / `jj help` / `jj op show -p` to fill this block.
 
 ## Core loop (prompt boundary)
 
@@ -75,23 +78,22 @@ Use these when the change belongs with history **other than** the open `@`, or w
 | WC mashed unrelated topics | `jj split path/a path/b -m "…"` (filesets, no `-i`), then describe each side |
 | Empty accidental `wip` | `jj abandon REV` |
 
-Before absorb/squash, note `OP=$(jj op log -n 1 -T 'self.id().short()' --no-graph)` — safety net for `jj undo`, not a backup ritual. After: `jj op show -p` and `jj diff -r REV --summary`.
+Before absorb/squash, note `OP=$(PAGER=cat jj op log -n 1 -T 'self.id().short()' --no-graph)` — safety net for `jj undo`, not a backup ritual. After: `PAGER=cat jj op show -p | head -n 80` and `PAGER=cat jj diff -r REV --summary`.
 
 Do **not** open a new rev (via commit-on-new-prompt) for drive-by noise that still belongs to the open concern — stay on `@`, or absorb/squash-into the ancestor that owns those lines.
 
 ## Inspect (before deciding)
 
 ```bash
-jj root
-jj status
-
-jj log -r @ --no-graph \
+# prefer the helper (sets PAGER + ui.paginate=never):
+#   bash ~/.agents/skills/jj-auto-revise/scripts/status.sh
+#
+# every standalone jj in a new agent shell:
+PAGER=cat GIT_PAGER=cat jj root
+PAGER=cat GIT_PAGER=cat jj log -r @ --no-graph \
   -T 'change_id.short() ++ " empty=" ++ empty ++ " conflict=" ++ conflict ++ " " ++ description.first_line() ++ "\n"'
-
-jj diff -r @ --summary
-
-# nearby targets for absorb/squash
-jj log -r 'ancestors(@-) & mutable()' -n 8 --no-graph \
+PAGER=cat GIT_PAGER=cat jj diff -r @ --summary
+PAGER=cat GIT_PAGER=cat jj log -r 'ancestors(@-) & mutable()' -n 8 --no-graph \
   -T 'change_id.short() ++ " " ++ description.first_line() ++ "\n"'
 ```
 
@@ -121,11 +123,11 @@ EOF
 )"
 
 # Absorb (paths optional). Leftover hunks stay in @.
-OP=$(jj op log -n 1 -T 'self.id().short()' --no-graph)
-jj absorb
-jj absorb path/to/file path/to/dir
-jj op show -p
-jj diff -r <ancestor> --summary
+OP=$(PAGER=cat jj op log -n 1 -T 'self.id().short()' --no-graph)
+PAGER=cat jj absorb
+PAGER=cat jj absorb path/to/file path/to/dir
+PAGER=cat jj op show -p | head -n 80
+PAGER=cat jj diff -r <ancestor> --summary
 
 # Squash into a known ancestor — keep its message
 jj squash --from @ --into REV --use-destination-message
@@ -175,5 +177,6 @@ Still **no push**. Same concern as HEAD → keep editing / amend only if user ru
 - Inventing a backup/duplicate bookmark ritual (that is `jj-resplit-stack` / `jj-solve-conflict`)
 - Resolving conflicts or resplitting a stack in this skill
 - Interactive `jj split -i` / `jj squash -i` / `jj absorb -i` when filesets suffice
+- Bare `jj status` / `jj log` / `jj diff` / `jj help` / `jj op show -p` / `jj bookmark list` on an agent PTY (hangs in `less`)
 - Any push / force-push
 - Hand-symlinking this skill into `~/.agents/skills` (Home Manager owns that path)

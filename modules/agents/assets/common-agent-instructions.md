@@ -19,6 +19,8 @@ Use the shared Agent Skills (installed under `~/.agents/skills`):
 
 **Never push** (`git push` / `jj git push` / remote bookmark push) while following those skills. Local bookmarks only unless the user explicitly asks to publish.
 
+Agent shells are PTYs. Bare `jj status` / `jj log` / `jj diff` / `jj op *` / `jj help` / `jj bookmark list` open `less` and hang forever (often with empty captured output). Prefix every standalone `jj` and `git log`/`git diff` with `PAGER=cat GIT_PAGER=cat`. The skill helper scripts already do this. Never run `jj op show -p` unpiped.
+
 ## Nix environment
 
 This machine is managed by Nix. When a command-line tool is not available,

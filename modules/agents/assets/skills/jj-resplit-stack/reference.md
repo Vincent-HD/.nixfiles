@@ -1,6 +1,8 @@
 # jj-resplit-stack reference
 
-Official sources: [operation log](https://docs.jj-vcs.dev/latest/operation-log/), [bookmarks](https://docs.jj-vcs.dev/latest/bookmarks/), `jj help duplicate|restore|squash|workspace|abandon`.
+Official sources: [operation log](https://docs.jj-vcs.dev/latest/operation-log/), [bookmarks](https://docs.jj-vcs.dev/latest/bookmarks/). Do not run `jj help` in an agent shell (paginates).
+
+**No pager.** Prefix every standalone `jj` with `PAGER=cat GIT_PAGER=cat`. Helper scripts set this themselves.
 
 ## Why `jj duplicate 'BASE..TIP'` (not tip-only)
 
@@ -28,6 +30,7 @@ Bookmarks **follow** rewritten change ids. When a commit is **abandoned**, jj **
 ```bash
 bash ~/.agents/skills/jj-resplit-stack/scripts/inventory.sh "$BASE" "$BLOB"
 # same thing by hand:
+export PAGER=cat GIT_PAGER=cat
 jj diff --from "$BASE" --to "$BLOB" --summary
 jj diff --from "$BASE" --to "$BLOB" --summary | wc -l
 ```
@@ -35,7 +38,7 @@ jj diff --from "$BASE" --to "$BLOB" --summary | wc -l
 When `@` **is** the leftover blob (do not do this during peels):
 
 ```bash
-jj status
+export PAGER=cat GIT_PAGER=cat
 jj diff --from "$BASE" --summary
 ```
 
@@ -71,6 +74,7 @@ If restore or squash reports a conflict: stop; `jj-solve-conflict`.
 ## Log templates (`--no-graph`)
 
 ```bash
+export PAGER=cat GIT_PAGER=cat
 jj op log -n 1 -T 'self.id().short()' --no-graph
 
 jj log -r @ --no-graph \

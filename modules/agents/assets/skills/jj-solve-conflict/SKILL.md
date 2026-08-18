@@ -24,6 +24,7 @@ Official loop (jj docs + `jj rebase` hint): conflicts are first-class — the re
 - **Oldest conflict first** (`roots(conflicts() & SCOPE)`). Never start at the tip.
 - Teleport with `jj new <conflicted>` (inspectable). Avoid `jj edit` on conflicted revs — official FAQ: harder to inspect the resolution (`jj diff` is the point of `new`).
 - Squash with `--use-destination-message` so nano/the editor never opens.
+- No pager. Agent shells are PTYs: bare `jj status` / `jj log` / `jj diff` / `jj op *` / `jj help` / `jj bookmark list` open `less` and hang forever. Prefix **every** standalone `jj` with `PAGER=cat GIT_PAGER=cat`. Helper scripts already set this plus `ui.paginate=never`. Never `jj op show -p` unpiped.
 - No interactive `-i`. No force-push. No `jj op restore` unless the user asks or a backup is the only way out — then report the op id first.
 - Scope to **the user's stack**. Independent DAG roots (other feature bookmarks) stay conflicted unless the user included them.
 - Preserve original file formatting. Reformatting a generated snapshot/lockfile turns every descendant into a whole-file 3-way.
@@ -50,16 +51,15 @@ When the same 1–2 files repeat across many commits, say so once (“48 commits
 ## 0. Inventory
 
 ```bash
-jj root
-jj status
-HOME="$(jj root)"
-# optional helper (same directory as this skill):
+PAGER=cat GIT_PAGER=cat jj root
+# helper disables the pager itself:
 #   bash ~/.agents/skills/jj-solve-conflict/scripts/inventory.sh 'conflicts()'
 ```
 
 Collect, then **show the progress block before editing files**:
 
 ```bash
+export PAGER=cat GIT_PAGER=cat
 # all conflicted commits (newest-first by default — reverse for oldest-first)
 jj log -r 'conflicts()' --reversed --no-graph \
   -T 'change_id.short() ++ " " ++ commit_id.short() ++ " " ++ description.first_line() ++ "\n"'
@@ -70,7 +70,7 @@ jj log -r 'roots(conflicts())' --no-graph \
 
 # files in one rev
 jj resolve -r REV --list
-jj log -r REV -T 'conflicted_files.map(|e| e.path().display()).join("\n") ++ "\n"'
+jj log -r REV -T 'conflicted_files.map(|e| e.path().display()).join("\n") ++ "\n"' --no-graph
 ```
 
 If `roots(conflicts())` has **more than one** lineage and the user did not name a stack: list each root (indexed) under **FEEDBACK NEEDED** and wait. Do not mix them.
@@ -84,8 +84,8 @@ Note the original WC: `ORIG=@` change id and its parent tip.
 ```bash
 STAMP=$(date +%Y%m%d-%H%M)
 TOPIC=${TOPIC:-conflicts}
-TIP=$(jj log -r 'heads(SCOPE)' -T 'change_id.short()' --no-graph | head -1)
-OP=$(jj op log -n 1 -T 'self.id().short()' --no-graph)
+TIP=$(PAGER=cat jj log -r 'heads(SCOPE)' -T 'change_id.short()' --no-graph | head -1)
+OP=$(PAGER=cat jj op log -n 1 -T 'self.id().short()' --no-graph)
 
 jj bookmark create "backup/pre-resolve-${TOPIC}-${STAMP}" -r "$TIP"
 
@@ -105,7 +105,7 @@ while conflicts remain in SCOPE:
   tell the user the progress block for FIRST
   jj new FIRST -m "resolve conflicts"
   resolve files (section 3)
-  jj diff                  # inspect resolution vs conflicted parent
+  jj diff --stat           # inspect resolution vs conflicted parent (never bare `jj diff`)
   jj squash --from @ --into FIRST --use-destination-message
   recount: conflicts() & SCOPE
   note how many descendants jj just auto-resolved
@@ -137,7 +137,7 @@ Inspect markers or `jj resolve --list` first. Then pick the **narrowest** tactic
 | True textual hunk (code you understand) | Edit markers, or `jj resolve --tool <merge-tool>` |
 | “Take this file from rev R” | `jj restore --from R --into @ -- path` |
 | Tree vs file vs symlink | No good 3-way yet (upstream #19). `jj restore` one side; **TLDR** it |
-| Bookmark conflict (not file) | Out of scope unless the user asked; see `jj help -k glossary` |
+| Bookmark conflict (not file) | Out of scope unless the user asked; see the jj glossary docs |
 
 `:ours` = conflict side **#1** = rebase **destination** (new parent). `:theirs` = side **#2** = **rebased revision**. Labels in markers (`<<<<<<< dest…` / `>>>>>>> rebased…`) beat memory.
 
@@ -150,6 +150,7 @@ After any whole-side take, diff the file against the **pre-rebase** tip (`evolog
 ## 4. Squash and recount
 
 ```bash
+export PAGER=cat GIT_PAGER=cat
 jj squash --from @ --into FIRST --use-destination-message
 jj log -r 'conflicts() & SCOPE' --no-graph \
   -T 'change_id.short() ++ " " ++ description.first_line() ++ "\n"' | wc -l
@@ -201,4 +202,5 @@ Still **no push**. Backup branch, then the host's usual rebase/merge conflict lo
 - Resolving an unrelated second DAG root “while you're here”
 - Pushing backup bookmarks
 - `jj op restore` as the first reaction (undo only the last step with `jj undo` if the just-made squash is wrong)
+- Bare `jj status` / `jj log` / `jj diff` / `jj help` / `jj op show -p` on an agent PTY (hangs in `less`)
 - Hand-symlinking this skill into `~/.agents/skills` (Home Manager owns that path)

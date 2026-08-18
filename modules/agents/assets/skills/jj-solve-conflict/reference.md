@@ -1,6 +1,8 @@
 # jj-solve-conflict reference
 
-Official sources: [conflicts](https://docs.jj-vcs.dev/latest/conflicts/), [working copy](https://docs.jj-vcs.dev/latest/working-copy/), [tutorial rebase](https://docs.jj-vcs.dev/latest/tutorial/), [operation log](https://docs.jj-vcs.dev/latest/operation-log/), `jj help rebase|resolve|duplicate|restore|squash`.
+Official sources: [conflicts](https://docs.jj-vcs.dev/latest/conflicts/), [working copy](https://docs.jj-vcs.dev/latest/working-copy/), [tutorial rebase](https://docs.jj-vcs.dev/latest/tutorial/), [operation log](https://docs.jj-vcs.dev/latest/operation-log/). Do not run `jj help` in an agent shell (paginates).
+
+**No pager.** Prefix every standalone `jj` with `PAGER=cat GIT_PAGER=cat`. Helper scripts set this themselves.
 
 ## Why jj is different
 
@@ -102,7 +104,7 @@ jj squash --from @ --into REV --use-destination-message
 
 jj next --conflict          # after current is clean
 jj undo                     # last operation only
-jj op log -n 5
+jj op log -n 5 --no-graph
 jj op restore OP            # last resort; report OP from backup step
 
 jj duplicate TIP            # sibling copy on same parents

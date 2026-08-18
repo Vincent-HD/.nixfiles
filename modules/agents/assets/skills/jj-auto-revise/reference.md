@@ -1,12 +1,15 @@
 # jj-auto-revise reference
 
-Official: `jj help commit|describe|absorb|squash|split|abandon`, [working copy](https://docs.jj-vcs.dev/latest/working-copy/), [operation log](https://docs.jj-vcs.dev/latest/operation-log/).
+Official: [working copy](https://docs.jj-vcs.dev/latest/working-copy/), [operation log](https://docs.jj-vcs.dev/latest/operation-log/). Do not run `jj help` in an agent shell (paginates).
+
+**No pager.** Agent shells are PTYs. Prefix every standalone `jj` with `PAGER=cat GIT_PAGER=cat`. Never `jj op show -p` unpiped.
 
 This file is extra recipes. Day-to-day loop stays in [SKILL.md](SKILL.md). Conflicts → `jj-solve-conflict`. History resplit → `jj-resplit-stack`.
 
 ## Inspect templates
 
 ```bash
+export PAGER=cat GIT_PAGER=cat
 jj log -r @ --no-graph \
   -T 'change_id.short() ++ " empty=" ++ empty ++ " conflict=" ++ conflict ++ " " ++ description.first_line() ++ "\n"'
 
@@ -17,7 +20,7 @@ jj log -r 'ancestors(@-) & mutable()' -n 8 --no-graph \
   -T 'change_id.short() ++ " " ++ description.first_line() ++ "\n"'
 
 jj op log -n 1 -T 'self.id().short() ++ "\n"' --no-graph
-jj op show -p
+jj op show -p | head -n 80
 ```
 
 Reuse an already-good `@` description as the `jj commit -m` text (no editor, no rewrite):
@@ -33,7 +36,7 @@ jj commit -m "$(jj log -r @ --no-graph -T 'description')"
 ```bash
 jj absorb path/a path/b
 jj diff -r @ --summary          # what did not land
-jj op show -p                   # where hunks went
+jj op show -p | head -n 80      # where hunks went
 ```
 
 Still-in-`@` hunks: leave them if they belong to the open concern; or `jj squash --from @ --into REV --use-destination-message path` when you know the rev; or keep editing `@`.

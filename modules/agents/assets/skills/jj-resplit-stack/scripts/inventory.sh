@@ -4,6 +4,14 @@
 # Default TO=@
 set -euo pipefail
 
+# Agent shells are PTYs. Bare jj opens `less` and hangs forever (often with
+# empty captured output). timeout(1) does not save you — less ignores SIGTERM.
+export PAGER=cat
+export GIT_PAGER=cat
+jj() {
+	command jj --config=ui.paginate=never "$@"
+}
+
 if [[ $# -lt 1 ]]; then
 	echo "usage: inventory.sh BASE [TO]" >&2
 	exit 2

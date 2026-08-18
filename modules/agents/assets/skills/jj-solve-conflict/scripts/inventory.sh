@@ -4,6 +4,14 @@
 # Default revset: conflicts()
 set -euo pipefail
 
+# Agent shells are PTYs. Bare jj opens `less` and hangs forever (often with
+# empty captured output). timeout(1) does not save you — less ignores SIGTERM.
+export PAGER=cat
+export GIT_PAGER=cat
+jj() {
+	command jj --config=ui.paginate=never "$@"
+}
+
 SCOPE="${1:-conflicts()}"
 
 if ! jj root >/dev/null 2>&1; then

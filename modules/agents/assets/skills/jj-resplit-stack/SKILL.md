@@ -24,6 +24,7 @@ This skill only **backups → squash blob onto BASE → peels feature/FE-BE slic
 - Duplicate the **range** `BASE..TIP` (not only the tip). Bookmarks on a rewritten change **follow**; abandoning a commit **deletes** its bookmarks. The duplicate is the real snapshot.
 - Squash peels with `--use-destination-message` so the blob's `wip: squash blob` text does not overwrite the slice `-m`, and so nano never opens.
 - No interactive `-i`. No push. No `jj op restore` unless the user asks or a backup is the only way out — then report the op id first.
+- No pager. Agent shells are PTYs: bare `jj status` / `jj log` / `jj diff` / `jj op *` / `jj help` / `jj bookmark list` open `less` and hang forever. Prefix **every** standalone `jj` with `PAGER=cat GIT_PAGER=cat`. Helper scripts already set this plus `ui.paginate=never`. Never `jj op show -p` unpiped.
 - Tests travel with the code they cover. Prefer FE/BE split when either side is reviewable alone.
 - Never bare `jj run -r R -- <test>`: it checks out, runs, and **amends** R. Use a disposable child or a workspace.
 - After the new stack is verified: restore `@` to the stack tip. Ask before abandoning the old pre-squash range. **Do not delete backups yourself.**
@@ -49,19 +50,18 @@ Extra recipes: [reference.md](reference.md).
 ## 1. Inventory + plan
 
 ```bash
-jj root
-jj status
+PAGER=cat GIT_PAGER=cat jj root
 BASE=main   # trunk / stack root — not the first wip commit
 TIP=@
-# optional helper (same directory as this skill):
+# helper disables the pager itself:
 #   bash ~/.agents/skills/jj-resplit-stack/scripts/inventory.sh "$BASE" "$TIP"
 
-jj log -r 'mutable()' -n 40 --no-graph \
+PAGER=cat GIT_PAGER=cat jj log -r 'mutable()' -n 40 --no-graph \
   -T 'change_id.short() ++ " " ++ commit_id.short() ++ " " ++ description.first_line() ++ "\n"'
-jj log -r "${BASE}::${TIP}" --no-graph \
+PAGER=cat GIT_PAGER=cat jj log -r "${BASE}::${TIP}" --no-graph \
   -T 'change_id.short() ++ " " ++ description.first_line() ++ "\n"'
-jj diff --from "$BASE" --to "$TIP" --summary
-jj bookmark list
+PAGER=cat GIT_PAGER=cat jj diff --from "$BASE" --to "$TIP" --summary
+PAGER=cat GIT_PAGER=cat jj bookmark list
 ```
 
 Pick `BASE` and `TIP`. If several heads or `BASE` is unclear: list them indexed under **FEEDBACK NEEDED** and wait.
@@ -83,7 +83,7 @@ If the user only wanted day-to-day describe/absorb: use `jj-auto-revise`. Stop.
 ```bash
 STAMP=$(date +%Y%m%d-%H%M)
 TOPIC=${TOPIC:-resplit}
-OP=$(jj op log -n 1 -T 'self.id().short()' --no-graph)
+OP=$(PAGER=cat jj op log -n 1 -T 'self.id().short()' --no-graph)
 PRE="backup/pre-squash-${TOPIC}-${STAMP}"
 
 jj bookmark create "$PRE" -r "$TIP"
@@ -181,6 +181,7 @@ Discover the project’s own test command from its docs/`package.json`/`Makefile
 **Safe (preferred) — disposable child** (tree equals parent `R`; abandon when done):
 
 ```bash
+export PAGER=cat GIT_PAGER=cat
 R=<slice-change>
 jj log -r "$R" --no-graph \
   -T 'change_id.short() ++ " " ++ description.first_line() ++ "\n"'
@@ -213,6 +214,7 @@ On failure: fix in that rev (`jj edit R` or fix + squash-into with `--use-destin
 Restore `@` to the stack tip (abandon leftover test WCs first):
 
 ```bash
+export PAGER=cat GIT_PAGER=cat
 jj edit "$STACK_TIP"     # or: jj new "$STACK_TIP"
 jj log -r "${BASE}::@" --no-graph \
   -T 'change_id.short() ++ " " ++ commit_id.short() ++ " " ++ description.first_line() ++ "\n"'
@@ -262,6 +264,7 @@ No duplicate/auto-rebase — tell the user jj would have been better.
 - Dirtying feature revs via careless `jj run`
 - Inlining conflict resolution (use `jj-solve-conflict`)
 - Using this skill for day-to-day describe/absorb (use `jj-auto-revise`)
+- Bare `jj status` / `jj log` / `jj diff` / `jj help` / `jj bookmark list` on an agent PTY (hangs in `less`)
 - Deleting backup bookmarks/duplicates unless the user asked
 - Pushing backup or stack bookmarks
 - Hand-symlinking this skill into `~/.agents/skills` (Home Manager owns that path)
