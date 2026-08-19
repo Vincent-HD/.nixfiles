@@ -71,6 +71,17 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # The platform module is used without importing nix-gaming's optional game packages.
+    nix-gaming = {
+      url = "github:fufexan/nix-gaming";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.flake-parts.follows = "flake-parts";
+    };
+
+    # Keep this input on its release branch and do not follow its nixpkgs input: its README
+    # requires the exact nixpkgs revision used for its prebuilt kernel cache.
+    nix-cachyos-kernel.url = "github:xddxdd/nix-cachyos-kernel/release";
+
     nix-index-database = {
       url = "github:nix-community/nix-index-database";
       inputs.nixpkgs.follows = "nixpkgs";

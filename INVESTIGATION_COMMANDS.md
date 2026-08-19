@@ -36,6 +36,21 @@ nix eval --impure --expr '(builtins.getFlake "git+file:///home/vincent/.nixfiles
 nix eval --impure --expr '(builtins.getFlake "git+file:///home/vincent/.nixfiles").inputs.home-manager.outPath' --raw
 ```
 
+### Inspect a NixOS boot specialization
+
+```bash
+nix eval --raw ".#nixosConfigurations.${HOST}.config.specialisation.<name>.configuration.boot.kernelPackages.kernel.name"
+nix eval --json ".#nixosConfigurations.${HOST}.config.specialisation.<name>.configuration.boot.extraModulePackages" \
+  --apply 'map (package: package.name or "")'
+```
+
+Purpose: verify an experimental kernel specialization and confirm that out-of-tree modules such as
+NVIDIA or a custom kernel module are rebuilt against the same kernel before switching or rebooting.
+
+Use when:
+- a host exposes an alternate kernel, scheduler, or hardware profile through `specialisation.*`
+- you need to compare the specialization's kernel/module graph with the default configuration
+
 ## Package / Derivation Inspection
 
 ### Determine the executing Nix platform

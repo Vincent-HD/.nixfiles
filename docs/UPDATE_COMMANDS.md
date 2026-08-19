@@ -228,6 +228,32 @@ These are updated with `nix flake lock`, not `nix-update`.
 nix flake update spicetify-nix
 ```
 
+### nix-gaming
+
+- **File**: `flake.nix`
+- **Why**: Provides the standalone `platformOptimizations` NixOS module. The module is imported
+  explicitly; nix-gaming's optional game, Wine, and Proton packages are not installed by this host.
+- **How**: Refresh the locked source, then review the module against the current Steam/NixOS options.
+
+```bash
+nix flake update nix-gaming
+```
+
+### nix-cachyos-kernel
+
+- **File**: `flake.nix`
+- **Why**: Provides the release-branch CachyOS kernel package set used by the `cachyos` boot
+  specialization in `modules/gaming-optimization.nix`.
+- **Important**: Keep the input on the `release` branch and do not make its nixpkgs input follow this
+  repository. The upstream project pins its own nixpkgs revision for binary-cache compatibility.
+- **How**: Refresh the lock entry, then evaluate the `cachyos` specialization and check that the
+  NVIDIA and custom CPUID modules still follow the selected kernel.
+
+```bash
+nix flake update nix-cachyos-kernel
+nix eval --raw '.#nixosConfigurations.pc-fixe.config.specialisation.cachyos.configuration.boot.kernelPackages.kernel.name'
+```
+
 ### codex-desktop-linux
 
 - **File**: `flake.nix`

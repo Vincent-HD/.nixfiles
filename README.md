@@ -47,6 +47,7 @@ modules/
   noctalia.nix
   graphics.nix
   sound.nix
+  gaming-optimization.nix
   coding.nix
   browser.nix
   discord.nix
@@ -118,6 +119,8 @@ The main inputs are:
 - `nixcord`
 - `niri`
 - `noctalia`
+- `nix-gaming`
+- `nix-cachyos-kernel`
 
 Most inputs follow `nixpkgs` to avoid duplicate evaluations.
 

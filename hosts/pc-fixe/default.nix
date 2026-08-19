@@ -24,6 +24,7 @@ in
       nixos.windowsMounts
       nixos.moonshine
       nixos.gaming
+      nixos.gamingOptimization
       nixos.deskflow
       nixos.localSend
 
