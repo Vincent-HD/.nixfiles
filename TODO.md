@@ -4,49 +4,6 @@ This file tracks known technical debt that is intentionally deferred. Entries sh
 current compromise, the desired end state, and how to verify the replacement before removing the
 existing implementation.
 
-## Replace OpenCode JSON Transformation With Native Nix Settings
-
-### Context
-
-The shared OpenCode source configuration currently lives in
-`modules/coding/assets/opencode.jsonc`. The Home Manager coding module parses that JSON, replaces the
-hardcoded Linux home directory, removes Linux-only MCP servers on Darwin, and generates a
-platform-specific JSON file:
-
-- `mcp.github` references a token file under the user's home directory.
-- `mcp.nixos` depends on the Linux-only `mcp-nixos` package.
-- Darwin currently removes both entries because the GitHub token has not been migrated and
-  `mcp-nixos` is unavailable there.
-
-This works, but modifying an external JSON-shaped value with `recursiveUpdate` and `removeAttrs`
-makes the final configuration less obvious than defining it directly in Nix.
-
-### Desired End State
-
-- Create a reusable OpenCode Home Manager module that works on both Linux and Darwin.
-- Define OpenCode settings and each MCP integration as native Nix options so hosts can explicitly
-  opt in or opt out instead of having integrations silently removed based on the platform.
-- Enable the same useful MCP integrations on both platforms wherever they are supported, including
-  provisioning their packages, commands, paths, and secrets appropriately for each platform.
-- Keep genuinely platform-specific MCP integrations available only where supported, but represent
-  that limitation explicitly and fail with a useful evaluation error when a host enables an
-  unsupported integration.
-- Derive all home-relative paths from `config.home.homeDirectory`.
-- Provision the GitHub MCP token safely on both platforms before enabling that integration.
-- Remove `modules/coding/assets/opencode.jsonc` once it is no longer the source of truth.
-
-### Verification
-
-- Evaluate the rendered OpenCode configuration for both `pc-fixe` and `macbook-pro`.
-- Confirm neither rendered configuration contains a hardcoded `/home/vincent` or `/Users/vincent`.
-- Confirm each host's rendered configuration contains exactly the MCP integrations explicitly
-  enabled for that host.
-- Confirm shared MCP integrations, including GitHub, work on both Linux and Darwin.
-- Confirm enabling an unsupported MCP integration produces a clear Nix evaluation error.
-- Confirm the OpenCode systemd service works on Linux.
-- Confirm the OpenCode launchd agent remains running on Darwin and
-  `curl -fsS http://127.0.0.1:4096/global/health` reports `"healthy":true`.
-
 ## Consolidate Shell Configuration Around Zsh
 
 ### Context

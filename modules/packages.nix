@@ -38,6 +38,7 @@
         lightjj = pkgs.callPackage ../packages/lightjj { };
         opencodex = pkgs.callPackage ../packages/opencodex { };
         papercuts = pkgs.callPackage ../packages/papercuts { };
+        t3code = pkgs.callPackage ../packages/t3code { };
         portless = pkgs.callPackage ../packages/portless { };
         plannotator = pkgs.callPackage ../packages/plannotator { };
       }

@@ -48,7 +48,7 @@ in
             hm.agentSkills
             hm.agentCursor
             hm.agentCodex
-            hm.agentOpenCode
+            hm.agentT3Code
             hm.agentVscode
             hm.executor
             hm.plannotator

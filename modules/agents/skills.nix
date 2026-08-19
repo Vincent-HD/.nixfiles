@@ -6,7 +6,7 @@
     }:
     {
       # Portable Agent Skills: one registration → ~/.agents/skills via agentCommon.
-      # Codex, Cursor, and OpenCode discover that path natively; VS Code is pointed
+      # Codex and Cursor discover that path natively; VS Code is pointed
       # there by agentVscode. Do not also install these under client-specific paths.
       custom.agentSetup.skills = {
         # Select only these directories from their pinned upstream source trees.

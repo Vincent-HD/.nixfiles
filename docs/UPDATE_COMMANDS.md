@@ -161,6 +161,17 @@ nix run .#update-curseforge -- --check
 nix run github:Mic92/nix-update -- --flake cursor-agent --use-update-script
 ```
 
+### t3code
+
+- **File**: `packages/t3code/default.nix`
+- **Pattern**: Linux AppImage via `appimageTools.wrapType2`; macOS DMG via `undmg`
+- **Flake output**: `.#t3code`
+- **Note**: This tracks GitHub nightly prereleases, not stable tags. The update script refreshes only the artifact for the platform where it runs.
+
+```bash
+nix run github:Mic92/nix-update -- --flake t3code --use-update-script
+```
+
 ### plannotator
 
 - **File**: `packages/plannotator/default.nix`

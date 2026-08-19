@@ -341,7 +341,7 @@ before installation.
 - Add a portable Zsh/shell module.
 - Reuse Git/Jujutsu and portable CLI configuration.
 - Split Linux-only content out of `hm.coding`.
-- Convert the OpenCode user service from `systemd` to `launchd` if it is wanted on macOS.
+- Install T3 Code nightly from the pinned Nix package instead of converting an OpenCode user service.
 - Manage selected Kitty, VS Code, and Cursor text configuration.
 
 ### Phase 4: macOS defaults and application ownership cleanup

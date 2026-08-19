@@ -228,12 +228,13 @@ If you want to remove a feature, change the relevant host composition under `hos
 `modules/agents/` is the declarative home for cross-agent tools and shared Agent Skills.
 
 - Add a skill once in `modules/agents/skills.nix` through `custom.agentSetup.skills`; Home Manager installs it under the Agent Skills
-  standard path, `~/.agents/skills`, which Codex, Cursor, and OpenCode discover natively; VS Code is configured to use it through
+  standard path, `~/.agents/skills`, which Codex and Cursor discover natively; VS Code is configured to use it through
   `chat.agentSkillsLocations`.
 - MCPs are deliberately written in each client's native schema: Cursor's global
   `~/.cursor/mcp.json` lives in `modules/agents/cursor.nix`, Codex's lower-precedence
-  `/etc/codex/config.toml` lives in `modules/agents/codex.nix`, OpenCode's `settings.mcp` lives in
-  `modules/agents/opencode.nix`, and VS Code's user-profile `mcp.json` lives in `modules/agents/vscode.nix`.
+  `/etc/codex/config.toml` lives in `modules/agents/codex.nix`, and VS Code's user-profile
+  `mcp.json` lives in `modules/agents/vscode.nix`.
+- T3 Code nightly is a pinned desktop package (`packages/t3code`) wired by `modules/agents/t3code.nix`; it drives provider CLIs rather than a client MCP schema.
 - File-backed MCP credentials stay outside the Nix store and are decrypted by sops-nix.
 - Executable MCPs use pinned Nix packages.
 - A home-level `AGENTS.md` gives every AGENTS-aware client the same Nix environment guidance. If a
