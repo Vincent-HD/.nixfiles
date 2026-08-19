@@ -28,6 +28,17 @@ run it temporarily with `comma` (for example, `, jq`) or use
 `nix run nixpkgs#jq -- <arguments>`. Do not install a tool globally just
 to complete a task.
 
+## Shared MCP catalog (Executor)
+
+MCP tools on this machine live in **Executor**, not in each editor. Cursor, Codex, and VS Code already connect to that one catalog.
+
+When you need a tool, or you are about to add or create an MCP server, ask Executor first:
+
+- Call Executor `skills` with name `execute`, then `tools.search({ query: "..." })` to see what is already shared.
+- The catalog currently includes GitHub, Context7, NixOS package and option docs (`nixos`), browser automation, Postgres, and Arch ops.
+- Do not add a client-local MCP in Cursor, Codex, or VS Code for something Executor already exposes.
+- If the tool is missing, ask to add it to the Executor catalog so every client gets it, instead of wiring a one-off server into a single agent.
+
 ## Response sections and feedback
 
 When proposing work, requesting feedback, or showcasing changes:

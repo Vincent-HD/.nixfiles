@@ -168,7 +168,7 @@
         {
           slug = "nixos";
           name = "NixOS";
-          description = "NixOS package and option documentation.";
+          description = "NixOS, Home Manager, Darwin, nixpkgs, and Nix docs via mcp-nixos.";
           transport = "stdio";
           command = lib.getExe pkgs.mcp-nixos;
           args = [ ];
