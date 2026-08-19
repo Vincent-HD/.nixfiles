@@ -144,6 +144,9 @@
         };
 
         programs.niri.settings = {
+          # Ask compatible applications to omit their client-side title bars.
+          prefer-no-csd = true;
+
           window-rules = [
             {
               matches = [
