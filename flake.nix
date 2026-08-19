@@ -59,7 +59,10 @@
       inputs.nixpkgs.follows = "nixpkgs-darwin";
     };
 
-    code-cursor-nix.url = "github:jacopone/code-cursor-nix";
+    # 3.16.17 hangs the agent Shell on this host: ExtHostShellExec still probes
+    # cursorsandbox, which fails unshare(EPERM) inside the Nix FHS wrapper and
+    # never falls back. 3.15.6 did. Pin until that path is fixed.
+    code-cursor-nix.url = "github:jacopone/code-cursor-nix/4c42c3db6d67b3a71ee5429bff33e29555b8dd07";
 
     nixcord = {
       url = "github:FlameFlag/nixcord";

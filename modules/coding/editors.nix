@@ -9,6 +9,7 @@
     let
       # Re-evaluate code-cursor-nix with this flake's package set so Cursor
       # stays aligned with the rest of the host configuration.
+      # Input is pinned to 3.15.6 in flake.nix — do not float it to 3.16.x.
       cursorPkg = pkgs.callPackage "${inputs.code-cursor-nix}/package.nix" { };
       cursorAgentPkg = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.cursor-agent;
     in
