@@ -3,10 +3,10 @@ name: jj-auto-revise
 description: >
   Keep Jujutsu work as one open revision at a time: print a progress block at prompt
   boundaries, describe at the start of a piece of work, do not commit when that piece
-  ends, and on each new user prompt either continue editing the same rev or jj commit
-  then describe the new concern. Prefer absorb/squash-into for follow-ups to recent
-  ancestors. Use when implementing with jj, or when the user says "jj", "absorb",
-  "describe", "jj commit", "as usual with jj".
+  ends. On each new prompt, keep nits, docs, and small extras on @; jj commit then
+  describe only for a substantial new concern; ask if unsure. Prefer absorb/squash-into
+  for follow-ups to recent ancestors. Use when implementing with jj, or when the user
+  says "jj", "absorb", "describe", "jj commit", "as usual with jj".
 ---
 
 # jj auto-revise
@@ -20,7 +20,7 @@ Companions: later squash→resplit into a stacked PR → `jj-resplit-stack`. Con
 ## Hard rules
 
 - One open `@` per concern. Do **not** `jj commit` / `jj new` at the end of a turn that finished a sub-step of the same ask.
-- Print the **progress block** at prompt boundaries (related vs unrelated) and before/after absorb, squash, or split. Not after every file edit.
+- Print the **progress block** at prompt boundaries (stay vs new rev) and before/after absorb, squash, or split. Not after every file edit.
 - HEREDOC `-m` or `--use-destination-message`. Never open an editor (`nano` / `$EDITOR`).
 - No pager. Agent shells are PTYs: bare `jj status` / `jj log` / `jj diff` / `jj op *` / `jj help` / `jj bookmark list` / `jj config list` open `less` and hang forever (often with empty captured output). `timeout(1)` does not help — `less` ignores SIGTERM. Prefix **every** standalone `jj` (and `git log` / `git diff`) with `PAGER=cat GIT_PAGER=cat`. Exports do not persist across agent shell calls. Helper scripts already set this plus `ui.paginate=never`. Never `jj op show -p` unpiped — use `| head`.
 - No interactive `-i`. No push. No backup/duplicate stacks (companions own those).
@@ -29,12 +29,12 @@ Companions: later squash→resplit into a stacked PR → `jj-resplit-stack`. Con
 
 ## Progress (mandatory)
 
-At each **new user prompt** (deciding related vs unrelated) and when absorbing, squashing, or splitting, print this block. Fill it from the inspect commands. Do not wait until the end of the turn. Skip it while only editing files on an already-decided `@`.
+At each **new user prompt** (deciding stay vs new rev) and when absorbing, squashing, or splitting, print this block. Fill it from the inspect commands. Do not wait until the end of the turn. Skip it while only editing files on an already-decided `@`.
 
 ```markdown
 **Concern:** `<@ description first line>` (`change_id`)
 **WC:** empty | N files | mixed (topics: …)
-**This prompt:** related | unrelated | absorb-into `<rev>` | squash-into `<rev>` | split
+**This prompt:** stay-on-@ | new-rev | absorb-into `<rev>` | squash-into `<rev>` | split
 **Action:** continue editing @  |  jj commit → describe new  |  absorb/squash/split then continue
 ```
 
@@ -57,15 +57,19 @@ Work stays on **one open revision** (`@`) while the user is still on that concer
 | **Start** of a piece (or `@` still empty / untitled `wip`) | `jj describe` the current concern (why-focused, conventional). Then edit files. |
 | **During** that piece (same prompt or follow-ups on the same ask) | Keep editing `@`. Do **not** `jj commit` / `jj new` because a sub-step finished. Touch `jj describe` only if the meaning changed in a **very meaningful** way (scope flip, wrong title, split concern). |
 | **End** of a piece | Do **not** commit. Leave the described rev open. |
-| **Each new user prompt** | Inspect `@` (block above). **Related** → continue editing; leave the description alone unless a very meaningful rename is needed. **Unrelated** → `jj commit` (finalizes the previous rev and opens a new empty `@`), then `jj describe` the new concern, then edit. |
+| **Each new user prompt** | Inspect `@` (block above). **Small extra** (nit, docs, copy, tests, tiny ask) → stay on `@`. **Substantial new concern** → `jj commit` (finalizes the previous rev and opens a new empty `@`), then `jj describe` the new concern, then edit. **Unsure** → ask once. |
 
-`jj commit` = describe + new empty WC. Use it at **prompt boundaries** when the ask switched concerns. Always pass `-m` so no editor opens. If the previous rev is already well described, pass that same text (do not invent a rewrite). Then `jj describe` only the new `@`. Prefer not rewriting a good prior description.
+`jj commit` = describe + new empty WC. Use it at **prompt boundaries** only for a substantial new concern. Always pass `-m` so no editor opens. If the previous rev is already well described, pass that same text (do not invent a rewrite). Then `jj describe` only the new `@`. Prefer not rewriting a good prior description.
 
-### Related vs unrelated
+### Same rev vs new rev
 
-**Related:** same reviewable unit (same feature/fix/docs topic, same bug, polish/tests/docs for that same change). Drive-by noise that belongs to the open concern stays on `@`: typo / import / comment on that change; docs that only document it; test fix for an assertion it introduced.
+Default: **keep editing `@`**. Prefer fewer revisions while the user is still in the same stretch of work. Peeling history later is `jj-resplit-stack`, not prompt-boundary splits.
 
-**Unrelated:** a new feature, a different bug, a separable refactor, or anything that would make `@`’s description a lie if mashed in. When unsure, ask once — or commit and start clean rather than kitchen-sink `@`.
+Stay on `@` when the new ask is a nit, docs, copy, tests, or any other **small** extra — even if it is not the same topic as the current description.
+
+Open a new rev (`jj commit` then describe) only when the new ask is a **substantial** new concern: a full feature, a different bug of similar size, or a refactor large enough to stand alone.
+
+When unsure whether the extra is small enough to keep: **ask once**. Do not split by default.
 
 ## Absorb vs squash vs split
 
@@ -75,7 +79,7 @@ Use these when the change belongs with history **other than** the open `@`, or w
 | --------- | ------- |
 | Small follow-up to a **recent mutable ancestor** (same lines) | `jj absorb [paths…]` — hunks go to the closest mutable ancestor that last touched those lines; leftover hunks stay in source |
 | Same concern as a **known** ancestor; absorb ambiguous or you already know the rev | `jj squash --from @ --into REV [paths…]` with `--use-destination-message` unless you are **intentionally** rewriting the ancestor message |
-| WC mashed unrelated topics | `jj split path/a path/b -m "…"` (filesets, no `-i`), then describe each side |
+| WC mixed with two **substantial** topics | `jj split path/a path/b -m "…"` (filesets, no `-i`), then describe each side |
 | Empty accidental `wip` | `jj abandon REV` |
 
 Before absorb/squash, note `OP=$(PAGER=cat jj op log -n 1 -T 'self.id().short()' --no-graph)` — safety net for `jj undo`, not a backup ritual. After: `PAGER=cat jj op show -p | head -n 80` and `PAGER=cat jj diff -r REV --summary`.
@@ -97,7 +101,7 @@ PAGER=cat GIT_PAGER=cat jj log -r 'ancestors(@-) & mutable()' -n 8 --no-graph \
   -T 'change_id.short() ++ " " ++ description.first_line() ++ "\n"'
 ```
 
-`empty=true` with an untitled `wip` → describe, then edit. `conflict=true` → stop, `jj-solve-conflict`. File list vs description disagree on topic → **mixed** → split (or unrelated commit), do not describe the mash as one concern.
+`empty=true` with an untitled `wip` → describe, then edit. `conflict=true` → stop, `jj-solve-conflict`. File list vs description disagree **and both sides are substantial** → **mixed** → split or ask. A small extra next to the main topic is not mixed — keep it on `@`.
 
 ## Command cookbook
 
@@ -109,7 +113,7 @@ feat(scope): why this change exists
 EOF
 )"
 
-# New prompt is unrelated: finalize previous @ (always -m; no editor)
+# New prompt is a substantial new concern: finalize previous @ (always -m; no editor)
 jj commit -m "$(cat <<'EOF'
 feat(scope): why the previous change exists
 
@@ -163,15 +167,15 @@ jj abandon REV
 
 ## Git fallback (no jj)
 
-Still **no push**. Same concern as HEAD → keep editing / amend only if user rules allow. New unrelated prompt → new path-staged commit. No absorb equivalent.
+Still **no push**. Same stretch of work as HEAD → keep editing / amend only if user rules allow. Substantial new concern → new path-staged commit. Small extras stay in the current commit when rules allow amend; otherwise ask. No absorb equivalent.
 
 ## Anti-patterns
 
 - `jj commit` / `jj new` at the end of every agent turn “to be safe”
 - Re-describing `@` every prompt when the concern did not change
-- Mashing an unrelated user ask into `@` because commit feels heavy
-- New rev per drive-by lint on the open concern
-- Describing a mixed WC with a message that covers half the diff
+- Opening a new rev for a nit, docs, copy, or other small extra
+- Splitting by default when unsure (ask instead)
+- Describing a mixed WC with a message that covers half the diff (only when both halves are substantial)
 - Bare `jj squash` / `jj commit` / `jj describe` / `jj split` without `-m` or `--use-destination-message` (opens an editor)
 - Rewriting an ancestor message on absorb/squash when you only meant to land a follow-up
 - Inventing a backup/duplicate bookmark ritual (that is `jj-resplit-stack` / `jj-solve-conflict`)
