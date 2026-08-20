@@ -22,11 +22,12 @@ in
       nixos.printing
       nixos.gparted
       nixos.windowsMounts
-      nixos.moonshine
+      nixos.sunshine
       nixos.gaming
       nixos.gamingOptimization
       nixos.deskflow
       nixos.localSend
+      nixos.tailscale
 
       # ── Home Manager integration ─────────────────────────
       inputs.home-manager.nixosModules.home-manager

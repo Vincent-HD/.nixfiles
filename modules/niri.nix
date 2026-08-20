@@ -240,7 +240,12 @@
           };
 
           spawn-at-startup = [
-            { command = [ noctaliaExe "--allow-duplicate" ]; }
+            {
+              command = [
+                noctaliaExe
+                "--allow-duplicate"
+              ];
+            }
           ];
 
           environment = {
@@ -301,7 +306,6 @@
           binds = lib.mkMerge [
             {
               # Launchers and core actions.
-              # Vicinae replaces the old Noctalia launcher on the same shortcut.
               "Mod+Space".action.spawn = [
                 "vicinae"
                 "toggle"
