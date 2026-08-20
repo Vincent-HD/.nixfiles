@@ -87,6 +87,8 @@
         text = ''
           # Close Ghostty surfaces without asking for confirmation.
           confirm-close-surface = false
+          # Do not return OSC color probes that can leak into interactive input.
+          osc-color-report-format = none
           # Use Zsh-compatible Meta sequences for word movement with modified arrows.
           keybind = alt+arrow_left=esc:b
           keybind = alt+arrow_right=esc:f
