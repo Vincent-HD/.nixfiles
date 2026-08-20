@@ -502,6 +502,20 @@ Use when:
 - the public health or model endpoint omits administrative capability fields
 - you need to compare enabled rows with the service's full configured catalog
 
+### Inspect an Executor MCP registration
+
+```bash
+EXECUTOR_TOKEN_FILE="$HOME/.executor/server-control/auth.json"
+EXECUTOR_URL="http://127.0.0.1:4789"
+MCP_SLUG=<slug>
+curl --fail --silent --show-error --max-time 10 \
+  -H "Authorization: Bearer $(jq -r '.token' "$EXECUTOR_TOKEN_FILE")" \
+  "$EXECUTOR_URL/api/mcp/servers/$MCP_SLUG" | jq .
+```
+
+Purpose: inspect a Nix-managed Executor MCP integration and verify that a server or connection has
+been removed from the live local catalog without printing the bearer token.
+
 ### Probe a local Streamable HTTP MCP proxy
 
 ```bash
