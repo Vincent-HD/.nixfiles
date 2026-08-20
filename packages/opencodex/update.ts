@@ -42,8 +42,7 @@ if (currentVersion === undefined) {
 console.log(`opencodex current: ${currentVersion}`);
 console.log(`opencodex latest:  ${version}`);
 if (currentVersion === version) {
-  console.log("opencodex is already current.");
-  process.exit(0);
+  console.log("opencodex version is current; refreshing source and Bun dependency hashes.");
 }
 
 const sourceHash = await prefetch(tarballUrl);

@@ -25,7 +25,7 @@ let
     };
     "aarch64-darwin" = {
       artifact = "plannotator-darwin-arm64";
-      hash = "sha256-MtKPrN80xRGYLTjyK121O3FSdTbS0PwI/sHPjxinYlc=";
+      hash = "sha256-1xvt/TWHyXU+DQuR0i3NthnYBIjqWum0WaxvNGIdfPE=";
     };
   };
   source = sources.${stdenvNoCC.hostPlatform.system};

@@ -25,14 +25,14 @@ let
     "aarch64-darwin" = {
       platform = "darwin";
       architecture = "arm64";
-      hash = "sha512-1CfBrRwni554wusM+ezcjguYOvu+3gZnBtJOrMrv7vVk5xBORDEL0ZavaJXajiXCCaP0ALYK9pu3ZQalXMCDOA==";
+      hash = "sha512-oTlWJ4KxJ8yCGyHDRfEJo13IPwA6G0M1SAPDTeELMd4EeJVJWpGBwXEu8ZNebiMtjGQYnP99qqgaGPydj6mWEA==";
     };
   };
   source = sources.${stdenvNoCC.hostPlatform.system};
 in
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "executor";
-  version = "1.5.41";
+  version = "1.5.42";
 
   # Executor publishes one self-contained Bun binary for each OS/architecture.
   src = fetchurl {

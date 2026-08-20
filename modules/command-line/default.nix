@@ -13,6 +13,7 @@
       batPreview = "${pkgs.bat}/bin/bat --color=always --style=numbers --line-range=:200 {} 2>/dev/null || true";
       inshellisensePackage = pkgs.inshellisense;
       inshellisenseRoot = "${inshellisensePackage}/lib/node_modules/@microsoft/inshellisense";
+      inshellisenseResources = "${config.xdg.dataHome}/inshellisense";
     in
     {
       home.packages = [
@@ -286,15 +287,15 @@
           '')
           (lib.mkOrder 1500 ''
             # Load Inshellisense after the other shell integrations.
-            [[ -f "${config.home.homeDirectory}/.inshellisense/init/zsh/init.zsh" ]] \
-              && source "${config.home.homeDirectory}/.inshellisense/init/zsh/init.zsh"
+            [[ -f "${inshellisenseResources}/init/zsh/init.zsh" ]] \
+              && source "${inshellisenseResources}/init/zsh/init.zsh"
           '')
         ];
       };
 
       # Generate Inshellisense's mutable shell resources when the nixpkgs package changes.
       home.activation.inshellisenseResources = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-        inshellisense_state=${lib.escapeShellArg "${config.home.homeDirectory}/.inshellisense"}
+        inshellisense_state=${lib.escapeShellArg inshellisenseResources}
         inshellisense_version=${lib.escapeShellArg pkgs.inshellisense.version}
         version_file="$inshellisense_state/.nixpkgs-version"
         zsh_init="$inshellisense_state/init/zsh/init.zsh"
@@ -303,7 +304,8 @@
           || [[ "$(< "$version_file")" != "$inshellisense_version" ]] \
           || [[ ! -f "$zsh_init" ]]; then
           cd ${lib.escapeShellArg inshellisenseRoot}
-          ${inshellisensePackage}/bin/is reinit >/dev/null
+          XDG_DATA_HOME=${lib.escapeShellArg config.xdg.dataHome} \
+            ${inshellisensePackage}/bin/is reinit >/dev/null
           printf '%s\n' "$inshellisense_version" > "$version_file"
         fi
       '';

@@ -59,7 +59,7 @@ nix run github:Mic92/nix-update -- --flake lightjj
 - **File**: `packages/opencodex/default.nix`
 - **Pattern**: npm release tarball + tagged Bun lockfile + fixed-output Bun dependency closure
 - **Flake output**: `.#opencodex`
-- **Note**: The package runs with Nix's Bun runtime and discards OpenCodex's unused bundled npm Bun binary. Its update script refreshes the tarball, lockfile, and dependency-closure hashes together.
+- **Note**: The package runs with Nix's Bun runtime and discards OpenCodex's unused bundled npm Bun binary. Its update script refreshes the tarball, lockfile, and dependency-closure hashes together, including when only the Bun dependency closure changed.
 
 ```bash
 nix run github:Mic92/nix-update -- --flake opencodex --use-update-script

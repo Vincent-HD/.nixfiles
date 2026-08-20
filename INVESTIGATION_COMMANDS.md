@@ -73,6 +73,24 @@ nix eval --raw ".#packages.${SYSTEM}.<pkg>.version"
 
 Purpose: confirm that a flake package exists for the platform an updater is targeting before running `nix-update`. This is especially useful when the current host does not provide a Linux-only output.
 
+### Build a package for the current platform
+
+```bash
+SYSTEM=$(nix eval --impure --raw --expr builtins.currentSystem)
+nix build ".#packages.${SYSTEM}.<pkg>" --no-link
+```
+
+Purpose: validate the platform-specific artifact and catch fixed-output hash mismatches before rebuilding the full host configuration.
+
+### Syntax-check generated shell configuration
+
+```bash
+nix eval --raw ".#<host-config>.config.home-manager.users.<user>.programs.zsh.initContent" | zsh -n
+nix eval --raw ".#<host-config>.config.home-manager.users.<user>.home.activation.<feature>.data" | zsh -n
+```
+
+Purpose: catch quoting and shell-syntax errors in generated Home Manager shell initialization and activation snippets without applying the configuration.
+
 ### Read a package version and source position from the evaluated package set
 
 ```bash
