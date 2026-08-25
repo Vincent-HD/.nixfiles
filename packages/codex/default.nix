@@ -10,14 +10,14 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "codex";
-  version = "0.147.0";
+  version = "0.149.1";
 
   # Use the full package archive: CLI + required codex-code-mode-host sibling.
   # The plain `codex-*-linux-musl.tar.gz` asset only contains the CLI binary, which
   # breaks tool execution since 0.144 (hard fail on 0.147 with code_mode_host).
   src = fetchurl {
     url = "https://github.com/openai/codex/releases/download/rust-v${finalAttrs.version}/codex-package-x86_64-unknown-linux-musl.tar.gz";
-    hash = "sha256-vXWNU9VuQdxl4EX0WJ33mgOO0ZegEa3LUqJY5q1kz9o=";
+    hash = "sha256-HoUxrl9t6jxuEeU+dMxayBvxull/mylvsRLW6jD9r10=";
   };
 
   sourceRoot = ".";
