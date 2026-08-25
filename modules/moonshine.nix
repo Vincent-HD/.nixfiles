@@ -92,9 +92,6 @@ in
               }
               {
                 title = "Niri Desktop (Noctalia)";
-                # Moonshine already provides the outer headless compositor. Start Niri
-                # without --session so it nests inside that compositor, and include the
-                # Home Manager profile so Niri can start the user's Noctalia shell.
                 command = [
                   "/run/current-system/sw/bin/env"
                   "PATH=/etc/profiles/per-user/${cfg.user}/bin:/run/current-system/sw/bin:/run/wrappers/bin"
@@ -173,6 +170,7 @@ in
             ip saddr ${cfg.trustedNetwork} tcp dport { ${lib.concatStringsSep ", " (map toString moonshineTcpPorts)} } accept
             ip saddr ${cfg.trustedNetwork} udp dport { ${lib.concatStringsSep ", " (map toString moonshineUdpPorts)} } accept
           '';
+
         })
       ];
     };

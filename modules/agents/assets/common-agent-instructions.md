@@ -7,13 +7,13 @@
 
 ### Jujutsu revisions
 
-Keep history as **one logical change per revision**, with conventional, why-focused descriptions. Do not mash unrelated topics into `@`.
+Keep history as **one logical change per revision** when you *do* split, with conventional, why-focused descriptions. While implementing, keep nits, docs, and small extras on `@`; split only for a substantial new concern (ask if unsure). See `jj-auto-revise`.
 
 Use the shared Agent Skills (installed under `~/.agents/skills`):
 
 | When | Skill | Intent |
 | ---- | ----- | ------ |
-| While implementing; “jj” / absorb / describe | `jj-auto-revise` | Describe `@` at start of a concern; print a progress block at prompt boundaries; do not commit when a piece ends; on each new prompt, continue if related, else `jj commit` then describe the new concern; absorb/squash-into for ancestor follow-ups |
+| While implementing; “jj” / absorb / describe | `jj-auto-revise` | Describe `@` at start of a concern; print a progress block at prompt boundaries; do not commit when a piece ends; on each new prompt, keep nits/docs/small extras on `@`, else `jj commit` then describe a substantial new concern (ask if unsure); absorb/squash-into for ancestor follow-ups |
 | Later cleanup; stacked PRs; squash & resplit a wip stack | `jj-resplit-stack` | Backup (bookmark + range duplicate) → squash blob onto BASE → peel feature/FE-BE slices with a running progress block → related tests per rev |
 | Unresolved jj conflicts after rebase/merge; “fix conflicts” | `jj-solve-conflict` | Backup (bookmark + duplicate), teleport with `jj new` onto the oldest conflict, resolve, squash with `--use-destination-message`, keep a running remaining-count |
 
@@ -27,6 +27,17 @@ This machine is managed by Nix. When a command-line tool is not available,
 run it temporarily with `comma` (for example, `, jq`) or use
 `nix run nixpkgs#jq -- <arguments>`. Do not install a tool globally just
 to complete a task.
+
+## Shared MCP catalog (Executor)
+
+MCP tools on this machine live in **Executor**, not in each editor. Cursor, Codex, and VS Code already connect to that one catalog.
+
+When you need a tool, or you are about to add or create an MCP server, ask Executor first:
+
+- Call Executor `skills` with name `execute`, then `tools.search({ query: "..." })` to see what is already shared.
+- The catalog currently includes GitHub, Context7, NixOS package and option docs (`nixos`), browser automation, Postgres, and Arch ops.
+- Do not add a client-local MCP in Cursor, Codex, or VS Code for something Executor already exposes.
+- If the tool is missing, ask to add it to the Executor catalog so every client gets it, instead of wiring a one-off server into a single agent.
 
 ## Response sections and feedback
 

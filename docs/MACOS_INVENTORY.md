@@ -139,7 +139,7 @@ external prerequisite, and removing an entry does not uninstall the app.
 | HTTPie Desktop | Identified developer | Manual; no exact Homebrew cask found |
 | Scroll Reverser | Identified developer | Homebrew cask `scroll-reverser` |
 | Slack | Identified developer | Homebrew cask `slack` |
-| T3 Code (Alpha) | Identified developer | Homebrew cask `t3-code` |
+| T3 Code (Nightly) | Identified developer | Nix package `t3code` (nightly GitHub prerelease) |
 | Zwift | Vendor package receipt | Homebrew cask `zwift` |
 
 Brave-installed web apps exist under `~/Applications/Brave Browser Apps.localized`: Gather,
@@ -317,7 +317,6 @@ Darwin host evaluate.
 - `modules/bitwarden.nix`: `/home/${username}/.bitwarden-ssh-agent.sock`
 - `modules/secrets.nix`: `/home/${username}/...`
 - `modules/noctalia/noctalia.nix`: `/home/${config.home.username}/...`
-- `modules/coding/assets/opencode.jsonc`: `/home/vincent/...`
 
 Portable modules should use `config.home.homeDirectory`. NixOS-only modules may keep Linux paths
 when that is clearer, but should still avoid hardcoding the username.

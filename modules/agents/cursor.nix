@@ -32,11 +32,14 @@
 
         # Use the absolute package path because GUI-launched Cursor may not
         # inherit the Home Manager profile PATH, especially on macOS.
-        # RTK rewrite hook disabled: on this host it can stall Cursor agent
-        # Shell (preToolUse stdin) even on 3.15.6. Re-enable after Cursor 3.16
-        # unsandboxed spawn is fixed.
         ".cursor/hooks.json".source = (pkgs.formats.json { }).generate "cursor-hooks.json" {
           version = 1;
+          hooks.preToolUse = [
+            {
+              command = "${lib.getExe rtk} hook cursor";
+              matcher = "Shell";
+            }
+          ];
         };
       };
 

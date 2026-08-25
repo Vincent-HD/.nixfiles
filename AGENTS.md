@@ -10,7 +10,7 @@ auto-imported by `import-tree`. The Linux host runs **KDE Plasma 6** on **NVIDIA
 ## Agent References
 
 - `INVESTIGATION_COMMANDS.md` — reusable shell, eval, validation, and debugging command patterns
-- `.agents/skills/` — project-scoped Agent Skills discovered by Codex, Cursor, OpenCode, and VS Code
+- `.agents/skills/` — project-scoped Agent Skills discovered by Codex, Cursor, and VS Code
 - `.agents/skills/update-investigation-commands/SKILL.md` — project skill for maintaining the investigation command reference
 - `reference-repos.md` — only tracks other people's NixOS / nix-darwin / Home Manager configuration repositories. Never add application codebases, packaging repos, skills repos, tooling repos, or other non-config references.
 
@@ -23,14 +23,14 @@ flake.nix                              # Entrypoint: inputs + mkFlake via import
 flake.lock                             # Pinned input versions (auto-generated)
 AGENTS.md                              # This file
 modules/
-  agents/                              # Agent-specific modules: common, skills, Cursor, Codex, OpenCode, VS Code
+  agents/                              # Agent-specific modules: common, skills, Cursor, Codex, T3 Code, VS Code
   global-options.nix                   # Shared flake-parts options: systems, flake.username
   plasma.nix                           # KDE Plasma 6 + SDDM + Kate (NixOS + HM)
   niri.nix                             # Niri compositor + greetd + Kitty (NixOS + HM); see hosts/pc-fixe/default.nix `desktopSession`
   noctalia.nix                         # Noctalia shell + upower / power-profiles-daemon (NixOS + HM)
   graphics.nix                         # NVIDIA GPU (NixOS)
   sound.nix                            # PipeWire audio (NixOS)
-  coding.nix                           # VSCode, Cursor, OpenCode, Neovim, Vim, Git (NixOS + HM)
+  coding.nix                           # VSCode, Cursor, Neovim, Vim, Git (NixOS + HM)
   browser.nix                          # Brave (HM)
   discord.nix                          # Nixcord with Vencord (HM)
   spotify.nix                          # Spotify (HM)
@@ -193,13 +193,13 @@ changes, validate `.#darwinConfigurations.macbook-pro`.
 - Keep `system.stateVersion` and `home.stateVersion` stable unless intentionally migrating state.
 - **Add cross-client Agent Skills through `custom.agentSetup.skills` in `modules/agents/skills.nix` (or a
   contributing feature module).** Home Manager installs each entry under `~/.agents/skills`, which
-  Codex, Cursor, and OpenCode discover natively, while VS Code is configured through
+  Codex and Cursor discover natively, while VS Code is configured through
   `chat.agentSkillsLocations`. Do not duplicate them under
-  `~/.codex/skills`, `~/.cursor/skills`, or `~/.config/opencode/skills`, and do not manage
+  `~/.codex/skills` or `~/.cursor/skills`, and do not manage
   any tool's built-in skill directory.
 - **Keep MCP definitions explicit in each client's native schema.** Maintain Cursor in
-  `modules/agents/cursor.nix`, Codex in `modules/agents/codex.nix`, OpenCode in
-  `modules/agents/opencode.nix`, and VS Code in `modules/agents/vscode.nix`. Repeating the small
+  `modules/agents/cursor.nix`, Codex in `modules/agents/codex.nix`, and VS Code in
+  `modules/agents/vscode.nix`. Repeating the small
   server list is preferred over a normalizing abstraction. Use pinned executable paths and
   file-backed sops secrets.
 - **Keep copied third-party skills as local snapshots** when they are not a versioned upstream
@@ -250,16 +250,16 @@ subdirectory:
   those values into assets when needed.
 
 ```
-modules/coding/
-├── default.nix              # Main module
+modules/agents/
+├── common.nix
 └── assets/
-    └── opencode.jsonc       # Static config file
+    └── common-agent-instructions.md
 ```
 
 Reference assets using relative paths:
 
 ```nix
-xdg.configFile."opencode/opencode.jsonc".source = ./assets/opencode.jsonc;
+home.file."AGENTS.md".text = builtins.readFile ./assets/common-agent-instructions.md;
 ```
 
 This keeps related files together and avoids cluttering the top-level `modules/` directory.

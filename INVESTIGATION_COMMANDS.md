@@ -20,7 +20,7 @@ NIX_EVAL_FEATURES='extra-experimental-features = nix-command flakes dynamic-deri
 ### Get an input source path from the current flake
 
 ```bash
-nix eval --impure --expr '(builtins.getFlake "git+file:///home/vincent/.nixfiles").inputs.niri.outPath' --raw
+nix eval --impure --expr '(builtins.getFlake "path:/home/vincent/.nixfiles").inputs.niri.outPath' --raw
 ```
 
 Purpose: resolve the exact checked-out source path for a flake input such as `niri`, `nixpkgs`, or `home-manager`.
@@ -32,8 +32,8 @@ Use when:
 Variants:
 
 ```bash
-nix eval --impure --expr '(builtins.getFlake "git+file:///home/vincent/.nixfiles").inputs.nixpkgs.outPath' --raw
-nix eval --impure --expr '(builtins.getFlake "git+file:///home/vincent/.nixfiles").inputs.home-manager.outPath' --raw
+nix eval --impure --expr '(builtins.getFlake "path:/home/vincent/.nixfiles").inputs.nixpkgs.outPath' --raw
+nix eval --impure --expr '(builtins.getFlake "path:/home/vincent/.nixfiles").inputs.home-manager.outPath' --raw
 ```
 
 ### Inspect a NixOS boot specialization
@@ -155,7 +155,7 @@ Purpose: confirm the exact app package selected after any override or launcher p
 ```bash
 nix build --impure --no-link --expr '
 let
-  flake = builtins.getFlake "git+file:///home/vincent/.nixfiles";
+  flake = builtins.getFlake "path:/home/vincent/.nixfiles";
   pkg = builtins.head (
     builtins.filter (
       p:
@@ -174,7 +174,7 @@ Purpose: force a specific HM-managed package or wrapper package to build even wh
 ```bash
 nix build --impure --no-link --print-out-paths --expr '
 let
-  flake = builtins.getFlake "git+file:///home/vincent/.nixfiles";
+  flake = builtins.getFlake "path:/home/vincent/.nixfiles";
   pkgs = import flake.inputs.nixpkgs { system = "x86_64-linux"; };
 in (pkgs.<package>.override { <dependency> = pkgs.<compatible-dependency>; })
 '
@@ -210,6 +210,18 @@ nix build --no-link --print-out-paths \
 
 Purpose: realize generated Home Manager wrappers, service units, and file sources after changing a
 Home Manager module, catching shell-check or generated-file failures without switching the host.
+
+### Inspect a rendered Home Manager activation script
+
+```bash
+GENERATION=$(nix build --no-link --print-out-paths \
+  '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$USER"'.home.activationPackage')
+bash -n "$GENERATION/activate"
+rg -n -C 6 '<activation-marker-or-command>' "$GENERATION/activate"
+```
+
+Purpose: verify the exact shell emitted for a Home Manager activation step after evaluation, including
+the pinned store paths and quoting that are not visible in the Nix module source.
 
 ### Run colocated Bun tests for a Nix-managed TypeScript asset
 
@@ -520,6 +532,20 @@ Use when:
 - the public health or model endpoint omits administrative capability fields
 - you need to compare enabled rows with the service's full configured catalog
 
+### Inspect an Executor MCP registration
+
+```bash
+EXECUTOR_TOKEN_FILE="$HOME/.executor/server-control/auth.json"
+EXECUTOR_URL="http://127.0.0.1:4789"
+MCP_SLUG=<slug>
+curl --fail --silent --show-error --max-time 10 \
+  -H "Authorization: Bearer $(jq -r '.token' "$EXECUTOR_TOKEN_FILE")" \
+  "$EXECUTOR_URL/api/mcp/servers/$MCP_SLUG" | jq .
+```
+
+Purpose: inspect a Nix-managed Executor MCP integration and verify that a server or connection has
+been removed from the live local catalog without printing the bearer token.
+
 ### Probe a local Streamable HTTP MCP proxy
 
 ```bash
@@ -548,7 +574,7 @@ Purpose: inspect the rendered value of a single NixOS option or nested attrset, 
 ```bash
 cd "$REPO" && nix build --impure --no-link --print-out-paths --expr '
 let
-  flake = builtins.getFlake "git+file:///home/vincent/.nixfiles";
+  flake = builtins.getFlake "path:/home/vincent/.nixfiles";
   pkgs = flake.nixosConfigurations.<host>.pkgs;
   settings = flake.nixosConfigurations.<host>.config.<service-option>;
 in
@@ -763,19 +789,21 @@ cd "$REPO" && nix run nixpkgs#statix -- check --config checks/statix.toml .
 
 Purpose: get direct Statix diagnostics locally without building the flake check derivation.
 
-### Format a Nix file with nixfmt
+### Check or format Nix files with nixfmt
 
 ```bash
-cd "$REPO" && nix shell nixpkgs#nixfmt -c nixfmt modules/niri.nix
+cd "$REPO" && nix run nixpkgs#nixfmt-rfc-style -- --check path/to/file.nix
 ```
 
-Purpose: format changed Nix files even when the repo has no `package.json` / `pnpm fmt`.
+Purpose: check changed Nix files without modifying them, even when the repo has no `package.json` / `pnpm fmt`.
 
 General form:
 
 ```bash
-cd "$REPO" && nix shell nixpkgs#nixfmt -c nixfmt path/to/file.nix
+cd "$REPO" && nix run nixpkgs#nixfmt-rfc-style -- path/to/file.nix
 ```
+
+The form without `--check` rewrites the file; review the diff afterward.
 
 ### Check for available formatters
 
@@ -826,6 +854,36 @@ systemctl show <service>.service --property=Environment --property=User --proper
 ```
 
 Purpose: identify the actual exit error, generated service environment, and runtime credentials for a failed system service.
+
+### Inspect a transient Wayland session and its environment
+
+```bash
+systemctl --user status <session-unit> --no-pager -l
+systemctl --user show <session-unit> --property=Environment --property=ExecStart --property=MainPID --property=ControlGroup --no-pager
+journalctl --user -u <session-unit> -b --no-pager -n 200
+ps -C <compositor> -o user,pid,ppid,stat,etime,args
+tr '\0' '\n' < "/proc/<compositor-pid>/environ" | sort
+```
+
+Purpose: identify nested compositor layers, Wayland display variables, transient systemd ownership, and the environment inherited by apps launched inside a streamed or remote session.
+
+### Inspect Wayland keysyms in the active compositor
+
+```bash
+nix run nixpkgs#wev --
+```
+
+Purpose: press a key in the `wev` window and inspect the received XKB keysym, such as `Super_L`, when a remote client or nested compositor may be translating or filtering it.
+
+### Check a network service and its host interfaces
+
+```bash
+systemctl is-active <service>.service
+ss -ltnup | rg '<port>|<process-name>'
+ip -br addr
+```
+
+Purpose: confirm that a NixOS-managed network service is running, identify its listening addresses and ports, and verify which host interfaces are available for client access.
 
 ### Compare booted and current NixOS generations
 
@@ -926,7 +984,7 @@ These were useful in this session, but are more situational.
 ```bash
 nix eval --impure --expr '
 let
-  f = builtins.getFlake "git+file:///home/vincent/.nixfiles";
+  f = builtins.getFlake "path:/home/vincent/.nixfiles";
   pkgs = import f.inputs.nixpkgs {
     system = "x86_64-linux";
     overlays = [ f.inputs.niri.overlays.niri ];
@@ -983,6 +1041,52 @@ noctalia-shell ipc call cb up
 ```
 
 Purpose: manual experiments while discovering behavior. These are best used sparingly because they can visibly affect the running session or depend on context.
+
+### Diagnose the active Tailscale peer path
+
+```bash
+tailscale status | grep -F '<peer-name>'
+tailscale ping --c=20 --until-direct=false '<peer-name>'
+tailscale netcheck
+tailscale status --json | jq '.Peer[] | select(.DNSName | startswith("<peer-name>")) | {Online, Active, CurAddr, Relay, PeerRelay, LastHandshake, TxBytes, RxBytes}'
+```
+
+Purpose: distinguish a direct UDP path (`direct` or a public endpoint in `tailscale ping`) from a DERP path (`relay "<region>"` / `via DERP(...)`) or a Tailscale peer relay (`via peer-relay(...)`). `netcheck` reports NAT and DERP reachability, not the active peer route. Prefer the human-readable `status` and `ping` output over the JSON `Relay` field alone.
+
+### Inspect Niri output modes before attempting a custom mode
+
+```bash
+niri msg outputs
+niri msg output '<output-name>' --help
+```
+
+Purpose: identify the connector and advertised modes before using Niri's custom output mode support. A live mode change has immediate display effects and can blank or damage an out-of-spec physical monitor, so only run these after selecting a safe output and a supported timing.
+
+If an output is known to be safe for the experiment:
+
+```bash
+niri msg output '<output-name>' custom-mode '<width>x<height>@<refresh-rate>'
+niri msg output '<output-name>' modeline '<vesa-modeline>'
+```
+
+Purpose: temporarily request a custom mode or explicit modeline in Niri without editing the declarative configuration. Use `niri msg outputs` afterward to verify the result and restore the declarative mode before ending the experiment.
+
+### Inspect DRM connector modes and EDID
+
+```bash
+for connector in /sys/class/drm/card*-*; do
+  name=${connector##*/}
+  state=$(<"$connector/status")
+  printf '%s %s\n' "$name" "$state"
+  if [ "$state" = connected ]; then
+    cat "$connector/modes"
+  fi
+done
+
+nix run nixpkgs#edid-decode -- /sys/class/drm/<card>-<connector>/edid
+```
+
+Purpose: verify whether a physical or virtual HDMI/DisplayPort sink is currently connected, which modes its EDID advertises, and whether a custom EDID has actually reached the GPU. An empty EDID usually means the connector is disconnected or the sink is powered off.
 
 ## Notes
 

@@ -88,6 +88,8 @@
         text = ''
           # Close Ghostty surfaces without asking for confirmation.
           confirm-close-surface = false
+          # Do not return OSC color probes that can leak into interactive input.
+          osc-color-report-format = none
           # Use Zsh-compatible Meta sequences for word movement with modified arrows.
           keybind = alt+arrow_left=esc:b
           keybind = alt+arrow_right=esc:f
@@ -281,8 +283,8 @@
             ''
           ))
           (lib.mkOrder 1400 ''
-            # Register Carapace with Zsh and let it reuse Inshellisense specs.
-            export CARAPACE_BRIDGES='zsh,inshellisense'
+            # Keep Carapace on its native Zsh bridge instead of routing through Inshellisense.
+            export CARAPACE_BRIDGES='zsh'
             source <(${pkgs.carapace}/bin/carapace _carapace)
           '')
           (lib.mkOrder 1500 ''

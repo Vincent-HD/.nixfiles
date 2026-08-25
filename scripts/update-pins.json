@@ -233,6 +233,20 @@
       ]
     },
     {
+      "name": "t3code",
+      "type": "nix-update",
+      "description": "T3 Code nightly desktop GitHub prerelease (current-platform AppImage or DMG)",
+      "command": [
+        "nix",
+        "run",
+        "github:Mic92/nix-update",
+        "--",
+        "--flake",
+        "t3code",
+        "--use-update-script"
+      ]
+    },
+    {
       "name": "plannotator",
       "type": "nix-update",
       "description": "Plannotator current-platform release binary and shared Agent Skills",
