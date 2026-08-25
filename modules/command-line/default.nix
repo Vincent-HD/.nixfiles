@@ -300,6 +300,7 @@
         inshellisense_version=${lib.escapeShellArg pkgs.inshellisense.version}
         version_file="$inshellisense_state/.nixpkgs-version"
         zsh_init="$inshellisense_state/init/zsh/init.zsh"
+        zsh_integration="$inshellisense_state/shell/shellIntegration-rc.zsh"
 
         if [[ ! -f "$version_file" ]] \
           || [[ "$(< "$version_file")" != "$inshellisense_version" ]] \
@@ -307,6 +308,14 @@
           cd ${lib.escapeShellArg inshellisenseRoot}
           ${inshellisensePackage}/bin/is reinit >/dev/null
           printf '%s\n' "$inshellisense_version" > "$version_file"
+        fi
+
+        # Keep Inshellisense's prompt markers out of Zsh completion input in nested terminals.
+        if [[ -f "$zsh_integration" ]]; then
+          ${pkgs.gnused}/bin/sed -i \
+            -e "s#^[[:space:]]*builtin printf '\\e]6973;PS\\a'[[:space:]]*\$#\\tbuiltin printf '\\e]6973;PS\\a' > /dev/tty#" \
+            -e "s#^[[:space:]]*builtin printf '\\e]6973;PE\\a'[[:space:]]*\$#\\tbuiltin printf '\\e]6973;PE\\a' > /dev/tty#" \
+            "$zsh_integration"
         fi
       '';
 

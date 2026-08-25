@@ -193,6 +193,18 @@ nix build --no-link --print-out-paths \
 Purpose: realize generated Home Manager wrappers, service units, and file sources after changing a
 Home Manager module, catching shell-check or generated-file failures without switching the host.
 
+### Inspect a rendered Home Manager activation script
+
+```bash
+GENERATION=$(nix build --no-link --print-out-paths \
+  '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$USER"'.home.activationPackage')
+bash -n "$GENERATION/activate"
+rg -n -C 6 '<activation-marker-or-command>' "$GENERATION/activate"
+```
+
+Purpose: verify the exact shell emitted for a Home Manager activation step after evaluation, including
+the pinned store paths and quoting that are not visible in the Nix module source.
+
 ### Run colocated Bun tests for a Nix-managed TypeScript asset
 
 ```bash
