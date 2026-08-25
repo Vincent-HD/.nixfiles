@@ -13,7 +13,7 @@ let
     "x86_64-linux" = {
       arch = "x86_64";
       ext = "AppImage";
-      hash = "sha256-kWg8I3CVWKROnIozOPK40crIAAhBCA2wjmaLCLR+DF4=";
+      hash = "sha256-Z9F6IZm2p63Td5OEHYLcfrpQdyWkpYbr0skVFiADjbU=";
     };
     "aarch64-darwin" = {
       arch = "arm64";
@@ -29,7 +29,7 @@ let
   source = sources.${stdenvNoCC.hostPlatform.system};
 
   pname = "t3code";
-  version = "0.0.34-nightly.20260819.1133";
+  version = "0.0.34-nightly.20260825.1185";
 
   src = fetchurl {
     url = "https://github.com/pingdotgg/t3code/releases/download/v${version}/T3-Code-${version}-${source.arch}.${source.ext}";
