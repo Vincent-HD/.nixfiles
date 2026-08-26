@@ -12,7 +12,7 @@ in
       inputs.sops-nix.nixosModules.sops
       nixos.pcFixeConfiguration
       nixos.niri
-      nixos.noctalia
+      nixos.dms
       nixos.graphics
       nixos.sound
       nixos.memoryPressure
@@ -42,8 +42,7 @@ in
             #hm.plasma
             hm.cursorPointer
             hm.niri
-            hm.noctalia
-            hm.noctalia-plugins-dependencies
+            hm.dms
             hm.coding
             hm.agentCommon
             hm.agentSkills

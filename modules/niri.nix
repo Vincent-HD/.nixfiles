@@ -10,7 +10,8 @@
 
       nixpkgs.overlays = [ inputs.niri.overlays.niri ];
 
-      # Use nixpkgs' current Niri package; niri-flake's package still references the removed libdisplay-info_0_2.
+      # Use nixpkgs' current Niri package; the niri-flake package currently
+      # references the removed libdisplay-info_0_2 with this nixpkgs revision.
       programs.niri.package = pkgs.niri;
 
       programs.niri.enable = true;
@@ -49,7 +50,9 @@
       services.greetd.restart = true;
     };
 
-  # Home Manager: niri config, Ghostty (Mod+T), spawn noctalia-shell at startup.
+  # Home Manager: Niri config and Ghostty (Mod+T). DMS is started by its
+  # dedicated user service, so this compositor config remains the single owner
+  # of Niri's layout and keybinds.
   config.flake.modules.homeManager.niri =
     {
       pkgs,
@@ -61,7 +64,6 @@
       audioCfg = config.custom.niri.audioBinds;
       mediaCfg = config.custom.niri.mediaBinds;
       niriExe = lib.getExe config.programs.niri.package;
-      noctaliaExe = "${config.home.profileDirectory}/bin/noctalia-shell";
       runNiriActions =
         actions: lib.concatStringsSep "\n" (map (action: "${niriExe} msg action ${action}") actions);
     in
@@ -86,9 +88,9 @@
         };
 
         volumeStep = lib.mkOption {
-          type = lib.types.str;
-          default = "0.05";
-          description = "Volume step passed to wpctl, without the trailing + or -.";
+          type = lib.types.int;
+          default = 5;
+          description = "Volume step in percentage points passed to DMS audio IPC.";
         };
       };
 
@@ -119,28 +121,36 @@
       };
 
       config = {
-        home.packages = [ pkgs.playerctl ];
-
         # Not in niri-flake's programs.niri.settings schema yet; merged via `include` (requires niri-unstable).
-        xdg.configFile."niri/recent-windows.kdl".text = ''
-          recent-windows {
-              debounce-ms 400
-              binds {
-                  Alt+Tab { next-window; }
-                  Alt+Shift+Tab { previous-window; }
-              }
-          }
-        '';
-
-        # Let Home Manager own the final config directly instead of patching a managed file in-place.
-        xdg.configFile.niri-config.enable = lib.mkForce false;
-        xdg.configFile."niri/config.kdl" = {
-          force = true;
-          text = ''
-            include "recent-windows.kdl"
-
-            ${config.programs.niri.finalConfig}
+        xdg.configFile = {
+          "niri/recent-windows.kdl".text = ''
+            recent-windows {
+                debounce-ms 400
+                binds {
+                    Alt+Tab { next-window; }
+                    Alt+Shift+Tab { previous-window; }
+                }
+            }
           '';
+
+          # Keep DMS's keybind settings page quiet without handing ownership of
+          # config.kdl to DMS. The actual keybinds remain below in this module;
+          # this empty include is only the integration marker DMS checks for.
+          "niri/dms/binds.kdl".text = ''
+            // Keybinds are managed in the NixOS configuration.
+          '';
+
+          # Let Home Manager own the final config directly instead of patching a managed file in-place.
+          "niri-config".enable = lib.mkForce false;
+          "niri/config.kdl" = {
+            force = true;
+            text = ''
+              include "recent-windows.kdl"
+              include optional=true "dms/binds.kdl"
+
+              ${config.programs.niri.finalConfig}
+            '';
+          };
         };
 
         programs.niri.settings = {
@@ -238,15 +248,6 @@
               };
             };
           };
-
-          spawn-at-startup = [
-            {
-              command = [
-                noctaliaExe
-                "--allow-duplicate"
-              ];
-            }
-          ];
 
           environment = {
             # NixOS Chromium/Electron: prefer Ozone Wayland over XWayland. Niri applies this only to processes
@@ -422,21 +423,52 @@
               "Mod+Shift+F".action.fullscreen-window = [ ];
               "Mod+Alt+F".action.toggle-window-floating = [ ];
               "Mod+Alt+Shift+F".action.switch-focus-between-floating-and-tiling = [ ];
-
-              # Screenshots and quit.
-              "Print".action.spawn = [
-                "noctalia-shell"
+              "Mod+V".action.spawn = [
+                "dms"
                 "ipc"
                 "call"
-                "plugin:screen-toolkit"
-                "annotate"
+                "clipboard"
+                "toggle"
+              ];
+
+              # Quick Capture provides the annotated screenshot workflow. Print
+              # selects a region, Mod+Print captures the focused output, and
+              # Alt+Print captures the focused window.
+              "Print".action.spawn = [
+                "dms"
+                "ipc"
+                "call"
+                "quickCapture"
+                "screenshot"
+                "region"
+                "edit"
               ];
               "Mod+Print".action.spawn = [
-                "noctalia-shell"
+                "dms"
                 "ipc"
                 "call"
-                "plugin:screen-toolkit"
-                "annotateFullscreen"
+                "quickCapture"
+                "screenshot"
+                "full"
+                "edit"
+              ];
+              "Alt+Print".action.spawn = [
+                "dms"
+                "ipc"
+                "call"
+                "quickCapture"
+                "screenshot"
+                "window"
+                "edit"
+              ];
+              # Opens the pinned DMS Screen Capture Toolbar. Its photo mode is
+              # available alongside GPU-backed video recording and audio modes.
+              "Mod+Shift+Print".action.spawn = [
+                "dms"
+                "ipc"
+                "call"
+                "screenCaptureToolbar"
+                "toggle"
               ];
               "Mod+Ctrl+Q".action.quit = { };
             }
@@ -444,10 +476,12 @@
               "${audioCfg.volumeUpKey}" = {
                 allow-when-locked = true;
                 action.spawn = [
-                  "wpctl"
-                  "set-volume"
-                  "@DEFAULT_AUDIO_SINK@"
-                  "${audioCfg.volumeStep}+"
+                  "dms"
+                  "ipc"
+                  "call"
+                  "audio"
+                  "increment"
+                  (toString audioCfg.volumeStep)
                 ];
               };
             })
@@ -455,10 +489,12 @@
               "${audioCfg.volumeDownKey}" = {
                 allow-when-locked = true;
                 action.spawn = [
-                  "wpctl"
-                  "set-volume"
-                  "@DEFAULT_AUDIO_SINK@"
-                  "${audioCfg.volumeStep}-"
+                  "dms"
+                  "ipc"
+                  "call"
+                  "audio"
+                  "decrement"
+                  (toString audioCfg.volumeStep)
                 ];
               };
             })
@@ -466,10 +502,11 @@
               "${audioCfg.muteKey}" = {
                 allow-when-locked = true;
                 action.spawn = [
-                  "wpctl"
-                  "set-mute"
-                  "@DEFAULT_AUDIO_SINK@"
-                  "toggle"
+                  "dms"
+                  "ipc"
+                  "call"
+                  "audio"
+                  "mute"
                 ];
               };
             })
@@ -477,8 +514,11 @@
               "${mediaCfg.playPauseKey}" = {
                 allow-when-locked = true;
                 action.spawn = [
-                  "playerctl"
-                  "play-pause"
+                  "dms"
+                  "ipc"
+                  "call"
+                  "mpris"
+                  "playPause"
                 ];
               };
             })
@@ -486,7 +526,10 @@
               "${mediaCfg.stopKey}" = {
                 allow-when-locked = true;
                 action.spawn = [
-                  "playerctl"
+                  "dms"
+                  "ipc"
+                  "call"
+                  "mpris"
                   "stop"
                 ];
               };
@@ -495,7 +538,10 @@
               "${mediaCfg.previousKey}" = {
                 allow-when-locked = true;
                 action.spawn = [
-                  "playerctl"
+                  "dms"
+                  "ipc"
+                  "call"
+                  "mpris"
                   "previous"
                 ];
               };
@@ -504,7 +550,10 @@
               "${mediaCfg.nextKey}" = {
                 allow-when-locked = true;
                 action.spawn = [
-                  "playerctl"
+                  "dms"
+                  "ipc"
+                  "call"
+                  "mpris"
                   "next"
                 ];
               };

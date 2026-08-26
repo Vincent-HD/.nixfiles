@@ -389,6 +389,36 @@ nix eval '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$USER"'.pr
 
 Purpose: inspect the effective bar widget settings as Nix renders them, especially when comparing widget-level defaults.
 
+## DankMaterialShell Settings Defaults
+
+### Compare a DMS JSON export with the upstream settings spec
+
+```bash
+DMS_SOURCE=/path/to/DankMaterialShell/quickshell/Common/settings/SettingsSpec.js \
+DMS_EXPORT=/path/to/settings.json \
+node <<'NODE'
+const fs = require("fs");
+const vm = require("vm");
+
+const source = fs.readFileSync(process.env.DMS_SOURCE, "utf8").replace(/^\\.pragma library\\s*/, "");
+const context = {};
+vm.createContext(context);
+vm.runInContext(source, context);
+const settings = JSON.parse(fs.readFileSync(process.env.DMS_EXPORT, "utf8"));
+const equal = (left, right) => JSON.stringify(left) === JSON.stringify(right);
+
+for (const [key, value] of Object.entries(settings)) {
+  if (!(key in context.SPEC)) {
+    console.log("UNKNOWN", key);
+  } else if (!equal(value, context.SPEC[key].def)) {
+    console.log("DIFF", key, JSON.stringify(value), "default=", JSON.stringify(context.SPEC[key].def));
+  }
+}
+NODE
+```
+
+Purpose: identify only persisted DMS values that differ from the checked-out upstream defaults before copying an export into `programs.dank-material-shell.settings`. Treat runtime metadata (for example `lastAppliedIconTheme`) and serialized color objects separately from user preferences.
+
 ## Home Manager / Config Evaluation
 
 ### Inspect rendered shell initialization and managed config text

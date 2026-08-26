@@ -281,6 +281,46 @@ nix flake update codex-desktop-linux
 - **Why**: It is intentionally pinned to a specific v4 revision and should stay out of routine updates until you migrate to v5.
 - **How**: Do not update this as part of normal maintenance.
 
+### dms
+
+- **File**: `flake.nix`
+- **Why**: Provides the DankMaterialShell stable branch and its Nix/Home Manager modules.
+- **How**: Refresh the stable input, then re-run the NixOS evaluation and DMS build.
+
+```bash
+nix flake update dms
+```
+
+### screen-capture-toolbar
+
+- **File**: `flake.nix`
+- **Why**: Pinned source for the DMS screenshot and GPU video-recording toolbar.
+- **How**: The source URL is pinned to a reviewed commit; update the revision in `flake.nix`, then refresh the lock entry.
+
+```bash
+nix flake update screen-capture-toolbar
+```
+
+### quick-capture
+
+- **File**: `flake.nix`
+- **Why**: Pinned source for the Quick Capture annotation plugin.
+- **How**: Update the reviewed commit in `flake.nix`, refresh the lock entry, and verify the plugin dependencies.
+
+```bash
+nix flake update quick-capture
+```
+
+### dms-plugins
+
+- **File**: `flake.nix`
+- **Why**: Pinned first-party DMS plugin source used for the declarative Dank Actions variants.
+- **How**: Update the reviewed commit in `flake.nix`, refresh the lock entry, and check the variant schema.
+
+```bash
+nix flake update dms-plugins
+```
+
 ### context7-skills
 
 - **File**: `flake.nix`

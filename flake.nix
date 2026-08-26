@@ -106,6 +106,36 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # DankMaterialShell stable branch; Home Manager provides the per-user shell,
+    # settings, Niri integration, and reproducible plugin sources.
+    dms = {
+      url = "github:AvengeMedia/DankMaterialShell/stable";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    # Pinned screen capture toolbar: photo and GPU-backed video recording from
+    # the DMS bar. Keep the plugin source in the flake lock instead of installing
+    # it imperatively through the DMS registry.
+    screen-capture-toolbar = {
+      url = "github:JDKamalakar/DMS-ScreenCapture_Toolbar/2b923cc95faa36876d790df6fc1ed575388e966d";
+      flake = false;
+    };
+
+    # Quick Capture provides the annotated screenshot workflow and a DankBar
+    # widget. The pinned revision is kept declarative so activation does not
+    # depend on a mutable plugin registry checkout.
+    quick-capture = {
+      url = "github:hthienloc/dms-quick-capture/8e923d1604fd860007f0d5a3a3088011f253f2c1";
+      flake = false;
+    };
+
+    # First-party DMS plugins, including Dank Actions used for the EasyEffects
+    # toggle that used to be a local Noctalia-style widget.
+    dms-plugins = {
+      url = "github:AvengeMedia/dms-plugins/3ad0e7845b62a9aca56f7959dd086b2a85655079";
+      flake = false;
+    };
+
     # Pinned to the last v4 (Quickshell-based) revision. Noctalia v5 is a fresh
     # rewrite with a TOML config format and is still alpha; keep it out of
     # `nix flake update` until we intentionally migrate.

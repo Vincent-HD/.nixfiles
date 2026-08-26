@@ -299,6 +299,50 @@
       ]
     },
     {
+      "name": "dms",
+      "type": "flake-input",
+      "description": "DankMaterialShell stable branch and Nix/Home Manager modules",
+      "command": [
+        "nix",
+        "flake",
+        "update",
+        "dms"
+      ]
+    },
+    {
+      "name": "screen-capture-toolbar",
+      "type": "flake-input",
+      "description": "Pinned DMS screenshot and GPU video recording toolbar source",
+      "command": [
+        "nix",
+        "flake",
+        "update",
+        "screen-capture-toolbar"
+      ]
+    },
+    {
+      "name": "quick-capture",
+      "type": "flake-input",
+      "description": "Pinned DMS screenshot annotation plugin source",
+      "command": [
+        "nix",
+        "flake",
+        "update",
+        "quick-capture"
+      ]
+    },
+    {
+      "name": "dms-plugins",
+      "type": "flake-input",
+      "description": "Pinned first-party DMS plugins, including Dank Actions",
+      "command": [
+        "nix",
+        "flake",
+        "update",
+        "dms-plugins"
+      ]
+    },
+    {
       "name": "crosspipe",
       "type": "manual",
       "description": "Pinned to a specific Crosspipe commit; update only after manually choosing the target revision",
