@@ -58,14 +58,32 @@
         };
 
         settings = {
-          # Keep only values that differ from the current DMS defaults. Theme
-          # and other default-valued settings are intentionally left to DMS.
-          dockTransparency = 0.85;
-          firstDayOfWeek = 1;
-          clockFormat = "HH:mm";
-          cornerRadius = 7;
-          barElevationEnabled = false;
+          # Keep only values that differ from the current DMS defaults. The
+          # custom theme path is derived from Home Manager's home directory so
+          # it does not hard-code the username.
+          currentThemeName = "custom";
+          currentThemeCategory = "registry";
+          customThemeFile = "${config.home.homeDirectory}/.config/DankMaterialShell/themes/crimsonVoltage/theme.json";
+          registryThemeVariants = {
+            catppuccin = {
+              dark = {
+                flavor = "mocha";
+                accent = "mauve";
+              };
+            };
+            gruvboxMulti = {
+              dark = {
+                flavor = "material-hard-dark";
+                accent = "blue";
+              };
+            };
+          };
+
           blurEnabled = true;
+          clockFormat = "HH:mm";
+          cornerRadius = 8;
+          niriLayoutBorderSize = 2;
+          barElevationEnabled = false;
 
           showLauncherButton = false;
           showWeather = false;
@@ -73,18 +91,69 @@
           showCpuTemp = false;
           showGpuTemp = false;
           showBattery = false;
+          showWorkspacePadding = true;
           showWorkspaceApps = true;
+          maxWorkspaceIcons = 6;
           workspaceAppIconSizeOffset = 2;
           groupWorkspaceApps = false;
-          workspaceActiveAppHighlightEnabled = true;
-          spotlightSectionViewModes = {
-            apps = "list";
-          };
-          dockSpacing = 8;
-          dockIconSize = 48;
+          workspaceColorMode = "secondaryContainer";
+          workspaceUnfocusedColorMode = "schh";
+          workspaceFocusedBorderColor = "primaryContainer";
+          controlCenterWidgets = [
+            {
+              id = "volumeSlider";
+              enabled = true;
+              width = 50;
+            }
+            {
+              id = "inputVolumeSlider";
+              enabled = true;
+              width = 50;
+            }
+            {
+              id = "wifi";
+              enabled = true;
+              width = 50;
+            }
+            {
+              id = "idleInhibitor";
+              enabled = true;
+              width = 50;
+            }
+            {
+              id = "bluetooth";
+              enabled = true;
+              width = 50;
+            }
+            {
+              id = "audioOutput";
+              enabled = true;
+              width = 50;
+            }
+            {
+              id = "audioInput";
+              enabled = true;
+              width = 50;
+            }
+            {
+              id = "nightMode";
+              enabled = true;
+              width = 50;
+            }
+            {
+              id = "darkMode";
+              enabled = true;
+              width = 50;
+            }
+            {
+              id = "builtin_tailscale";
+              enabled = true;
+              width = 50;
+            }
+          ];
 
-          # DMS uses a positive spacing value to float the bar away from the
-          # screen edge, matching Noctalia's floating bar type.
+          # The widget layout is custom; omitted per-bar options use DMS's
+          # current defaults.
           barConfigs = [
             {
               id = "default";
@@ -95,29 +164,14 @@
               showOnLastDisplay = true;
               leftWidgets = [
                 "controlCenterButton"
-                {
-                  id = "workspaceSwitcher";
-                  enabled = true;
-                }
+                "workspaceSwitcher"
               ];
               centerWidgets = [ "focusedWindow" ];
               rightWidgets = [
                 "dankActions:musicDucking"
                 "dankActions:musicNormal"
                 "cpuUsage"
-                {
-                  id = "cpuTemp";
-                  enabled = true;
-                  minimumWidth = true;
-                }
                 "memUsage"
-                {
-                  id = "diskUsage";
-                  enabled = true;
-                  mountPath = "/";
-                  diskUsageMode = 3;
-                  minimumWidth = true;
-                }
                 "network_speed_monitor"
                 "clock"
                 "systemTray"
@@ -125,11 +179,8 @@
                 "notificationButton"
                 "quickCapture"
               ];
-              spacing = 8;
               innerPadding = 4;
               widgetPadding = 8;
-              autoHide = false;
-              openOnOverview = false;
             }
           ];
 
@@ -185,8 +236,10 @@
           };
 
           # Dank Actions supports declarative variants. Two mutually exclusive
-          # entries preserve Noctalia's dynamic music/music-down icon while
-          # exposing the same left/right click behavior.
+          # entries expose a dynamic hearing/hearing-disabled icon while
+          # preserving the same left/right click behavior.
+          # The 600-second polling interval handles external changes; resetting
+          # both widgets after an action refreshes their visibility immediately.
           dankActions = {
             src = "${inputs.dms-plugins}/DankActions";
             settings = {
@@ -194,24 +247,26 @@
                 {
                   id = "musicDucking";
                   name = "Music Ducking";
-                  icon = "music_note";
-                  clickCommand = ''if [ "$(easyeffects -a output 2>/dev/null)" = "Music Ducking" ]; then easyeffects -l "Without Music Ducking"; else easyeffects -l "Music Ducking"; fi'';
-                  middleClickCommand = ''easyeffects -l "Without Music Ducking"'';
-                  rightClickCommand = ''easyeffects -l "Without Music Ducking"'';
+                  icon = "hearing";
+                  clickCommand = ''if [ "$(easyeffects -a output 2>/dev/null)" = "Music Ducking" ]; then easyeffects -l "Without Music Ducking"; else easyeffects -l "Music Ducking"; fi; dms ipc call widget reset dankActions:musicDucking >/dev/null 2>&1; dms ipc call widget reset dankActions:musicNormal >/dev/null 2>&1'';
+                  middleClickCommand = ''easyeffects -l "Without Music Ducking"; dms ipc call widget reset dankActions:musicDucking >/dev/null 2>&1; dms ipc call widget reset dankActions:musicNormal >/dev/null 2>&1'';
+                  rightClickCommand = ''easyeffects -l "Without Music Ducking"; dms ipc call widget reset dankActions:musicDucking >/dev/null 2>&1; dms ipc call widget reset dankActions:musicNormal >/dev/null 2>&1'';
                   visibilityCommand = ''test "$(easyeffects -a output 2>/dev/null)" = "Music Ducking"'';
-                  visibilityInterval = 1;
+                  # Seconds between visibility checks; 600 = 10 minutes.
+                  visibilityInterval = 600;
                   showIcon = true;
                   showText = false;
                 }
                 {
                   id = "musicNormal";
                   name = "Music (normal)";
-                  icon = "music_off";
-                  clickCommand = ''if [ "$(easyeffects -a output 2>/dev/null)" = "Music Ducking" ]; then easyeffects -l "Without Music Ducking"; else easyeffects -l "Music Ducking"; fi'';
-                  middleClickCommand = ''easyeffects -l "Without Music Ducking"'';
-                  rightClickCommand = ''easyeffects -l "Without Music Ducking"'';
+                  icon = "hearing_disabled";
+                  clickCommand = ''if [ "$(easyeffects -a output 2>/dev/null)" = "Music Ducking" ]; then easyeffects -l "Without Music Ducking"; else easyeffects -l "Music Ducking"; fi; dms ipc call widget reset dankActions:musicDucking >/dev/null 2>&1; dms ipc call widget reset dankActions:musicNormal >/dev/null 2>&1'';
+                  middleClickCommand = ''easyeffects -l "Without Music Ducking"; dms ipc call widget reset dankActions:musicDucking >/dev/null 2>&1; dms ipc call widget reset dankActions:musicNormal >/dev/null 2>&1'';
+                  rightClickCommand = ''easyeffects -l "Without Music Ducking"; dms ipc call widget reset dankActions:musicDucking >/dev/null 2>&1; dms ipc call widget reset dankActions:musicNormal >/dev/null 2>&1'';
                   visibilityCommand = ''test "$(easyeffects -a output 2>/dev/null)" != "Music Ducking"'';
-                  visibilityInterval = 1;
+                  # Seconds between visibility checks; 600 = 10 minutes.
+                  visibilityInterval = 600;
                   showIcon = true;
                   showText = false;
                 }
