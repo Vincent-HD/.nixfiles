@@ -10,23 +10,23 @@
         config.allowUnfree = true;
       };
 
-      mkBunApp =
+      mkBunRunner =
         name: script:
-        let
-          runner = pkgs.writeTextFile {
-            name = name;
-            destination = "/bin/${name}";
-            executable = true;
-            text = ''
-              #!${lib.getExe pkgs.bun}
-              await import("file://${script}");
-            '';
-          };
-        in
-        {
-          type = "app";
-          program = "${runner}/bin/${name}";
+        pkgs.writeTextFile {
+          name = name;
+          destination = "/bin/${name}";
+          executable = true;
+          text = ''
+            #!${lib.getExe pkgs.bun}
+            const module = await import("file://${script}");
+            if (typeof module.main === "function") await module.main();
+          '';
         };
+
+      mkBunApp = name: script: {
+        type = "app";
+        program = "${mkBunRunner name script}/bin/${name}";
+      };
     in
     {
       packages = {
@@ -48,11 +48,15 @@
         curseforge = pkgs.callPackage ../packages/curseforge { };
         crosspipe = pkgs.callPackage ../packages/crosspipe { };
         moonshine = pkgs.callPackage ../packages/moonshine { };
+        persist-dms = mkBunRunner "persist-dms" ../scripts/persist-dms.ts;
       };
 
       apps = {
         update-pins = mkBunApp "update-pins" ../scripts/update-pins.ts;
         update-curseforge = mkBunApp "update-curseforge" ../packages/curseforge/update.ts;
+      }
+      // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
+        persist-dms = mkBunApp "persist-dms" ../scripts/persist-dms.ts;
       };
     };
 }

@@ -134,6 +134,19 @@ nix eval --raw '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$USE
 
 Purpose: verify the exact text generated for a Home Manager-managed application configuration after module merging.
 
+### Compare and persist a running DMS configuration
+
+```bash
+persist-dms --dry-run
+persist-dms
+persist-dms --watch
+```
+
+Purpose: read DMS's in-memory settings through IPC, compare them with the defaults from the
+installed DMS package, and update the generated settings file. The normal command commits only
+that generated file; `--watch` polls with a debounce and commits each stable change. Use
+`nix run .#persist-dms -- --dry-run` before the helper is installed in the user profile.
+
 For applications with a config validator, pipe the rendered file through a process substitution:
 
 ```bash

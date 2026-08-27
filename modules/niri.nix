@@ -420,6 +420,7 @@
               # Window state and layout helpers.
               "Mod+R".action.switch-preset-column-width = [ ];
               "Mod+F".action.maximize-column = [ ];
+              "Mod+M".action.maximize-window-to-edges = [ ];
               "Mod+Shift+F".action.fullscreen-window = [ ];
               "Mod+Alt+F".action.toggle-window-floating = [ ];
               "Mod+Alt+Shift+F".action.switch-focus-between-floating-and-tiling = [ ];

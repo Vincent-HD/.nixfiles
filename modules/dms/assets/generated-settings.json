@@ -1,0 +1,124 @@
+{
+  "acMonitorTimeout": 300,
+  "barConfigs": [
+    {
+      "centerWidgets": [
+        "focusedWindow"
+      ],
+      "enabled": true,
+      "id": "default",
+      "innerPadding": 4,
+      "leftWidgets": [
+        "controlCenterButton",
+        "workspaceSwitcher"
+      ],
+      "name": "Main Bar",
+      "position": 0,
+      "rightWidgets": [
+        "dankActions:musicDucking",
+        "dankActions:musicNormal",
+        "cpuUsage",
+        "memUsage",
+        "network_speed_monitor",
+        "clock",
+        "systemTray",
+        "clipboard",
+        "notificationButton",
+        "quickCapture"
+      ],
+      "screenPreferences": [
+        "all"
+      ],
+      "showOnLastDisplay": true,
+      "widgetPadding": 8
+    }
+  ],
+  "barElevationEnabled": false,
+  "blurEnabled": true,
+  "clockFormat": "HH:mm",
+  "controlCenterWidgets": [
+    {
+      "enabled": true,
+      "id": "volumeSlider",
+      "width": 50
+    },
+    {
+      "enabled": true,
+      "id": "inputVolumeSlider",
+      "width": 50
+    },
+    {
+      "enabled": true,
+      "id": "wifi",
+      "width": 50
+    },
+    {
+      "enabled": true,
+      "id": "idleInhibitor",
+      "width": 50
+    },
+    {
+      "enabled": true,
+      "id": "bluetooth",
+      "width": 50
+    },
+    {
+      "enabled": true,
+      "id": "audioOutput",
+      "width": 50
+    },
+    {
+      "enabled": true,
+      "id": "audioInput",
+      "width": 50
+    },
+    {
+      "enabled": true,
+      "id": "nightMode",
+      "width": 50
+    },
+    {
+      "enabled": true,
+      "id": "darkMode",
+      "width": 50
+    },
+    {
+      "enabled": true,
+      "id": "builtin_tailscale",
+      "width": 50
+    }
+  ],
+  "cornerRadius": 8,
+  "currentThemeCategory": "registry",
+  "currentThemeName": "custom",
+  "customThemeFile": "~/.config/DankMaterialShell/themes/crimsonVoltage/theme.json",
+  "groupWorkspaceApps": false,
+  "maxWorkspaceIcons": 6,
+  "niriLayoutBorderSize": 2,
+  "registryThemeVariants": {
+    "catppuccin": {
+      "dark": {
+        "accent": "mauve",
+        "flavor": "mocha"
+      }
+    },
+    "gruvboxMulti": {
+      "dark": {
+        "accent": "blue",
+        "flavor": "material-hard-dark"
+      }
+    }
+  },
+  "showBattery": false,
+  "showCpuTemp": false,
+  "showGpuTemp": false,
+  "showLauncherButton": false,
+  "showMusic": false,
+  "showWeather": false,
+  "showWorkspaceApps": true,
+  "showWorkspacePadding": true,
+  "workspaceAppIconSizeOffset": 2,
+  "workspaceColorMode": "secondaryContainer",
+  "workspaceFocusedBorderColor": "primaryContainer",
+  "workspaceUnfocusedColorMode": "schh"
+}

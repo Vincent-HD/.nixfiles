@@ -204,6 +204,18 @@ Inspect flake outputs:
 nix flake show
 ```
 
+Persist DMS settings edited in the running shell:
+
+```bash
+persist-dms --dry-run  # preview the non-default settings diff
+persist-dms            # write and commit only modules/dms/assets/generated-settings.json
+persist-dms --watch    # keep watching and commit each debounced change
+```
+
+The command reads DMS's in-memory settings through IPC and compares them with the
+`SettingsSpec.js` shipped by the installed DMS package. Use `nix run .#persist-dms -- ...`
+before the command has been installed into the user profile.
+
 ## Editing Tips
 
 If you want to add a new feature:

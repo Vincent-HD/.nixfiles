@@ -27,6 +27,7 @@
       ];
 
       home.packages = [
+        inputs.self.packages.${pkgs.system}.persist-dms
         pkgs.coreutils
         pkgs.curl
         pkgs.file
@@ -57,137 +58,9 @@
           includes.enable = false;
         };
 
-        settings = {
-          # Keep only values that differ from the current DMS defaults. The
-          # custom theme path is derived from Home Manager's home directory so
-          # it does not hard-code the username.
-          currentThemeName = "custom";
-          currentThemeCategory = "registry";
-          customThemeFile = "${config.home.homeDirectory}/.config/DankMaterialShell/themes/crimsonVoltage/theme.json";
-          registryThemeVariants = {
-            catppuccin = {
-              dark = {
-                flavor = "mocha";
-                accent = "mauve";
-              };
-            };
-            gruvboxMulti = {
-              dark = {
-                flavor = "material-hard-dark";
-                accent = "blue";
-              };
-            };
-          };
-
-          blurEnabled = true;
-          clockFormat = "HH:mm";
-          cornerRadius = 8;
-          niriLayoutBorderSize = 2;
-          barElevationEnabled = false;
-
-          showLauncherButton = false;
-          showWeather = false;
-          showMusic = false;
-          showCpuTemp = false;
-          showGpuTemp = false;
-          showBattery = false;
-          showWorkspacePadding = true;
-          showWorkspaceApps = true;
-          maxWorkspaceIcons = 6;
-          workspaceAppIconSizeOffset = 2;
-          groupWorkspaceApps = false;
-          workspaceColorMode = "secondaryContainer";
-          workspaceUnfocusedColorMode = "schh";
-          workspaceFocusedBorderColor = "primaryContainer";
-          controlCenterWidgets = [
-            {
-              id = "volumeSlider";
-              enabled = true;
-              width = 50;
-            }
-            {
-              id = "inputVolumeSlider";
-              enabled = true;
-              width = 50;
-            }
-            {
-              id = "wifi";
-              enabled = true;
-              width = 50;
-            }
-            {
-              id = "idleInhibitor";
-              enabled = true;
-              width = 50;
-            }
-            {
-              id = "bluetooth";
-              enabled = true;
-              width = 50;
-            }
-            {
-              id = "audioOutput";
-              enabled = true;
-              width = 50;
-            }
-            {
-              id = "audioInput";
-              enabled = true;
-              width = 50;
-            }
-            {
-              id = "nightMode";
-              enabled = true;
-              width = 50;
-            }
-            {
-              id = "darkMode";
-              enabled = true;
-              width = 50;
-            }
-            {
-              id = "builtin_tailscale";
-              enabled = true;
-              width = 50;
-            }
-          ];
-
-          # The widget layout is custom; omitted per-bar options use DMS's
-          # current defaults.
-          barConfigs = [
-            {
-              id = "default";
-              name = "Main Bar";
-              enabled = true;
-              position = 0;
-              screenPreferences = [ "all" ];
-              showOnLastDisplay = true;
-              leftWidgets = [
-                "controlCenterButton"
-                "workspaceSwitcher"
-              ];
-              centerWidgets = [ "focusedWindow" ];
-              rightWidgets = [
-                "dankActions:musicDucking"
-                "dankActions:musicNormal"
-                "cpuUsage"
-                "memUsage"
-                "network_speed_monitor"
-                "clock"
-                "systemTray"
-                "clipboard"
-                "notificationButton"
-                "quickCapture"
-              ];
-              innerPadding = 4;
-              widgetPadding = 8;
-            }
-          ];
-
-          # Match Noctalia's current idle policy: blank the displays after five
-          # minutes, but do not lock or suspend automatically.
-          acMonitorTimeout = 300;
-        };
+        # persist-dms owns this generated file. It contains only settings that
+        # differ from the DMS SettingsSpec defaults; plugin settings stay below.
+        settings = builtins.fromJSON (builtins.readFile ./assets/generated-settings.json);
 
         clipboardSettings = {
           disabled = false;
