@@ -15,6 +15,32 @@ USER=vincent
 NIX_EVAL_FEATURES='extra-experimental-features = nix-command flakes dynamic-derivations'
 ```
 
+## Generated Nix / Expression Checks
+
+### Parse a generated Nix expression without evaluating it
+
+```bash
+nix-instantiate --parse --expr '<nix-expression>'
+```
+
+Purpose: smoke-test the syntax emitted by a generator while keeping evaluation
+out of the check. Use this before nix eval when debugging an expression
+printer or a generated .nix file.
+
+### Evaluate JSON-compatible Nix data strictly with nix-instantiate
+
+```bash
+nix-instantiate --eval --json --strict --expr '<nix-data-expression>'
+```
+
+Purpose: inspect a fully evaluated attrset/list fixture emitted by a generator
+when recursive strictness is required. The modern nix eval command in the local
+Nix version has no --strict flag; use it without --strict for ordinary
+JSON-compatible evaluation.
+
+Use only for JSON-compatible data; functions, derivations, paths and string
+contexts need a target-specific expression or a focused Nix inspection.
+
 ## Core Flake / Input Discovery
 
 ### Get an input source path from the current flake
