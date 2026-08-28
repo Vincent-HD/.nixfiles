@@ -1,7 +1,7 @@
 { inputs, ... }:
 {
   config.flake.modules.nixos.gamingOptimization =
-    { pkgs, ... }:
+    { pkgs, lib, ... }:
     {
       # Import only nix-gaming's sysctl module; its optional game and Wine packages remain unused.
       imports = [ inputs.nix-gaming.nixosModules.platformOptimizations ];
@@ -13,11 +13,14 @@
       # Enable the four SteamOS platform sysctls provided by nix-gaming.
       programs.steam.platformOptimizations.enable = true;
 
-      # Keep the stock kernel as the default generation and expose CachyOS as a boot-menu
-      # specialization. The x86-64-v3 variant is compatible with this host's Zen 3 CPU and is
-      # available from the release binary cache.
-      specialisation.cachyos.configuration = {
-        boot.kernelPackages = pkgs.cachyosKernels."linuxPackages-cachyos-latest-x86_64-v3";
+      # Use the tested x86-64-v3 CachyOS kernel as the normal boot entry. It is compatible with
+      # this host's Zen 3 CPU and is available from the release binary cache.
+      boot.kernelPackages = pkgs.cachyosKernels."linuxPackages-cachyos-latest-x86_64-v3";
+
+      # Keep an explicitly named stock-kernel entry in the same generation for rollback without
+      # changing the rest of the gaming configuration.
+      specialisation.stock.configuration = {
+        boot.kernelPackages = lib.mkForce pkgs.linuxPackages;
       };
 
       # nix-cachyos-kernel's release branch publishes its prebuilt kernels to this cache.

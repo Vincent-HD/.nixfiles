@@ -62,20 +62,23 @@ nix eval --impure --expr '(builtins.getFlake "path:/home/vincent/.nixfiles").inp
 nix eval --impure --expr '(builtins.getFlake "path:/home/vincent/.nixfiles").inputs.home-manager.outPath' --raw
 ```
 
-### Inspect a NixOS boot specialization
+### Compare default and specialized NixOS kernel paths
 
 ```bash
+nix eval --raw ".#nixosConfigurations.${HOST}.config.boot.kernelPackages.kernel.name"
 nix eval --raw ".#nixosConfigurations.${HOST}.config.specialisation.<name>.configuration.boot.kernelPackages.kernel.name"
+nix eval --json ".#nixosConfigurations.${HOST}.config.boot.extraModulePackages" \
+  --apply 'builtins.map (package: package.name or "")'
 nix eval --json ".#nixosConfigurations.${HOST}.config.specialisation.<name>.configuration.boot.extraModulePackages" \
-  --apply 'map (package: package.name or "")'
+  --apply 'builtins.map (package: package.name or "")'
 ```
 
-Purpose: verify an experimental kernel specialization and confirm that out-of-tree modules such as
-NVIDIA or a custom kernel module are rebuilt against the same kernel before switching or rebooting.
+Purpose: compare the default and alternate kernel paths and confirm that out-of-tree modules such as
+NVIDIA or a custom kernel module are rebuilt against the selected kernel before switching or rebooting.
 
 Use when:
 - a host exposes an alternate kernel, scheduler, or hardware profile through `specialisation.*`
-- you need to compare the specialization's kernel/module graph with the default configuration
+- a default kernel has recently changed and you need to verify the fallback specialization's module graph
 
 ## Package / Derivation Inspection
 

@@ -12,7 +12,7 @@ The closest composable stack is:
 2. [Chaotic Nyx](https://github.com/chaotic-cx/nyx) or [nix-cachyos-kernel](https://github.com/xddxdd/nix-cachyos-kernel) for CachyOS kernels and newer gaming packages.
 3. Native NixOS modules for GameMode, Gamescope, MangoHud, ZRAM, power profiles, and sched-ext.
 
-For this repository, the implementation is a low-risk gaming-optimization module: it imports only nix-gaming's `platformOptimizations` module, keeps the existing gaming stack, and exposes the CachyOS kernel as a separate `cachyos` boot specialization. The stock kernel remains the default, so the experiment is rollback-friendly.
+For this repository, the implementation is a focused gaming-optimization module: it imports only nix-gaming's `platformOptimizations` module, keeps the existing gaming stack, and uses the tested CachyOS kernel as the default. A `stock` boot specialization remains available as an explicit fallback.
 
 ## What is actually being copied
 
@@ -43,7 +43,7 @@ This configuration already has a good gaming foundation:
 - Power profiles through [`modules/noctalia/noctalia.nix`](/home/vincent/.nixfiles/modules/noctalia/noctalia.nix).
 - The nix-gaming Cachix cache is trusted in [`hosts/pc-fixe/configuration.nix`](/home/vincent/.nixfiles/hosts/pc-fixe/configuration.nix), and the CachyOS kernel cache is configured by [`modules/gaming-optimization.nix`](/home/vincent/.nixfiles/modules/gaming-optimization.nix).
 
-The local nixpkgs currently provides `linux-zen`, `ananicy-cpp`, and `ananicy-rules-cachyos`; it does not expose `linuxPackages_cachyos`. The dedicated kernel input now supplies `linuxPackages-cachyos-latest-x86_64-v3` in the `cachyos` specialization. The host also builds a custom CPUID-fault-emulation module and uses NVIDIA; evaluation confirms both follow the selected CachyOS kernel.
+The local nixpkgs currently provides `linux-zen`, `ananicy-cpp`, and `ananicy-rules-cachyos`; it does not expose `linuxPackages_cachyos`. The dedicated kernel input now supplies `linuxPackages-cachyos-latest-x86_64-v3` as the default and keeps `linuxPackages` available in the `stock` specialization. The host also builds a custom CPUID-fault-emulation module and uses NVIDIA; evaluation confirms both follow whichever kernel entry is selected.
 
 ## Important conflict to avoid
 
@@ -62,15 +62,15 @@ It does not install all of nix-gaming's Wine/Proton or game packages, change the
 
 ## Which option is best for this host?
 
-My recommendation for the always-on baseline is **nix-gaming's `platformOptimizations` module**. It is narrow, reversible, and does not add a kernel, a large overlay, a process-priority daemon, or a new desktop session. The CachyOS kernel is intentionally kept as a separate second-step boot experiment rather than part of that baseline.
+My recommendation for the always-on baseline is **nix-gaming's `platformOptimizations` module**. It is narrow and does not add a large overlay, a process-priority daemon, or a new desktop session. For this host, the tested `nix-cachyos-kernel` package is now the default kernel, with the stock kernel retained only as a fallback specialization.
 
 For the larger alternatives:
 
 - **Best CachyOS-style source overall: Chaotic Nyx.** It is the broadest option and provides CachyOS kernels, newer graphics/gaming packages, and sched-ext integration, but it is deliberately bleeding-edge and expands both the overlay and binary-cache trust boundary.
-- **Best kernel-only experiment: `nix-cachyos-kernel`.** It is the better fit if the goal is specifically a CachyOS kernel without importing a large package ecosystem. It still needs a separate specialization and validation because this host uses NVIDIA and a custom out-of-tree kernel module.
+- **Best kernel-only option: `nix-cachyos-kernel`.** It is the better fit if the goal is specifically a CachyOS kernel without importing a large package ecosystem. This host uses NVIDIA and a custom out-of-tree kernel module, so both the default and stock fallback paths are validated.
 - **Best Bazzite/SteamOS-like experience: Jovian-NixOS.** It targets a Gamescope/Steam-Deck-style appliance session, which is not what this normal Niri desktop needs.
 
-So the module uses nix-gaming now, exposes one dedicated CachyOS kernel for testing, and does not add Nyx merely to obtain the four sysctls.
+So the module uses nix-gaming and the kernel-only `nix-cachyos-kernel` input, while avoiding Nyx merely to obtain the four sysctls or a CachyOS kernel.
 
 ## What the other optimizers are, where they are, and whether we need them
 
@@ -80,15 +80,15 @@ So the module uses nix-gaming now, exposes one dedicated CachyOS kernel for test
 | **`platformOptimizations`** | The four sysctls listed above; it is not a daemon or scheduler. | Imported and enabled by [`modules/gaming-optimization.nix`](/home/vincent/.nixfiles/modules/gaming-optimization.nix). | **Yes, enabled.** |
 | **Ananicy-cpp** | A background daemon that applies nice/priority rules to processes automatically. | `ananicy-cpp` and `ananicy-rules-cachyos` are available in current nixpkgs, but `services.ananicy` is not enabled in this repo. | **No for now.** It overlaps with GameMode and is easy to mis-tune. |
 | **sched-ext / SCX** | A kernel interface that lets a userspace scheduler such as `scx_rustland` or `scx_rusty` make scheduling decisions. | The NixOS `services.scx` option exists, but the service is disabled and no scheduler is selected here. | **No for now.** It is an experiment for latency/throughput trade-offs, not a universal FPS switch. |
-| **CachyOS kernel** | A separately patched kernel with different schedulers, compiler/link-time settings, and hardware-tuned variants. | Available through the `cachyos` specialization from `nix-cachyos-kernel`; the stock kernel remains the default. | **Available to test.** Kernel/module/NVIDIA compatibility has been evaluated, then runtime benchmarking decides whether it is better. |
+| **CachyOS kernel** | A separately patched kernel with different schedulers, compiler/link-time settings, and hardware-tuned variants. | The x86-64-v3 variant from `nix-cachyos-kernel` is the default; the stock kernel is available through the `stock` specialization. | **Enabled by default.** Kernel/module/NVIDIA compatibility has been evaluated; runtime benchmarking can still compare it with the stock fallback. |
 | **ZRAM, earlyoom, power profiles** | Memory-pressure protection and power/performance policy switching. | ZRAM/earlyoom are in [`modules/memory-pressure.nix`](/home/vincent/.nixfiles/modules/memory-pressure.nix); power profiles are enabled in [`modules/noctalia/noctalia.nix`](/home/vincent/.nixfiles/modules/noctalia/noctalia.nix). | **Already covered.** No duplicate optimizer is needed. |
 
-## Implemented test path
+## Implemented default and fallback path
 
-1. Apply the configuration with `sudo nixos-rebuild switch --flake .#pc-fixe`. This enables nix-gaming's four sysctls and installs a `cachyos` boot specialization while leaving the normal entry on the current kernel.
-2. Reboot and choose the `cachyos` specialization from the systemd-boot menu for testing. The generated entry currently includes `(Linux 7.1.8-cachyos)` in its label. Verify the running kernel with `uname -r`; it should report `7.1.8-cachyos`.
-3. Compare identical games, settings, and workloads on the normal and `cachyos` entries. Record average FPS, 1% lows, frametime variance, input latency, suspend/resume, and NVIDIA behavior.
-4. Keep the normal boot entry as the fallback. Do not add Ananicy, sched-ext, or a second kernel scheduler until this isolated comparison has a clear result.
-5. If the CachyOS kernel wins consistently, it can later be promoted from the specialization to the default; otherwise remove the specialization without changing the nix-gaming sysctls.
+1. Apply the configuration with `sudo nixos-rebuild switch --flake .#pc-fixe`. This enables nix-gaming's four sysctls and makes CachyOS the normal kernel, with a `stock` boot specialization in the same generation.
+2. Reboot and use the normal systemd-boot entry. The generated entry currently includes `(Linux 7.2.0-cachyos)` in its label. Verify the running kernel with `uname -r`; it should report `7.2.0-cachyos`.
+3. If needed, choose the `stock` specialization and verify that it reports the current nixpkgs kernel (`6.18.45` in the evaluated configuration).
+4. Compare identical games, settings, and workloads on the default and `stock` entries. Record average FPS, 1% lows, frametime variance, input latency, suspend/resume, and NVIDIA behavior.
+5. Do not add Ananicy, sched-ext, or a second kernel scheduler until this isolated comparison has a clear result. If CachyOS causes a regression, use the `stock` entry or remove the default assignment without changing the nix-gaming sysctls.
 
 The implementation is in [`modules/gaming-optimization.nix`](/home/vincent/.nixfiles/modules/gaming-optimization.nix), enabled by [`hosts/pc-fixe/default.nix`](/home/vincent/.nixfiles/hosts/pc-fixe/default.nix). No Ananicy or sched-ext configuration was added.

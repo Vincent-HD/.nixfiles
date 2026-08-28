@@ -253,16 +253,17 @@ nix flake update nix-gaming
 ### nix-cachyos-kernel
 
 - **File**: `flake.nix`
-- **Why**: Provides the release-branch CachyOS kernel package set used by the `cachyos` boot
-  specialization in `modules/gaming-optimization.nix`.
+- **Why**: Provides the release-branch CachyOS kernel package set used as the default kernel, with
+  a stock-kernel fallback specialization in `modules/gaming-optimization.nix`.
 - **Important**: Keep the input on the `release` branch and do not make its nixpkgs input follow this
   repository. The upstream project pins its own nixpkgs revision for binary-cache compatibility.
-- **How**: Refresh the lock entry, then evaluate the `cachyos` specialization and check that the
-  NVIDIA and custom CPUID modules still follow the selected kernel.
+- **How**: Refresh the lock entry, then evaluate the default and `stock` kernel paths and check that
+  the NVIDIA and custom CPUID modules still follow the selected kernel.
 
 ```bash
 nix flake update nix-cachyos-kernel
-nix eval --raw '.#nixosConfigurations.pc-fixe.config.specialisation.cachyos.configuration.boot.kernelPackages.kernel.name'
+nix eval --raw '.#nixosConfigurations.pc-fixe.config.boot.kernelPackages.kernel.name'
+nix eval --raw '.#nixosConfigurations.pc-fixe.config.specialisation.stock.configuration.boot.kernelPackages.kernel.name'
 ```
 
 ### codex-desktop-linux
