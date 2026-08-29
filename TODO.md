@@ -4,39 +4,31 @@ This file tracks known technical debt that is intentionally deferred. Entries sh
 current compromise, the desired end state, and how to verify the replacement before removing the
 existing implementation.
 
-## Consolidate Shell Configuration Around Zsh
+## Reconcile the Dormant Darwin Homebrew Module
 
 ### Context
 
-The Mac login shell is Zsh, but shell configuration is currently split:
+The active macOS composition imports the shared `hm.commandLine` and `hm.coding` modules and now
+composes `darwin.macosDefaults`. The duplicated Darwin development module was removed after its
+portable behavior moved into the shared modules. One older migration module remains auto-discovered
+but is not composed:
 
-- `modules/coding/default.nix` enables Bash and initializes Fnm only for Bash on Linux.
-- `modules/darwin/development.nix` contains a Darwin-specific Zsh configuration instead of a shared
-  cross-platform Zsh feature.
-- Some shell integrations remain in manually managed startup files during the incremental macOS
-  migration.
+- `modules/darwin/homebrew.nix`
 
-This leaves behavior inconsistent between Linux and Darwin and keeps some development tooling tied
-to Bash or Homebrew.
+It contains the pre-migration Homebrew formula, cask, and Mac App Store list. Enabling it directly
+would duplicate applications already owned by Home Manager. Keep it inactive until a fresh live Mac
+inventory decides which remaining applications to keep, remove, or migrate.
 
 ### Desired End State
 
-- Create one reusable Home Manager Zsh feature module shared by Linux and Darwin.
-- Move shared aliases and shell integrations into that module.
-- Initialize the Nix-managed Fnm package for Zsh on both hosts.
-- Migrate Starship, Zoxide, McFly, and other existing interactive integrations into Home Manager
-  without losing their current behavior or history.
-- Separate Darwin-only integrations such as OrbStack from shared Zsh configuration.
-- Remove obsolete Homebrew paths and manually managed Zsh startup content after each replacement is
-  tested.
-- Remove Bash-only interactive configuration from `hm.coding`; retain Bash only where required for
-  compatibility or non-interactive scripts.
+- Re-inventory Homebrew, Mac App Store, manual applications, and privileged components on the Mac.
+- Assign one owner to each retained application: Home Manager, declarative Homebrew/MAS, or external.
+- Move only the selected declarations into composed feature modules.
+- Delete `modules/darwin/homebrew.nix` after it contains no unique migration information.
 
 ### Verification
 
-- New Zsh login and interactive shells start without errors on both hosts.
-- `fnm`, Starship, Zoxide, McFly, aliases, completion, autosuggestions, and syntax highlighting
-  work on both hosts.
-- Darwin and Linux share the same declarative Zsh configuration.
-- Home Manager owns the intended Zsh files without silently discarding existing behavior.
-- NixOS rebuilds and Darwin rebuilds both pass before removing old startup-file content.
+- `rg 'darwin\.homebrew' hosts modules` finds either explicit composition or no remaining definition.
+- The generated Brewfile and relevant `system.defaults` match the intended live macOS state.
+- A new Zsh login shell has the same shared integrations as Linux and preserves OrbStack integration.
+- Linux and Darwin evaluations pass before removing the old files.

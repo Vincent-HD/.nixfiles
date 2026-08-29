@@ -147,6 +147,26 @@ nix eval --json '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$US
 Purpose: locate a generated wrapper or helper package by name before building or inspecting its
 store output, without printing the full package list.
 
+### Find duplicate packages in a rendered Home Manager list
+
+```bash
+nix eval --json \
+  '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$USER"'.<hm.package-list-option>' \
+  --apply '
+    packages:
+    let
+      groups = builtins.groupBy (package: package.name or "") packages;
+      counts = builtins.mapAttrs
+        (name: values: { inherit name; count = builtins.length values; })
+        groups;
+    in
+    builtins.filter (entry: entry.count > 1) (builtins.attrValues counts)'
+```
+
+Purpose: find packages contributed by multiple composed modules after option merging. Start with
+`home.packages`; the same pattern also works for `environment.systemPackages`. Identical store paths
+added internally by Home Manager can be harmless, so trace local declarations before removing one.
+
 ### Inspect a rendered Home Manager shell option
 
 ```bash
@@ -861,26 +881,35 @@ cd "$REPO" && nix run nixpkgs#statix -- check --config checks/statix.toml .
 
 Purpose: get direct Statix diagnostics locally without building the flake check derivation.
 
-### Check or format Nix files with nixfmt
+### Format or check all tracked Nix files
 
 ```bash
-cd "$REPO" && nix run nixpkgs#nixfmt-rfc-style -- --check path/to/file.nix
+cd "$REPO" && nix fmt
+cd "$REPO" && nix fmt -- --ci
 ```
 
-Purpose: check changed Nix files without modifying them, even when the repo has no `package.json` / `pnpm fmt`.
+Purpose: use the flake's `nixfmt-tree` formatter to format the repository, or verify formatting
+without modifying files in CI and audit workflows.
 
-General form:
+For a focused file check without traversing the repository:
 
 ```bash
-cd "$REPO" && nix run nixpkgs#nixfmt-rfc-style -- path/to/file.nix
+cd "$REPO" && nix run nixpkgs#nixfmt -- --check path/to/file.nix
 ```
 
-The form without `--check` rewrites the file; review the diff afterward.
+### Find unused Nix declarations
+
+```bash
+cd "$REPO" && nix run nixpkgs#deadnix -- .
+```
+
+Purpose: detect unused module parameters, derivation lambda arguments, and local bindings that
+Statix does not report.
 
 ### Check for available formatters
 
 ```bash
-command -v nixfmt-rfc-style nixfmt alejandra 2>/dev/null
+command -v nixfmt nixfmt-tree alejandra 2>/dev/null
 ```
 
 Purpose: quickly see which formatter binaries are already on the machine.

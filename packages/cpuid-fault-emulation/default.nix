@@ -9,7 +9,7 @@
 let
   kernelDirectory = "${kernel.dev}/lib/modules/${kernel.modDirVersion}/build";
 in
-stdenv.mkDerivation (finalAttrs: {
+stdenv.mkDerivation {
   pname = "cpuid-fault-emulation";
   version = "0.1";
 
@@ -46,4 +46,4 @@ stdenv.mkDerivation (finalAttrs: {
     license = lib.licenses.gpl2Only;
     platforms = [ "x86_64-linux" ];
   };
-})
+}

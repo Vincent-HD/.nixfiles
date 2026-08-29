@@ -2,7 +2,7 @@
 {
   # NixOS side: NVIDIA GPU
   config.flake.modules.nixos.graphics =
-    { pkgs, config, ... }:
+    { pkgs, ... }:
     {
       hardware.graphics.enable = true;
       hardware.graphics.extraPackages = [ pkgs.nvidia-vaapi-driver ];

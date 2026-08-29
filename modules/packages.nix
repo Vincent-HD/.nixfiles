@@ -23,10 +23,17 @@
           '';
         };
 
-      mkBunApp = name: script: {
-        type = "app";
-        program = "${mkBunRunner name script}/bin/${name}";
-      };
+      mkBunApp =
+        {
+          name,
+          description,
+          script,
+        }:
+        {
+          type = "app";
+          program = "${mkBunRunner name script}/bin/${name}";
+          meta.description = description;
+        };
     in
     {
       packages = {
@@ -45,18 +52,29 @@
       // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
         codex = pkgs.callPackage ../packages/codex { };
         cpuid-fault-emulation = pkgs.callPackage ../packages/cpuid-fault-emulation { };
-        curseforge = pkgs.callPackage ../packages/curseforge { };
+        curseforge = unfreePkgs.callPackage ../packages/curseforge { };
         crosspipe = pkgs.callPackage ../packages/crosspipe { };
-        moonshine = pkgs.callPackage ../packages/moonshine { };
         persist-dms = mkBunRunner "persist-dms" ../scripts/persist-dms.ts;
       };
 
       apps = {
-        update-pins = mkBunApp "update-pins" ../scripts/update-pins.ts;
-        update-curseforge = mkBunApp "update-curseforge" ../packages/curseforge/update.ts;
+        update-pins = mkBunApp {
+          name = "update-pins";
+          description = "Update registered package pins and flake inputs";
+          script = ../scripts/update-pins.ts;
+        };
       }
       // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
-        persist-dms = mkBunApp "persist-dms" ../scripts/persist-dms.ts;
+        persist-dms = mkBunApp {
+          name = "persist-dms";
+          description = "Persist non-default DankMaterialShell settings";
+          script = ../scripts/persist-dms.ts;
+        };
+        update-curseforge = mkBunApp {
+          name = "update-curseforge";
+          description = "Update the pinned CurseForge AppImage";
+          script = ../packages/curseforge/update.ts;
+        };
       };
     };
 }

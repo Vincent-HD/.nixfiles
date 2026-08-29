@@ -179,7 +179,6 @@ in
 
   config.flake.modules.darwin.portless =
     {
-      config,
       lib,
       pkgs,
       ...

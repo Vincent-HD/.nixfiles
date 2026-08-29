@@ -76,6 +76,8 @@ in
     let
       homeDirectory = "/Users/${config.flake.username}";
       opencodexPackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.opencodex;
+      codexHome = "${homeDirectory}/.codex";
+      opencodexHome = "${homeDirectory}/.opencodex";
     in
     {
       # Install the official Codex CLI; the codex-app cask is deprecated upstream.
@@ -92,7 +94,13 @@ in
       # Match OpenCodex's native launchd label so its health checks recognize it.
       launchd.user.agents.opencodex = {
         command = "${pkgs.lib.getExe opencodexPackage} start --port 10100";
-        environment.OCX_SERVICE = "1";
+        environment = {
+          OCX_SERVICE = "1";
+          CODEX_HOME = codexHome;
+          OPENCODEX_HOME = opencodexHome;
+          OCX_BUN_RUNTIME_SOURCE = "process";
+          OCX_BUN_RUNTIME_PATH = pkgs.lib.getExe pkgs.bun;
+        };
         serviceConfig = {
           Label = "com.opencodex.proxy";
           KeepAlive = true;
@@ -160,6 +168,16 @@ in
     }:
     let
       opencodexPackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.opencodex;
+      codexHome = "${config.home.homeDirectory}/.codex";
+      opencodexHome = "${config.home.homeDirectory}/.opencodex";
+      opencodexServiceState = {
+        version = 2;
+        codexHome = codexHome;
+        opencodexHome = opencodexHome;
+        bunPath = pkgs.lib.getExe pkgs.bun;
+        cliPath = "${opencodexPackage}/lib/opencodex/src/cli/index.ts";
+        backend = "scheduler";
+      };
       # Export the enabled OpenCodex catalog in VS Code's custom endpoint format.
       opencodexModelsVscode = pkgs.writeShellApplication {
         name = "opencodex-models-vscode";
@@ -199,11 +217,13 @@ in
             codex
             opencodexPackage
             opencodexModelsVscode
-            pkgs.jq
           ];
 
           home.file.".codex/.keep".text = "";
           home.file.".opencodex/.keep".text = "";
+          # Nix owns the service, so keep OpenCodex's ownership manifest in sync
+          # rather than asking its imperative installer to rewrite the unit.
+          home.file.".opencodex/service-state.json".text = builtins.toJSON opencodexServiceState;
 
           # Opt into Cursor's native tools only after OpenCodex owns the provider setup.
           home.activation.opencodexCursorNativeExec = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
@@ -255,13 +275,24 @@ in
               Unit = {
                 Description = "OpenCodex provider proxy";
                 After = [ "network-online.target" ];
+                Wants = [ "network-online.target" ];
               };
               Service = {
+                Type = "simple";
                 ExecStart = "${pkgs.lib.getExe opencodexPackage} start --port 10100";
-                Environment = "OCX_SERVICE=1";
+                Environment = [
+                  "OCX_SERVICE=1"
+                  "CODEX_HOME=${codexHome}"
+                  "OPENCODEX_HOME=${opencodexHome}"
+                  "OCX_BUN_RUNTIME_SOURCE=process"
+                  "OCX_BUN_RUNTIME_PATH=${pkgs.lib.getExe pkgs.bun}"
+                  "PATH=/run/wrappers/bin:${config.home.profileDirectory}/bin:/run/current-system/sw/bin"
+                ];
                 Restart = "on-failure";
                 RestartSec = "5";
                 WorkingDirectory = config.home.homeDirectory;
+                StandardOutput = "append:${opencodexHome}/service.log";
+                StandardError = "append:${opencodexHome}/service.log";
               };
               Install.WantedBy = [ "default.target" ];
             };

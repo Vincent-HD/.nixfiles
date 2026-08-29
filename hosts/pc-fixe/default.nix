@@ -55,7 +55,6 @@ in
             hm.commandLine
             hm.comma
             hm.direnv
-            hm.jq
             hm.lazydocker
             hm.discord
             hm.browser

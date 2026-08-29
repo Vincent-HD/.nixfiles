@@ -8,6 +8,7 @@ in
   config.flake.darwinConfigurations."macbook-pro" = inputs.nix-darwin.lib.darwinSystem {
     modules = [
       darwin.macbookProConfiguration
+      darwin.macosDefaults
       inputs.sops-nix.darwinModules.sops
       darwin.secrets
       darwin.agentCodex
@@ -37,7 +38,6 @@ in
             hm.comma
             hm.direnv
             hm.discord
-            hm.jq
             hm.lazydocker
             hm.work
             hm.localSend

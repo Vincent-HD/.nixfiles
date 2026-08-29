@@ -59,7 +59,7 @@
   # nix-darwin: install Deskflow via the upstream `deskflow/tap` Homebrew cask.
   # nixpkgs `deskflow` is Linux-only; on macOS, the project distributes an unsigned
   # app that requires Homebrew's quarantine handling, so Homebrew owns the install.
-  # See `docs/MACOS_NIX_RESEARCH.md` for the macOS ownership rationale.
+  # See `docs/MACOS_MIGRATION.md` for the macOS ownership rationale.
   config.flake.modules.darwin.deskflow =
     { config, lib, ... }:
     let

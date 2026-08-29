@@ -11,10 +11,14 @@ other concerns each live in their own module.
 
 - Hosts: `pc-fixe` (NixOS) and `macbook-pro` (nix-darwin)
 - User: `vincent`
-- NixOS desktop: KDE Plasma 6 / Niri on NVIDIA
+- NixOS desktop: Niri + DankMaterialShell on NVIDIA; Plasma and Noctalia remain available as inactive alternatives
 - macOS platform: Apple Silicon with nix-darwin, Home Manager, and declarative Homebrew
 - Config style: Nix flake + flake-parts + NixOS/nix-darwin + Home Manager
 - Module loading: automatic via `import-tree`
+
+Inactive fallbacks are kept deliberately for possible future use: Plasma as an alternative desktop,
+Noctalia v4 as an alternative shell, and Moonshine as an alternative remote-session host. They are
+not part of the active composition and must be re-evaluated before reactivation.
 
 ## How This Repo Is Organized
 
@@ -41,22 +45,39 @@ flake.lock
 AGENTS.md
 INVESTIGATION_COMMANDS.md
 modules/
+  agents/
+    common.nix
+    skills.nix
+    codex.nix
+    cursor.nix
+    t3code.nix
+    vscode.nix
+  coding/
+    default.nix
+    editors.nix
+    git.nix
+    jujutsu.nix
+    nix-tools.nix
+  command-line/
+    default.nix
+    assets/
+  darwin/
+  dms/
+    dms.nix
+    assets/
+  noctalia/                    # Inactive legacy alternative
   global-options.nix
+  packages.nix
+  checks.nix
   plasma.nix
   niri.nix
-  noctalia.nix
   graphics.nix
   sound.nix
   gaming-optimization.nix
-  coding.nix
   browser.nix
-  discord.nix
-  spotify.nix
-  bitwarden.nix
-  printing.nix
-  windows-mounts.nix
-  curseforge.nix
-  gparted.nix
+packages/                     # Standalone pinned derivations
+scripts/                      # Update runner and DMS persistence helper
+docs/                         # Operational references and research
 hosts/
   macbook-pro/
     default.nix
@@ -109,20 +130,25 @@ A few conventions matter when editing this repo:
 
 ## Flake Inputs
 
-The main inputs are:
+The main framework and host inputs are:
 
 - `nixpkgs`
 - `flake-parts`
 - `import-tree`
 - `home-manager`
+- `home-manager-darwin`
+- `nix-darwin`
+- `sops-nix`
 - `code-cursor-nix`
 - `nixcord`
 - `niri`
-- `noctalia`
+- `dms`
 - `nix-gaming`
 - `nix-cachyos-kernel`
 
-Most inputs follow `nixpkgs` to avoid duplicate evaluations.
+Pinned DMS plugin sources, Agent Skill sources, and selected application flakes are also tracked in
+`flake.lock`. Most compatible inputs follow the host package set to avoid duplicate evaluations;
+`nix-cachyos-kernel` intentionally keeps its own nixpkgs revision for binary-cache compatibility.
 
 ## Secrets Management
 
@@ -204,6 +230,26 @@ Inspect flake outputs:
 nix flake show
 ```
 
+Format all tracked Nix files and verify formatting without modifying them:
+
+```bash
+nix fmt
+nix fmt -- --ci
+```
+
+Evaluate all flake outputs and run the registered build checks:
+
+```bash
+nix flake check
+```
+
+Review or run the data-driven pin update registry:
+
+```bash
+nix run .#update-pins -- --list
+nix run .#update-pins -- --dry-run
+```
+
 Persist DMS settings edited in the running shell:
 
 ```bash
@@ -230,10 +276,11 @@ If you want to remove a feature, change the relevant host composition under `hos
 
 - `AGENTS.md` documents repository conventions in more detail, especially for coding agents.
 - `INVESTIGATION_COMMANDS.md` collects useful commands for debugging, validation, and evaluation.
-- `docs/MACOS_INVENTORY.md` records the pre-migration inventory and ownership boundaries for the
+- `docs/MACOS_MIGRATION.md` is the current live-inventory and application-ownership plan for the
   MacBook Pro.
-- `docs/MACOS_NIX_RESEARCH.md` records the researched nix-darwin, Home Manager, and Homebrew design
-  and migration plan.
+- `docs/COMMAND_LINE_OVERVIEW.html` is a visual map of the shared terminal environment.
+- `docs/UPDATE_COMMANDS.md` documents every registered pinned package and flake-input update.
+- `docs/NIX_CLI_CHEATSHEET.md` describes the repository's validation ladder and Nix tooling.
 
 ## Shared Agent Setup
 

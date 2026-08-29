@@ -56,13 +56,6 @@
           Pages = 409201541;
           Tailscale = 1475387142;
         };
-
-        onActivation = {
-          cleanup = "none";
-          autoUpdate = false;
-          upgrade = false;
-          extraEnv.HOMEBREW_NO_ANALYTICS = "1";
-        };
       };
     };
 }

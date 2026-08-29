@@ -24,7 +24,7 @@ let
         (lib.getExe bun)
         ./update.ts
       ];
-      appimageContents = appimageTools.extractType2 {
+      appimageContents = appimageTools.extract {
         pname = finalAttrs.pname;
         version = finalAttrs.version;
         src = finalAttrs.src;
@@ -35,6 +35,7 @@ let
     meta = {
       description = "Desktop client for managing CurseForge mods";
       homepage = "https://www.curseforge.com/download/app";
+      license = lib.licenses.unfree;
       mainProgram = "curseforge";
       platforms = [ "x86_64-linux" ];
     };

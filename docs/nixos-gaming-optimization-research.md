@@ -40,7 +40,7 @@ This configuration already has a good gaming foundation:
 
 - Steam, Gamescope, Gamescope session, GameMode, MangoHud, Proton-GE, Heroic, and Lutris in [`modules/gaming.nix`](/home/vincent/.nixfiles/modules/gaming.nix).
 - ZRAM and earlyoom in [`modules/memory-pressure.nix`](/home/vincent/.nixfiles/modules/memory-pressure.nix).
-- Power profiles through [`modules/noctalia/noctalia.nix`](/home/vincent/.nixfiles/modules/noctalia/noctalia.nix).
+- Power profiles through [`modules/dms/dms.nix`](/home/vincent/.nixfiles/modules/dms/dms.nix).
 - The nix-gaming Cachix cache is trusted in [`hosts/pc-fixe/configuration.nix`](/home/vincent/.nixfiles/hosts/pc-fixe/configuration.nix), and the CachyOS kernel cache is configured by [`modules/gaming-optimization.nix`](/home/vincent/.nixfiles/modules/gaming-optimization.nix).
 
 The local nixpkgs currently provides `linux-zen`, `ananicy-cpp`, and `ananicy-rules-cachyos`; it does not expose `linuxPackages_cachyos`. The dedicated kernel input now supplies `linuxPackages-cachyos-latest-x86_64-v3` as the default and keeps `linuxPackages` available in the `stock` specialization. The host also builds a custom CPUID-fault-emulation module and uses NVIDIA; evaluation confirms both follow whichever kernel entry is selected.
@@ -81,7 +81,7 @@ So the module uses nix-gaming and the kernel-only `nix-cachyos-kernel` input, wh
 | **Ananicy-cpp** | A background daemon that applies nice/priority rules to processes automatically. | `ananicy-cpp` and `ananicy-rules-cachyos` are available in current nixpkgs, but `services.ananicy` is not enabled in this repo. | **No for now.** It overlaps with GameMode and is easy to mis-tune. |
 | **sched-ext / SCX** | A kernel interface that lets a userspace scheduler such as `scx_rustland` or `scx_rusty` make scheduling decisions. | The NixOS `services.scx` option exists, but the service is disabled and no scheduler is selected here. | **No for now.** It is an experiment for latency/throughput trade-offs, not a universal FPS switch. |
 | **CachyOS kernel** | A separately patched kernel with different schedulers, compiler/link-time settings, and hardware-tuned variants. | The x86-64-v3 variant from `nix-cachyos-kernel` is the default; the stock kernel is available through the `stock` specialization. | **Enabled by default.** Kernel/module/NVIDIA compatibility has been evaluated; runtime benchmarking can still compare it with the stock fallback. |
-| **ZRAM, earlyoom, power profiles** | Memory-pressure protection and power/performance policy switching. | ZRAM/earlyoom are in [`modules/memory-pressure.nix`](/home/vincent/.nixfiles/modules/memory-pressure.nix); power profiles are enabled in [`modules/noctalia/noctalia.nix`](/home/vincent/.nixfiles/modules/noctalia/noctalia.nix). | **Already covered.** No duplicate optimizer is needed. |
+| **ZRAM, earlyoom, power profiles** | Memory-pressure protection and power/performance policy switching. | ZRAM/earlyoom are in [`modules/memory-pressure.nix`](/home/vincent/.nixfiles/modules/memory-pressure.nix); power profiles are enabled in [`modules/dms/dms.nix`](/home/vincent/.nixfiles/modules/dms/dms.nix). | **Already covered.** No duplicate optimizer is needed. |
 
 ## Implemented default and fallback path
 

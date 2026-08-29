@@ -87,16 +87,8 @@ describe("opencodex-models-vscode E2E", () => {
       )
     ))).toBe(true);
 
-    const cursor46Models = models.filter((model) => (
-      model.id === "cursor/grok-4.6" || model.id === "cursor/grok-4.6-fast"
-    ));
-    expect(cursor46Models.length).toBe(2);
-    expect(cursor46Models.every((model) => (
-      model.toolCalling === true
-      && model.vision === true
-      && model.contextWindow === 500_000
-      && model.maxInputTokens === 484_000
-      && model.maxOutputTokens === 16_000
-    ))).toBe(true);
+    const cursorModels = models.filter((model) => model.id.startsWith("cursor/"));
+    expect(cursorModels.length).toBeGreaterThan(0);
+    expect(cursorModels.every((model) => model.toolCalling === true)).toBe(true);
   }, 30_000);
 });

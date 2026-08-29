@@ -5,7 +5,6 @@
     {
       home.packages = [
         inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.jj-ryu
-        pkgs.jujutsu
         inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.lightjj
         inputs.jjui.packages.${pkgs.stdenv.hostPlatform.system}.jjui
       ];

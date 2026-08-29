@@ -20,7 +20,13 @@ nix run .#update-pins -- --validate fast
 nix run .#update-pins -- --list
 ```
 
-`noctalia` is listed in the JSON denylist, so the default update flow skips it explicitly.
+Commit-pinned inputs (`noctalia` and the three DMS plugin sources) are disabled manual entries.
+Running `nix flake update <name>` cannot advance a revision embedded in `flake.nix`; edit the
+reviewed revision first, then refresh its lock entry. `noctalia` is additionally denylisted to make
+the intentional v4 hold visible.
+
+`code-cursor-nix` and `herdr` are also disabled manual entries because their URLs select a fixed
+commit or tag. Choose and test a new revision in `flake.nix` before refreshing either lock entry.
 
 The `codex` and `curseforge` outputs are Linux-only. The data-driven updater
 reads each entry's `systems` field and skips packages that do not support the
@@ -183,17 +189,6 @@ nix run github:Mic92/nix-update -- --flake t3code --use-update-script
 nix run github:Mic92/nix-update -- --flake plannotator --use-update-script
 ```
 
-### moonshine
-
-- **File**: `packages/moonshine/default.nix`
-- **Pattern**: `stdenv.mkDerivation` + `fetchurl` from the upstream Linux release archive
-- **Flake output**: `.#moonshine`
-- **Note**: This is intentionally the prebuilt `x86_64-linux` release; it avoids compiling Moonshine's Rust workspace.
-
-```bash
-nix run github:Mic92/nix-update -- --flake moonshine
-```
-
 ## Branch-Pinned Packages
 
 These packages are packaged in a `nix-update`-friendly shape, but the upstream tracking model means the naive command is not necessarily correct.
@@ -280,7 +275,8 @@ nix flake update codex-desktop-linux
 
 - **File**: `flake.nix`
 - **Why**: It is intentionally pinned to a specific v4 revision and should stay out of routine updates until you migrate to v5.
-- **How**: Do not update this as part of normal maintenance.
+- **How**: Do not update this as part of normal maintenance. When migration work begins, edit the
+  pinned revision in `flake.nix` before refreshing the lock entry.
 
 ### dms
 
@@ -296,7 +292,7 @@ nix flake update dms
 
 - **File**: `flake.nix`
 - **Why**: Pinned source for the DMS screenshot and GPU video-recording toolbar.
-- **How**: The source URL is pinned to a reviewed commit; update the revision in `flake.nix`, then refresh the lock entry.
+- **How**: The source URL is pinned to a reviewed commit; update the revision in `flake.nix`, then refresh the lock entry. The registry entry is manual/disabled because refreshing the unchanged revision is a no-op.
 
 ```bash
 nix flake update screen-capture-toolbar
@@ -306,7 +302,7 @@ nix flake update screen-capture-toolbar
 
 - **File**: `flake.nix`
 - **Why**: Pinned source for the Quick Capture annotation plugin.
-- **How**: Update the reviewed commit in `flake.nix`, refresh the lock entry, and verify the plugin dependencies.
+- **How**: Update the reviewed commit in `flake.nix`, refresh the lock entry, and verify the plugin dependencies. The registry entry is manual/disabled because refreshing the unchanged revision is a no-op.
 
 ```bash
 nix flake update quick-capture
@@ -316,10 +312,33 @@ nix flake update quick-capture
 
 - **File**: `flake.nix`
 - **Why**: Pinned first-party DMS plugin source used for the declarative Dank Actions variants.
-- **How**: Update the reviewed commit in `flake.nix`, refresh the lock entry, and check the variant schema.
+- **How**: Update the reviewed commit in `flake.nix`, refresh the lock entry, and check the variant schema. The registry entry is manual/disabled because refreshing the unchanged revision is a no-op.
 
 ```bash
 nix flake update dms-plugins
+```
+
+### code-cursor-nix
+
+- **File**: `flake.nix`
+- **Why**: Cursor 3.16.x regressed the agent shell inside the Nix FHS wrapper, so the input remains
+  pinned to the tested 3.15.6 revision.
+- **How**: Select and test a replacement revision in `flake.nix`, then refresh the lock entry. A
+  plain update cannot advance the embedded commit.
+
+```bash
+nix flake update code-cursor-nix
+```
+
+### herdr
+
+- **File**: `flake.nix`
+- **Why**: The URL selects a specific Herdr release tag.
+- **How**: Change the tag in `flake.nix`, then refresh the lock entry and verify both host package
+  sets. A plain update cannot advance the embedded tag.
+
+```bash
+nix flake update herdr
 ```
 
 ### context7-skills

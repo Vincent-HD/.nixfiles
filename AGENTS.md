@@ -25,12 +25,15 @@ AGENTS.md                              # This file
 modules/
   agents/                              # Agent-specific modules: common, skills, Cursor, Codex, T3 Code, VS Code
   global-options.nix                   # Shared flake-parts options: systems, flake.username
-  plasma.nix                           # KDE Plasma 6 + SDDM + Kate (NixOS + HM)
-  niri.nix                             # Niri compositor + greetd + Kitty (NixOS + HM); see hosts/pc-fixe/default.nix `desktopSession`
-  noctalia.nix                         # Noctalia shell + upower / power-profiles-daemon (NixOS + HM)
+  plasma.nix                           # Inactive KDE Plasma 6 alternative (NixOS + HM)
+  niri.nix                             # Active Niri compositor + greetd session (NixOS + HM)
+  dms/dms.nix                          # Active DankMaterialShell integration and plugins
+  noctalia/noctalia.nix                # Inactive legacy Noctalia v4 alternative
   graphics.nix                         # NVIDIA GPU (NixOS)
   sound.nix                            # PipeWire audio (NixOS)
-  coding.nix                           # VSCode, Cursor, Neovim, Vim, Git (NixOS + HM)
+  coding/                              # Editors, Git, Jujutsu, and Nix tooling
+  command-line/                        # Shared Zsh configuration and CLI tools
+  packages.nix                         # Standalone package and app outputs
   browser.nix                          # Brave (HM)
   discord.nix                          # Nixcord with Vencord (HM)
   spotify.nix                          # Spotify (HM)

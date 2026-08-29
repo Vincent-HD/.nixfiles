@@ -10,7 +10,23 @@
       # Re-evaluate code-cursor-nix with this flake's package set so Cursor
       # stays aligned with the rest of the host configuration.
       # Input is pinned to 3.15.6 in flake.nix — do not float it to 3.16.x.
-      cursorPkg = pkgs.callPackage "${inputs.code-cursor-nix}/package.nix" { };
+      cursorPkg = pkgs.callPackage "${inputs.code-cursor-nix}/package.nix" {
+        # The pinned package still uses deprecated nixpkgs aliases. Supply the
+        # exact legacy argument shape with current attributes until the pin moves.
+        appimageTools = pkgs.appimageTools // {
+          extractType2 = pkgs.appimageTools.extract;
+        };
+        xorg = {
+          libxkbfile = pkgs.libxkbfile;
+          libX11 = pkgs.libx11;
+          libXcomposite = pkgs.libxcomposite;
+          libXdamage = pkgs.libxdamage;
+          libXext = pkgs.libxext;
+          libXfixes = pkgs.libxfixes;
+          libXrandr = pkgs.libxrandr;
+          libxcb = pkgs.libxcb;
+        };
+      };
       cursorAgentPkg = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.cursor-agent;
     in
     lib.mkMerge [

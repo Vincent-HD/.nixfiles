@@ -42,8 +42,6 @@
       inputs.nixpkgs.follows = "nixpkgs-darwin";
     };
 
-    nix-homebrew.url = "github:zhaofengli/nix-homebrew";
-
     sops-nix = {
       url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";

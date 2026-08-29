@@ -13,7 +13,7 @@
   libxml2,
 }:
 
-stdenv.mkDerivation (finalAttrs: {
+stdenv.mkDerivation {
   pname = "crosspipe";
   version = "0.1.1-pr11-unstable-2026-03-12";
 
@@ -48,4 +48,4 @@ stdenv.mkDerivation (finalAttrs: {
     mainProgram = "crosspipe";
     platforms = lib.platforms.linux;
   };
-})
+}

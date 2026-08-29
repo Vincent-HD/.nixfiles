@@ -27,7 +27,7 @@
       ];
 
       home.packages = [
-        inputs.self.packages.${pkgs.system}.persist-dms
+        inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.persist-dms
         pkgs.coreutils
         pkgs.curl
         pkgs.file
@@ -36,7 +36,6 @@
         pkgs.grim
         pkgs.img2pdf
         pkgs.imagemagick
-        pkgs.jq
         pkgs.pipewire
         pkgs.pulseaudio
         pkgs.satty

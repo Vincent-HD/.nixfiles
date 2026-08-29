@@ -36,6 +36,7 @@
         # Inshellisense provides the active shell autocomplete integration.
         inshellisensePackage
         pkgs.jaq
+        pkgs.jq
         pkgs.just
         pkgs.lazygit
         pkgs.nh
@@ -205,6 +206,7 @@
       programs.zsh = {
         enable = true;
         enableCompletion = true;
+        autosuggestion.enable = true;
         syntaxHighlighting.enable = true;
 
         shellAliases = {

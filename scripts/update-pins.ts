@@ -147,6 +147,12 @@ async function loadConfig(root: string): Promise<UpdateConfig> {
   return await Bun.file(configPath).json();
 }
 
+function validateSelectedNames(config: UpdateConfig, options: Options): string[] {
+  const knownNames = new Set(config.updates.map((entry) => entry.name));
+  const selectedNames = [...(options.only ?? []), ...options.skip];
+  return [...new Set(selectedNames.filter((name) => !knownNames.has(name)))].sort();
+}
+
 async function currentSystem(): Promise<string> {
   return (await $`nix eval --impure --raw --expr builtins.currentSystem`.text()).trim();
 }
@@ -290,6 +296,13 @@ async function main(): Promise<void> {
 
   const root = await repoRoot();
   const config = await loadConfig(root);
+
+  const unknownNames = validateSelectedNames(config, options);
+  if (unknownNames.length > 0) {
+    await Bun.write(Bun.stderr, `Unknown update entries: ${unknownNames.join(", ")}\n`);
+    process.exitCode = 2;
+    return;
+  }
 
   if (options.list) {
     printList(config);
