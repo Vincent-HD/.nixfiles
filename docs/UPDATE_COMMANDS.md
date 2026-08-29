@@ -161,6 +161,19 @@ To run the package-specific updater directly:
 nix run .#update-curseforge -- --check
 ```
 
+### lsfg-vk
+
+- **File**: `packages/lsfg-vk/default.nix`
+- **Pattern**: locally packaged v2 source from the official `git.lsfg-vk.dev` forge, pinned to an immutable revision
+- **Flake output**: `.#lsfg-vk`
+- **Platform**: `x86_64-linux`
+- **Important**: LSFG-VK v2 is licensed CC BY-NC-ND 4.0 and is evaluated through the repository's unfree package set. Keep builds local; do not publish the result to a public or commercial binary cache.
+- **Note**: The package-specific updater discovers the newest v2 release/RC tag from the official forge, resolves annotated tags to their commit, prefetches the source hash, and updates the version, revision, and hash together.
+
+```bash
+nix run github:Mic92/nix-update -- --flake lsfg-vk --use-update-script
+```
+
 ### cursor-agent
 
 - **File**: `packages/cursor-agent/default.nix`

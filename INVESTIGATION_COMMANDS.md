@@ -68,6 +68,16 @@ nix eval --impure --expr '(builtins.getFlake "path:/home/vincent/.nixfiles").inp
 nix eval --impure --expr '(builtins.getFlake "path:/home/vincent/.nixfiles").inputs.home-manager.outPath' --raw
 ```
 
+### Validate shared modules across configured hosts
+
+```bash
+nix eval '.#nixosConfigurations.<linux-host>.config.system.build.toplevel.drvPath' --raw
+nix eval '.#darwinConfigurations.<darwin-host>.system' --raw
+```
+
+Purpose: evaluate the system graph for each configured platform after changing a shared module or
+Home Manager feature, without building or applying either host.
+
 ### Compare default and specialized NixOS kernel paths
 
 ```bash
@@ -344,6 +354,37 @@ Use when:
 - bumping a GitHub-backed overlay or package source
 - you already have a commit SHA and need the matching SRI hash
 - updating any derivation that fetches from a specific GitHub revision
+
+### Prefetch an immutable Git source hash
+
+```bash
+nix run nixpkgs#nix-prefetch-git -- \
+  --url <git-url> \
+  --rev <commit-sha> \
+  --no-deepClone
+```
+
+Purpose: obtain the SRI hash for a `fetchgit` source, including repositories hosted outside GitHub.
+Use an immutable commit rather than a branch or moving tag; the command also reports the resolved
+revision when an annotated tag is involved.
+
+### Inspect rendered system packages and environment variables
+
+```bash
+nix eval --impure --json --expr '
+let
+  configuration = (builtins.getFlake "/home/vincent/.nixfiles").nixosConfigurations.<host>.config;
+in {
+  systemPackages = map (package: package.name or "") configuration.environment.systemPackages;
+  steamExtraPackages = map (package: package.name or "") configuration.programs.steam.extraPackages;
+  matchingVariables = builtins.filter
+    (name: builtins.match "<prefix>.*" name != null)
+    (builtins.attrNames configuration.environment.variables);
+}'
+```
+
+Purpose: verify that a package reaches both the system profile and a composed runtime such as
+Steam's FHS environment, while confirming that optional feature variables were not applied globally.
 
 ### Debug a failing package build
 

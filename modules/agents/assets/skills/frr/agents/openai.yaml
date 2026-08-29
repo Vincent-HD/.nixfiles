@@ -1,0 +1,5 @@
+interface:
+  display_name: "FRR"
+  short_description: "Re-pitch clearly in rationalized French"
+policy:
+  allow_implicit_invocation: false

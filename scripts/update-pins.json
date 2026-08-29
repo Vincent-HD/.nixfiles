@@ -219,6 +219,23 @@
       ]
     },
     {
+      "name": "lsfg-vk",
+      "type": "nix-update",
+      "description": "Lossless Scaling frame generation Vulkan layer, CLI, and Qt interface",
+      "systems": [
+        "x86_64-linux"
+      ],
+      "command": [
+        "nix",
+        "run",
+        "github:Mic92/nix-update",
+        "--",
+        "--flake",
+        "lsfg-vk",
+        "--use-update-script"
+      ]
+    },
+    {
       "name": "cursor-agent",
       "type": "nix-update",
       "description": "Cursor Agent CLI current-platform release archive",

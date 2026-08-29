@@ -54,6 +54,7 @@
         cpuid-fault-emulation = pkgs.callPackage ../packages/cpuid-fault-emulation { };
         curseforge = unfreePkgs.callPackage ../packages/curseforge { };
         crosspipe = pkgs.callPackage ../packages/crosspipe { };
+        lsfg-vk = unfreePkgs.callPackage ../packages/lsfg-vk { };
         persist-dms = mkBunRunner "persist-dms" ../scripts/persist-dms.ts;
       };
 
