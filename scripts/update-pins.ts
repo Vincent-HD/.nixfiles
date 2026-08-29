@@ -44,6 +44,9 @@ type Result = {
 function usage(): string {
   return `Usage: update-pins.ts [options]
 
+Through the flake app:
+  nix run .#update-pins -- [options]
+
 Options:
   --dry-run              Print selected commands without running them.
   --only <a,b>           Run only the named update entries.
@@ -311,7 +314,19 @@ async function main(): Promise<void> {
 
   const system = await currentSystem();
   const results: Result[] = selectedEntries(config, options, system);
-  for (const entry of runnableEntries(config, options, system)) {
+  const runnable = runnableEntries(config, options, system);
+
+  if (options.only !== null && runnable.length === 0) {
+    printSummary(results);
+    await Bun.write(
+      Bun.stderr,
+      "None of the explicitly selected updates are runnable; validation was not run. Check --list and docs/UPDATE_COMMANDS.md for manual entries.\n",
+    );
+    process.exitCode = 2;
+    return;
+  }
+
+  for (const entry of runnable) {
     results.push(await runCommand(entry.name, entry.command, root, options.dryRun));
   }
 

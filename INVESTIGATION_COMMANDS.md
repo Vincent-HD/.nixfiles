@@ -15,6 +15,12 @@ USER=vincent
 NIX_EVAL_FEATURES='extra-experimental-features = nix-command flakes dynamic-derivations'
 ```
 
+When passing arguments to a flake app, separate them from Nix's own options:
+
+```bash
+nix run .#<app> -- <app-options>
+```
+
 ## Generated Nix / Expression Checks
 
 ### Parse a generated Nix expression without evaluating it

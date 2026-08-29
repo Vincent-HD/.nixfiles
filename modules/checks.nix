@@ -55,9 +55,14 @@ in
                 echo "unknown update entry unexpectedly succeeded" >&2
                 exit 1
               fi
-              bun "$UPDATE_PINS_REPO_ROOT/scripts/update-pins.ts" \
-                --dry-run --only screen-capture-toolbar \
-                | grep --fixed-strings 'screen-capture-toolbar (manual)'
+              if bun "$UPDATE_PINS_REPO_ROOT/scripts/update-pins.ts" \
+                --dry-run --only screen-capture-toolbar --validate fast \
+                >"$TMPDIR/manual.stdout" 2>"$TMPDIR/manual.stderr"; then
+                echo "manual-only update selection unexpectedly succeeded" >&2
+                exit 1
+              fi
+              grep --fixed-strings 'screen-capture-toolbar (manual)' "$TMPDIR/manual.stdout"
+              grep --fixed-strings 'validation was not run' "$TMPDIR/manual.stderr"
 
               touch "$out"
             '';

@@ -10,6 +10,9 @@ Routine updates are configured in `scripts/update-pins.json` and run through the
 nix run .#update-pins
 ```
 
+`nix run` requires the separator `--` before every option intended for the update runner. Without
+it, flags such as `--only` and `--validate` are parsed as options to the Nix CLI itself.
+
 Useful variants:
 
 ```bash
@@ -25,8 +28,10 @@ Running `nix flake update <name>` cannot advance a revision embedded in `flake.n
 reviewed revision first, then refresh its lock entry. `noctalia` is additionally denylisted to make
 the intentional v4 hold visible.
 
-`code-cursor-nix` and `herdr` are also disabled manual entries because their URLs select a fixed
-commit or tag. Choose and test a new revision in `flake.nix` before refreshing either lock entry.
+`herdr` is also a disabled manual entry because its URL selects a fixed tag. Choose and test a new
+release in `flake.nix` before refreshing its lock entry.
+Selecting only a disabled manual entry exits with an error and does not run validations, so a
+skipped update cannot look successful.
 
 The `codex` and `curseforge` outputs are Linux-only. The data-driven updater
 reads each entry's `systems` field and skips packages that do not support the
@@ -321,10 +326,8 @@ nix flake update dms-plugins
 ### code-cursor-nix
 
 - **File**: `flake.nix`
-- **Why**: Cursor 3.16.x regressed the agent shell inside the Nix FHS wrapper, so the input remains
-  pinned to the tested 3.15.6 revision.
-- **How**: Select and test a replacement revision in `flake.nix`, then refresh the lock entry. A
-  plain update cannot advance the embedded commit.
+- **Why**: Provides an automatically updated Cursor package for Linux and macOS.
+- **How**: Refresh the moving flake input through the normal update runner or directly with:
 
 ```bash
 nix flake update code-cursor-nix

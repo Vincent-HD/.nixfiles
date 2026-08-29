@@ -332,9 +332,8 @@
     },
     {
       "name": "code-cursor-nix",
-      "type": "manual",
-      "description": "Commit-pinned Cursor package; choose a tested revision before refreshing the lock",
-      "enabled": false,
+      "type": "flake-input",
+      "description": "Auto-updating Cursor editor package",
       "command": [
         "nix",
         "flake",
