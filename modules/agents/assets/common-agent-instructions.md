@@ -21,6 +21,14 @@ Use the shared Agent Skills (installed under `~/.agents/skills`):
 
 Agent shells are PTYs. Bare `jj status` / `jj log` / `jj diff` / `jj op *` / `jj help` / `jj bookmark list` open `less` and hang forever (often with empty captured output). Prefix every standalone `jj` and `git log`/`git diff` with `PAGER=cat GIT_PAGER=cat`. The skill helper scripts already do this. Never run `jj op show -p` unpiped.
 
+### Commit messages
+
+Use Conventional Commits for every Git commit subject and Jujutsu revision description you generate:
+`<type>[optional scope][!]: <imperative description>`. Use a lowercase type such as `feat`, `fix`,
+`docs`, `refactor`, `test`, `build`, `ci`, `chore`, `perf`, `revert`, or `style`; keep the subject
+concise and specific, and never use `WIP`, `update`, `changes`, or another vague subject. Check the
+final message before running `git commit`, `jj commit`, or `jj describe`.
+
 ## Nix environment
 
 This machine is managed by Nix. When a command-line tool is not available,

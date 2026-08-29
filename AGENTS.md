@@ -148,6 +148,14 @@ changes, validate `.#darwinConfigurations.macbook-pro`.
 
 ---
 
+## Commit Messages
+
+Commit subjects and Jujutsu revision descriptions generated for this repository must use Conventional
+Commits: `<type>[optional scope][!]: <imperative description>`. Use a lowercase, specific type and
+description; do not create `WIP`, `update`, `changes`, or other vague subjects.
+
+---
+
 ## Important Notes for Agents
 
 - **Be as explicit as possible in Nix.** Avoid shorthand that hides where values come from or where
