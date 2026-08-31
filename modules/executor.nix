@@ -106,6 +106,63 @@
           command = "${githubMcp}";
           args = [ ];
         }
+        {
+          slug = "postgres_sql_mcp";
+          name = "Postgres SQL MCP";
+          description = "Read-only PostgreSQL database access through pgEdge MCP.";
+          transport = "stdio";
+          command = lib.getExe pkgs.docker;
+          # Linux: Cursor/session-manager forwards bind 127.0.0.1, which
+          # host.docker.internal (docker0) cannot reach. Host networking makes
+          # 127.0.0.1 inside the container the same loopback. Darwin Docker
+          # Desktop already maps host.docker.internal to the Mac localhost.
+          args = [
+            "run"
+            "-i"
+            "--rm"
+          ]
+          ++ (
+            if pkgs.stdenv.hostPlatform.isLinux then
+              [
+                "--network"
+                "host"
+                "-e"
+                "PGEDGE_DB_HOST=127.0.0.1"
+              ]
+            else
+              [
+                "--add-host"
+                "host.docker.internal:host-gateway"
+                "-e"
+                "PGEDGE_DB_HOST=host.docker.internal"
+              ]
+          )
+          ++ [
+            "-e"
+            "PGEDGE_DB_PORT"
+            "-e"
+            "PGEDGE_DB_NAME"
+            "-e"
+            "PGEDGE_DB_USER"
+            "-e"
+            "PGEDGE_DB_PASSWORD"
+            "-e"
+            "PGEDGE_DB_ALLOW_WRITES"
+            "ghcr.io/pgedge/postgres-mcp:latest"
+          ];
+          # allow_writes is off unless the Executor connection sets
+          # PGEDGE_DB_ALLOW_WRITES to true/1/yes; pgEdge defaults to false.
+          envVars = [
+            "PGEDGE_DB_PORT"
+            "PGEDGE_DB_NAME"
+            "PGEDGE_DB_USER"
+            "PGEDGE_DB_PASSWORD"
+            "PGEDGE_DB_ALLOW_WRITES"
+          ];
+          # The connection is intentionally created manually in Executor so
+          # database credentials never get provisioned by Home Manager.
+          createConnection = false;
+        }
       ]
       ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
         {
