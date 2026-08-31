@@ -9,7 +9,47 @@
       "id": "default",
       "innerPadding": 4,
       "leftWidgets": [
-        "controlCenterButton",
+        {
+          "enabled": true,
+          "id": "controlCenterButton",
+          "showAudioIcon": false,
+          "showAudioPercent": false,
+          "showIdleInhibitorIcon": false,
+          "showMicIcon": false,
+          "showMicPercent": false,
+          "showNetworkIcon": false
+        },
+        {
+          "controlCenterGroupOrder": [
+            "network",
+            "vpn",
+            "bluetooth",
+            "audio",
+            "microphone",
+            "brightness",
+            "battery",
+            "printer",
+            "screenSharing",
+            "idleInhibitor",
+            "doNotDisturb"
+          ],
+          "enabled": true,
+          "id": "controlCenterButton",
+          "showAudioIcon": true,
+          "showAudioPercent": true,
+          "showBatteryIcon": false,
+          "showBluetoothIcon": false,
+          "showBrightnessIcon": false,
+          "showBrightnessPercent": false,
+          "showDoNotDisturbIcon": false,
+          "showIdleInhibitorIcon": false,
+          "showMicIcon": false,
+          "showMicPercent": false,
+          "showNetworkIcon": false,
+          "showPrinterIcon": false,
+          "showScreenSharingIcon": false,
+          "showVpnIcon": false
+        },
         "workspaceSwitcher"
       ],
       "name": "Main Bar",
@@ -18,10 +58,23 @@
         "dankActions:musicDucking",
         "dankActions:musicNormal",
         "cpuUsage",
-        "memUsage",
-        "network_speed_monitor",
+        {
+          "enabled": true,
+          "id": "memUsage",
+          "minimumWidth": false,
+          "showInGb": true,
+          "showSwap": false
+        },
+        {
+          "enabled": true,
+          "id": "network_speed_monitor"
+        },
         "clock",
-        "systemTray",
+        {
+          "enabled": true,
+          "id": "systemTray",
+          "trayUseInlineExpansion": false
+        },
         "clipboard",
         "notificationButton",
         "quickCapture"
