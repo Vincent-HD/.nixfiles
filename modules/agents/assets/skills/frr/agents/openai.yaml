@@ -1,5 +1,5 @@
 interface:
   display_name: "FRR"
-  short_description: "Re-pitch clearly in rationalized French"
+  short_description: "Re-pitch that — clearer, in French, not a translation"
 policy:
   allow_implicit_invocation: false

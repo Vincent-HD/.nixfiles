@@ -44,7 +44,7 @@ jj diff --from "$BASE" --summary
 
 `jj file list -r "$BLOB"` lists the **whole tree**, not the delta. Use `--summary` for peel leftovers.
 
-Count 0 → progress **Blob leftover:** `empty, abandon blob`. Then `jj abandon "$BLOB"` only after `-dup` backups exist. Live `backup/blob-*` disappears with that abandon.
+Count 0 → progress **Blob leftover:** `empty`. If inventory says `TO is BASE`, **delete the leftover bookmark name** — do not `jj abandon` BASE. Otherwise `jj abandon "$BLOB"` only after `-dup` backups exist.
 
 To inspect an emptied blob before abandoning, squash the last paths with `--keep-emptied`, inventory, then abandon.
 
@@ -67,6 +67,8 @@ Do not double-apply the same paths. Alternatives (pick one per slice):
 - `jj restore --from "$BLOB" --into @ -- paths` then remove those paths from the blob with a later squash, or
 - `jj split` on the blob (`-i` forbidden; split by explicit paths only)
 
+Deleted paths: pass them on `jj squash -- -- path`. `No matching entries` on empty `@` is OK if leftover inventory then drops those `D`s.
+
 Stay on the new stack. `jj squash --from "$BLOB"` does not require checking out the blob.
 
 If restore or squash reports a conflict: stop; `jj-solve-conflict`.
@@ -80,21 +82,21 @@ jj op log -n 1 -T 'self.id().short()' --no-graph
 jj log -r @ --no-graph \
   -T 'change_id.short() ++ " " ++ commit_id.short() ++ " " ++ if(empty, "(empty) ", "") ++ description.first_line() ++ "\n"'
 
-jj log -r 'mutable()' -n 40 --no-graph \
-  -T 'change_id.short() ++ " " ++ commit_id.short() ++ " " ++ description.first_line() ++ "\n"'
-
 jj log -r "${BASE}::${TIP}" --no-graph \
   -T 'change_id.short() ++ " " ++ description.first_line() ++ "\n"'
 
 jj log -r "${BASE}::@" --no-graph \
   -T 'change_id.short() ++ " " ++ commit_id.short() ++ " " ++ description.first_line() ++ "\n"'
+
+# bookmarks on the stack only (do not dump the whole repo list)
+jj bookmark list -r "${BASE}::${TIP} | ${TIP}"
 ```
 
 ## Tests per rev
 
 Never `jj run -r R -- <test>`: jj checks out R, runs the command, **amends** R with the resulting WC.
 
-Disposable child (preferred): `jj new R` → test → `jj abandon -r @` → `jj edit $STACK_TIP` if `@` is no longer the tip.
+Disposable child (preferred): `jj new R` → test → `jj abandon -r @`. That abandon leaves an empty untitled `@` on the parent — do not leave it; `jj new` the next slice or `jj edit $STACK_TIP`.
 
 Workspace (long / parallel): `jj workspace add --name NAME -r R DEST`. Forget the workspace when done. Do not run two writers on the same change ids.
 
@@ -111,15 +113,22 @@ Do not `jj describe` an empty leftover test `@`.
 
 ## Drop backups (user-requested only)
 
-```bash
-jj bookmark delete \
-  backup/pre-squash-TOPIC-STAMP \
-  backup/pre-squash-TOPIC-STAMP-dup \
-  backup/blob-TOPIC-STAMP \
-  backup/blob-TOPIC-STAMP-dup \
-  backup/post-squash-TOPIC-STAMP
+Copy-paste with a comment on every name (old live stack vs sibling snapshot vs leftover blob vs frozen blob). Do not run unless the user asked.
 
+```bash
+# old live tip from before squash (often already followed/gone)
+jj bookmark delete backup/pre-squash-TOPIC-STAMP
+# sibling copy of the old stack — the real snapshot
+jj bookmark delete backup/pre-squash-TOPIC-STAMP-dup
+# live leftover blob (follows peels; may point at BASE — name only, do not abandon)
+jj bookmark delete backup/blob-TOPIC-STAMP
+# frozen full-tree blob right after squash
+jj bookmark delete backup/blob-TOPIC-STAMP-dup
+jj bookmark delete backup/post-squash-TOPIC-STAMP
+
+# sibling of BASE..TIP (old stack copy)
 jj abandon <pre-squash-dup-range>
+# frozen squash blob (not the new peeled stack)
 jj abandon <blob-dup-tip>
 ```
 

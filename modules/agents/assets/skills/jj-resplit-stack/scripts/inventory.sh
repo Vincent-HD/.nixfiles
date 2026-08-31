@@ -47,7 +47,13 @@ done < <(jj diff --from "${BASE}" --to "${TO}" --summary)
 echo
 if [[ "$count" -eq 0 ]]; then
 	echo "count 0"
-	echo "empty, abandon blob"
+	base_id=$(jj log -r "${BASE}" --no-graph -T 'commit_id')
+	to_id=$(jj log -r "${TO}" --no-graph -T 'commit_id')
+	if [[ "$base_id" == "$to_id" ]]; then
+		echo "empty leftover: TO is BASE — bookmark followed here; delete the name, do not abandon BASE"
+	else
+		echo "empty, abandon blob"
+	fi
 else
 	echo "count ${count}"
 fi

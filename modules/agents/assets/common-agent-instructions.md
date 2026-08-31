@@ -14,7 +14,7 @@ Use the shared Agent Skills (installed under `~/.agents/skills`):
 | When | Skill | Intent |
 | ---- | ----- | ------ |
 | While implementing; “jj” / absorb / describe | `jj-auto-revise` | Describe `@` at start of a concern; print a progress block at prompt boundaries; do not commit when a piece ends; on each new prompt, keep nits/docs/small extras on `@`, else `jj commit` then describe a substantial new concern (ask if unsure); absorb/squash-into for ancestor follow-ups |
-| Later cleanup; stacked PRs; squash & resplit a wip stack | `jj-resplit-stack` | Backup (bookmark + range duplicate) → squash blob onto BASE → peel feature/FE-BE slices with a running progress block → related tests per rev |
+| Later cleanup; stacked PRs; squash & resplit a wip stack | `jj-resplit-stack` | Preflight (stack vs `@`, N/yolo, bookmarks, typecheck TIP) → backup → squash blob onto BASE → peel slices → typecheck + added tests per rev |
 | Unresolved jj conflicts after rebase/merge; “fix conflicts” | `jj-solve-conflict` | Backup (bookmark + duplicate), teleport with `jj new` onto the oldest conflict, resolve, squash with `--use-destination-message`, keep a running remaining-count |
 
 **Never push** (`git push` / `jj git push` / remote bookmark push) while following those skills. Local bookmarks only unless the user explicitly asks to publish.

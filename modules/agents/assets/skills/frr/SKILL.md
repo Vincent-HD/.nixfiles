@@ -1,12 +1,41 @@
 ---
 name: frr
-description: Re-pitch the previous answer in clear, direct, non-literal French while keeping technical vocabulary and concepts in English; use only when explicitly invoked.
+description: >
+  Stop. That last message did not land — re-pitch it in clear French, with the missing
+  context, not a translation. Use only when explicitly invoked (/frr).
+disable-model-invocation: true
 ---
 
 # Français rationalisé
 
-Stop. That last message did not land — re-pitch it.
+Stop. That last message did not land. **Re-pitch it** — same job as `/bro`.
 
-Write one self-contained re-pitch in clear, direct, natural French: short sentences, simple structure, and no unnecessary idioms or flourishes. Do not translate word for word. Technical words and concepts must stay in English; also preserve code, commands, identifiers, product names, proper nouns, and established technical labels. Translate the ordinary surrounding language naturally into French. Do not translate everything just to make every word French.
+The user did not understand. Your job is **clarity**, not French. French is only the output language.
 
-This is a one-shot French output. Produce only the re-pitch for this response, without explaining these rules or adding a second version. Do not treat it as a persistent language preference. If the conversation immediately before `/frr` used another language, switch back to that language on the next response; if it was already French, continue in French unless the user asks otherwise.
+## Do
+
+Same as `/bro`: give the missing context, then a simpler take.
+
+- Lead with where we are (what was decided, what is true now).
+- Cut noise. Drop lists that were only padding. Merge duplicates.
+- Short sentences. Simple structure. No idioms, no flourish.
+- Technical words, code, commands, identifiers, product names, and established labels stay in **English**.
+- Ordinary glue language in natural French.
+
+## Do not
+
+**Do not translate.** A French calque of the previous message is a failed `/frr`.
+
+Forbidden:
+
+- Same headings, same bullets, same order, with English swapped for French.
+- Sentence-by-sentence or paragraph-by-paragraph rendering.
+- “Translate the surrounding language” as the whole task.
+
+If the previous text was already French and still did not land: re-pitch it **clearer**, still in French. Still not a rewrite that keeps the same shape.
+
+## Output
+
+One self-contained re-pitch. No preamble about these rules. No English twin.
+
+One-shot. Do not treat French as a persistent preference. Next turn: same language as the conversation before `/frr`, unless that turn was already French (then stay in French unless asked otherwise).

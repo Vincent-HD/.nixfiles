@@ -1,11 +1,11 @@
 ---
 name: jj-resplit-stack
 description: >
-  Squash a messy jj (or git) stack, backup the blob, then resplit into meaningful revisions for a
-  stacked PR — by feature, preferring frontend/backend separation when possible, with related tests
-  in each rev and tests run successfully per rev. Keeps a running progress block (BASE, leftover
-  files, backups, tests). Use when the user asks to resplit, squash and split, prepare stacked PRs,
-  clean wip history, or reorganize commits by feature before review.
+  Squash a messy jj (or git) stack or working copy, backup, then resplit into meaningful revisions.
+  Always preflight: squash stack-onto-trunk vs only @; how many revs or yolo; bookmarks per rev vs
+  tip-only; typecheck TIP first (fail = no-go unless skip). Then peel feature/FE-BE slices with
+  tests per rev. Use when the user asks to resplit, squash and split, prepare stacked PRs, clean wip
+  history, or reorganize commits by feature before review.
 ---
 
 # jj resplit stack
@@ -16,18 +16,21 @@ Repo-agnostic personal skill. Prefer **jj** when `jj root` succeeds.
 
 Companions: day-to-day describe/absorb → `jj-auto-revise` (this skill is the later cleanup). Conflicted restore/peel → `jj-solve-conflict` (stop; do not resolve here).
 
-This skill only **backups → squash blob onto BASE → peels feature/FE-BE slices → tests each rev**. It does not run the prompt-boundary revise loop and does not resolve conflicts.
+This skill only **preflight → backups → squash blob onto BASE → peels feature/FE-BE slices → tests each rev**. It does not run the prompt-boundary revise loop and does not resolve conflicts.
 
 ## Hard rules
 
-- Backup **before** squash and **again** after the blob exists. Do not abandon backup bookmarks.
+- **Wait on preflight** (section 1). Do not bookmark, duplicate, squash, or peel until the user answers. Answers in the trigger message count.
+- Backup **before** squash and **again** after the blob exists. Do not abandon backup bookmarks. Never `jj abandon` a `backup/blob-*` that now points at BASE (delete the name only).
 - Duplicate the **range** `BASE..TIP` (not only the tip). Bookmarks on a rewritten change **follow**; abandoning a commit **deletes** its bookmarks. The duplicate is the real snapshot.
 - Squash peels with `--use-destination-message` so the blob's `wip: squash blob` text does not overwrite the slice `-m`, and so nano never opens.
 - No interactive `-i`. No push. No `jj op restore` unless the user asks or a backup is the only way out — then report the op id first.
 - No pager. Agent shells are PTYs: bare `jj status` / `jj log` / `jj diff` / `jj op *` / `jj help` / `jj bookmark list` open `less` and hang forever. Prefix **every** standalone `jj` with `PAGER=cat GIT_PAGER=cat`. Helper scripts already set this plus `ui.paginate=never`. Never `jj op show -p` unpiped.
-- Tests travel with the code they cover. Prefer FE/BE split when either side is reviewable alone.
+- Tests travel with the code they cover. Prefer FE/BE split when either side is reviewable alone. Typecheck + added tests on **every** peeled rev unless the user skipped typecheck.
 - Never bare `jj run -r R -- <test>`: it checks out, runs, and **amends** R. Use a disposable child or a workspace.
+- After abandoning a test child, `@` is empty untitled — `jj new` the next slice or `jj edit $STACK_TIP`. Do not leave those empties on the stack.
 - After the new stack is verified: restore `@` to the stack tip. Ask before abandoning the old pre-squash range. **Do not delete backups yourself.**
+- Never `jj bookmark set` an existing PR bookmark (`push-*`, remote-tracking). **Ask only.**
 
 ## Progress (mandatory)
 
@@ -39,44 +42,56 @@ Every user-visible message while this skill runs includes a **progress block**. 
 **Plan:** 1 backend 2 frontend 3 docs  (N remaining slices)
 **Now:** peeling slice 2/3 — `feat(ui): …` — paths: apps/frontend …
 **Blob leftover:** M files  (or “empty, abandon blob”)
-**Tests:** rev1 pass / rev2 running / …
+**Tests:** skip | TIP fail (no-go) | rev1 typecheck+specs / …
+**Bookmarks:** per-rev | tip-only
 **Backups:** pre-squash-…  dup=…  blob=…  op=…
 ```
 
-Steps: `1 inventory+plan` · `2 pre-backup` · `3 blob-on-BASE` · `4 post-backup` · `5 peel` · `6 tests` · `7 deliver`.
+Steps: `1 inventory+preflight` · `2 pre-backup` · `3 blob-on-BASE` · `4 post-backup` · `5 peel` · `6 tests` · `7 deliver`.
 
 Extra recipes: [reference.md](reference.md).
 
-## 1. Inventory + plan
+## 1. Inventory + preflight (wait)
+
+Read-only. If the user only wanted day-to-day describe/absorb: use `jj-auto-revise`. Stop.
 
 ```bash
 PAGER=cat GIT_PAGER=cat jj root
-BASE=main   # trunk / stack root — not the first wip commit
-TIP=@
 # helper disables the pager itself:
 #   bash ~/.agents/skills/jj-resplit-stack/scripts/inventory.sh "$BASE" "$TIP"
 
-PAGER=cat GIT_PAGER=cat jj log -r 'mutable()' -n 40 --no-graph \
-  -T 'change_id.short() ++ " " ++ commit_id.short() ++ " " ++ description.first_line() ++ "\n"'
 PAGER=cat GIT_PAGER=cat jj log -r "${BASE}::${TIP}" --no-graph \
-  -T 'change_id.short() ++ " " ++ description.first_line() ++ "\n"'
-PAGER=cat GIT_PAGER=cat jj diff --from "$BASE" --to "$TIP" --summary
-PAGER=cat GIT_PAGER=cat jj bookmark list
+  -T 'change_id.short() ++ " " ++ commit_id.short() ++ " " ++ description.first_line() ++ "\n"'
+PAGER=cat GIT_PAGER=cat jj diff --from "$BASE" --to "$TIP" --stat
+PAGER=cat GIT_PAGER=cat jj bookmark list -r "${BASE}::${TIP} | ${TIP}"
 ```
 
-Pick `BASE` and `TIP`. If several heads or `BASE` is unclear: list them indexed under **FEEDBACK NEEDED** and wait.
+Note the current op (`jj op log -n 1 -T 'self.id().short()' --no-graph`) for `jj op restore`.
 
-Propose an indexed split plan, for example:
+**Typecheck TIP now** (disposable child, same as §6) unless the trigger already said skip. Discover the command (`pnpm typefast`, `cargo check`, …). Fail → **no-go**: do not backup/squash. Put that in **FEEDBACK NEEDED**: fix TIP first, or **skip typecheck** for this run. Pass → continue the questions.
 
-1. `feat(api): …` — backend + its tests
-2. `feat(ui): …` — frontend + its tests
-3. `docs: …`
+Then **FEEDBACK NEEDED** (indexed). Do not squash until answered. Skip a question only if the trigger already answered it.
 
-Prefer separate FE/BE revs when either side is reviewable alone. Combine only when the change is incoherent without both. Backend below frontend when the UI depends on the API.
+1. **Scope:** squash the whole stack onto trunk (`main` / `main@origin` as `BASE`, `TIP=@`)? or **only `@`** (one rev vs its parent)?
+2. **Slice count:** how many revs, or **yolo** (agent picks from diff size, ~1 rev per ~1k lines, FE/BE split when reviewable alone, then shows the plan)?
+3. **Bookmarks:** a local bookmark on **every** peeled rev (`stack/${TOPIC}/1-…`), or **tip only**?
+4. **Typecheck:** already run on TIP. Confirm skip vs must-pass on every peeled rev (typecheck + **added** specs in that rev).
 
-Put the plan in **FEEDBACK NEEDED** when cut points are unclear; wait before squash. Show the progress block (`step 1/7 inventory+plan`, leftover = tip-vs-BASE file count).
+Propose the indexed plan with **approx line counts** per slice. Also list the **current** stack as notes (id + subject + size). Peels use the **final** tree: those messages will not come back, and one file cannot be “retry later” if the tip already has the later code.
 
-If the user only wanted day-to-day describe/absorb: use `jj-auto-revise`. Stop.
+```bash
+# current stack (notes only)
+PAGER=cat GIT_PAGER=cat jj log -r "${BASE}::${TIP}" --no-graph \
+  -T 'change_id.short() ++ " " ++ description.first_line() ++ "\n"'
+# per old rev:
+PAGER=cat GIT_PAGER=cat jj diff -r <rev> --stat
+# per proposed peel (paths that slice will take):
+PAGER=cat GIT_PAGER=cat jj diff --from "$BASE" --to "$TIP" --stat -- path1 path2
+```
+
+Prefer separate FE/BE revs when either side is reviewable alone. Combine only when incoherent without both. Backend below frontend when the UI depends on the API.
+
+Show the progress block (`step 1/7 inventory+preflight`). Wait.
 
 ## 2. Backup **before** squash (mandatory)
 
@@ -172,11 +187,11 @@ If a peel squash is conflicted: **stop, use `jj-solve-conflict`**.
 
 **Tests travel with code.** If a test file spans two features, keep it with the dominant feature or split the file in a dedicated follow-up rev.
 
-When leftover is empty: abandon the emptied blob only after backups exist (`jj abandon "$BLOB"`). Do not abandon the `-dup`.
+When leftover is empty: if `backup/blob-*` now points at **BASE**, `jj bookmark delete` that name only — do **not** `jj abandon` it. Otherwise abandon the emptied blob only after `-dup` backups exist (`jj abandon "$BLOB"`). Do not abandon the `-dup`.
 
 ## 6. Verify tests **per rev**
 
-Discover the project’s own test command from its docs/`package.json`/`Makefile`/`cargo`, etc. Do not assume a layout. Show progress (`step 6/7 tests`) before and after each rev.
+Unless the user skipped typecheck: every peeled rev must **typecheck**, and must run the **specs that rev adds**. A slice with no new tests: typecheck only. Discover commands from the project (`pnpm typefast`, `pnpm test --run path`, …). Do not assume a layout. Show progress (`step 6/7 tests`) before and after each rev.
 
 **Safe (preferred) — disposable child** (tree equals parent `R`; abandon when done):
 
@@ -193,6 +208,9 @@ EOF
 )"
 # run focused tests for paths in R
 jj abandon -r @
+# @ is now a new empty untitled rev on the parent. Do not peel from it.
+# Next slice: `jj new $NEXT`. Done testing: `jj edit $STACK_TIP`.
+# If an empty no-description child of the new stack remains, `jj abandon` that change only.
 ```
 
 **Safe — separate workspace** (long runs):
@@ -218,27 +236,37 @@ export PAGER=cat GIT_PAGER=cat
 jj edit "$STACK_TIP"     # or: jj new "$STACK_TIP"
 jj log -r "${BASE}::@" --no-graph \
   -T 'change_id.short() ++ " " ++ commit_id.short() ++ " " ++ description.first_line() ++ "\n"'
+# tip-only (default unless user asked per-rev):
+jj bookmark set "stack/${TOPIC}" -r "$STACK_TIP"
+# per-rev (only if user asked):
 jj bookmark set "stack/${TOPIC}/1-<slug>" -r <rev1>
 jj bookmark set "stack/${TOPIC}/2-<slug>" -r <rev2>
 ```
+
+Do **not** `jj bookmark set` an existing PR bookmark (`push-*`, `@git`). Under **FEEDBACK NEEDED**, ask whether to point it at the new tip. Wait. Do not move it in this turn.
 
 Report: ordered revs (message, paths, test command + pass), backup bookmark names/ids, `OP`, suggested stacked PR titles. **Do not** push or open PRs unless the user explicitly asks later.
 
 After the new stack is verified, ask before abandoning the old pre-squash range (still pointed at by `$PRE`).
 
-**Do not delete backups yourself.** In the closing message, give the user copy-paste commands (real names from steps 2 and 4). The duplicate is the real snapshot (different change id). The non-`dup` bookmark often follows the rewritten live change — deleting it only drops the name (and vanishes on its own if that commit is abandoned).
+**Do not delete backups yourself.** In the closing message, give copy-paste with a **comment on every line** saying what that name is (old live stack, sibling snapshot, live leftover blob, frozen blob). Use the real names from this run.
 
 ```bash
-# drop backup names (safe; live/new stack stays)
-jj bookmark delete \
-  backup/pre-squash-${TOPIC}-${STAMP} \
-  backup/pre-squash-${TOPIC}-${STAMP}-dup \
-  backup/blob-${TOPIC}-${STAMP} \
-  backup/blob-${TOPIC}-${STAMP}-dup \
-  backup/post-squash-${TOPIC}-${STAMP}
+# names only — does not delete the new stack
+# old live tip from before squash (bookmark followed the rewritten change; often gone already)
+jj bookmark delete backup/pre-squash-${TOPIC}-${STAMP}
+# sibling copy of the old stack (real snapshot; keep until you abandon the range below)
+jj bookmark delete backup/pre-squash-${TOPIC}-${STAMP}-dup
+# live leftover blob (follows peels; may now point at BASE — delete the name, do not abandon)
+jj bookmark delete backup/blob-${TOPIC}-${STAMP}
+# frozen full-tree blob right after squash (same commit as post-squash)
+jj bookmark delete backup/blob-${TOPIC}-${STAMP}-dup
+jj bookmark delete backup/post-squash-${TOPIC}-${STAMP}
 
-# also drop the duplicated sibling stack + frozen blob (the actual copies)
-jj abandon <pre-squash-dup-range>     # change ids jj duplicate printed for BASE..TIP
+# drop the actual copies (different change ids from duplicate)
+# sibling of BASE..TIP from step 2 (old stack, unused after resplit)
+jj abandon <pre-squash-dup-range>
+# frozen squash blob from step 4 (not the new peeled stack)
 jj abandon <blob-dup-tip>
 ```
 
@@ -260,7 +288,13 @@ No duplicate/auto-rebase — tell the user jj would have been better.
 - Tip-only `jj duplicate $TIP` as the only snapshot
 - Bare `jj squash` (opens an editor) / peeling without `--use-destination-message`
 - Forcing FE+BE into one rev when they were separable
-- Testing only the tip
+- Squashing before preflight answers (scope, N/yolo, bookmarks, typecheck skip vs no-go)
+- Testing only the tip / skipping TIP typecheck when it failed
+- Creating per-rev bookmarks when the user asked tip-only
+- `jj abandon` on `backup/blob-*` after it followed to BASE
+- Leaving empty untitled `@` after abandoning a test child
+- Dumping `jj log mutable()` or the full bookmark list
+- Silently `jj bookmark set` a PR bookmark (`push-*`)
 - Dirtying feature revs via careless `jj run`
 - Inlining conflict resolution (use `jj-solve-conflict`)
 - Using this skill for day-to-day describe/absorb (use `jj-auto-revise`)
