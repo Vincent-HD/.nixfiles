@@ -4,28 +4,22 @@ Official sources: [operation log](https://docs.jj-vcs.dev/latest/operation-log/)
 
 **No pager.** Prefix every standalone `jj` with `PAGER=cat GIT_PAGER=cat`. Helper scripts set this themselves.
 
-## Why `jj duplicate 'BASE..TIP'` (not tip-only)
+## Op restore
 
-`x..y` = ancestors of `y` excluding ancestors of `x` (includes TIP, excludes BASE). BASE must be trunk (`main` / immutable head), not the first wip commit.
+Capture before any rewrite. Echo in the first message. Print at the end. Do not restore unless the user asks.
 
-`jj duplicate` without `--onto` / `-A` / `-B` copies onto **existing parents** (or onto other newly duplicated commits). That yields a sibling stack:
-
-- first stack commit (parent = BASE) → copy also parented on BASE
-- the rest chain onto the new copies
-
-A **tip-only** `jj duplicate $TIP` copies TIP onto its **live parent**. Abandoning or rewriting that parent rebases the copy. The range duplicate does not.
-
-Output (oldest first). Pin the **last** `Duplicated … as CHANGE` line — that is the copy of TIP:
-
-```
-Duplicated <old-commit> as <new-change> <new-commit> <description>
+```bash
+OP=$(PAGER=cat GIT_PAGER=cat jj op log -n 1 -T 'self.id().short()' --no-graph)
+echo "OP=$OP"
+# closing:
+jj op restore $OP
 ```
 
-`--onto` / `-A` / `-B` change the destination. Do not use them for this backup; we want a sibling, not a splice.
-
-Bookmarks **follow** rewritten change ids. When a commit is **abandoned**, jj **deletes** bookmarks on it. Non-`dup` names on the live blob/tip are labels, not snapshots.
+`jj undo` = last operation only. Do not create backup bookmarks or `jj duplicate` snapshots.
 
 ## Leftover files (blob vs BASE)
+
+`$BLOB` is the **change id** of the squash-blob leftover (remembered after restore onto BASE). It is the peel source, not a backup.
 
 ```bash
 bash ~/.agents/skills/jj-resplit-stack/scripts/inventory.sh "$BASE" "$BLOB"
@@ -44,7 +38,7 @@ jj diff --from "$BASE" --summary
 
 `jj file list -r "$BLOB"` lists the **whole tree**, not the delta. Use `--summary` for peel leftovers.
 
-Count 0 → progress **Blob leftover:** `empty`. If inventory says `TO is BASE`, **delete the leftover bookmark name** — do not `jj abandon` BASE. Otherwise `jj abandon "$BLOB"` only after `-dup` backups exist.
+Count 0 → progress **Blob leftover:** `empty`. If inventory says `TO is BASE`, do **not** `jj abandon` BASE. Otherwise `jj abandon "$BLOB"` for the emptied leftover only.
 
 To inspect an emptied blob before abandoning, squash the last paths with `--keep-emptied`, inventory, then abandon.
 
@@ -111,45 +105,15 @@ jj edit "$STACK_TIP"     # or: jj new "$STACK_TIP"
 
 Do not `jj describe` an empty leftover test `@`.
 
-## Drop backups (user-requested only)
-
-Copy-paste with a comment on every name (old live stack vs sibling snapshot vs leftover blob vs frozen blob). Do not run unless the user asked.
-
-```bash
-# old live tip from before squash (often already followed/gone)
-jj bookmark delete backup/pre-squash-TOPIC-STAMP
-# sibling copy of the old stack — the real snapshot
-jj bookmark delete backup/pre-squash-TOPIC-STAMP-dup
-# live leftover blob (follows peels; may point at BASE — name only, do not abandon)
-jj bookmark delete backup/blob-TOPIC-STAMP
-# frozen full-tree blob right after squash
-jj bookmark delete backup/blob-TOPIC-STAMP-dup
-jj bookmark delete backup/post-squash-TOPIC-STAMP
-
-# sibling of BASE..TIP (old stack copy)
-jj abandon <pre-squash-dup-range>
-# frozen squash blob (not the new peeled stack)
-jj abandon <blob-dup-tip>
-```
-
-Do not run this unless the user asked. The non-`dup` bookmark may have followed the live rewritten change (or already vanished when that commit was abandoned).
-
-Old pre-squash **range** (`$PRE` / live stack): ask before `jj abandon`. Separate from dropping backup names.
-
-`jj undo` = last operation only. `jj op restore OP` = last resort; report `OP` from the backup step first.
+Ask before `jj abandon` of the old pre-squash range (`$TIP`). Closing message always includes `jj op restore $OP`.
 
 ## Commands cheat sheet
 
 ```bash
-jj duplicate "${BASE}..${TIP}"          # sibling stack; no --onto
-jj duplicate @                          # blob snapshot after restore
-
-jj restore --from "$PRE" --into @
+jj restore --from "$TIP" --into @
 jj squash --from "$BLOB" --into @ --use-destination-message -- paths
 
-jj bookmark create NAME -r REV
 jj bookmark set NAME -r REV
-jj bookmark delete NAME [NAME...]
 jj abandon REVSET
 
 jj workspace add --name NAME -r R DEST
@@ -157,6 +121,7 @@ jj workspace forget NAME
 
 jj diff --from "$BASE" --to "$BLOB" --summary
 jj op log -n 1 -T 'self.id().short()' --no-graph
+jj op restore OP
 ```
 
 ## Out of scope (other skills)

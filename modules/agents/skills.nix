@@ -21,9 +21,9 @@
         narrow-react-prop-types = "${inputs.humanlayer-skills}/plugins/narrow-react-prop-types/skills/narrow-react-prop-types";
         # Day-to-day: describe @ at start; commit only when a new prompt switches concern.
         jj-auto-revise = ./assets/skills/jj-auto-revise;
-        # Later: backup → squash blob → resplit for stacked PRs; never push from the skill.
+        # Later: capture op id → squash blob → resplit for stacked PRs; never push from the skill.
         jj-resplit-stack = ./assets/skills/jj-resplit-stack;
-        # Conflicted rebase/merge: backup, oldest-first jj new + squash, running count.
+        # Conflicted rebase/merge: capture op id, oldest-first jj new + squash, running count.
         jj-solve-conflict = ./assets/skills/jj-solve-conflict;
         papercuts = ./assets/skills/papercuts;
         # Local snapshot of astahmer's antislop skill; CLI lives in assets/antislop.

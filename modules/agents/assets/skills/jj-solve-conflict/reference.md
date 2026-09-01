@@ -105,25 +105,10 @@ jj squash --from @ --into REV --use-destination-message
 jj next --conflict          # after current is clean
 jj undo                     # last operation only
 jj op log -n 5 --no-graph
-jj op restore OP            # last resort; report OP from backup step
-
-jj duplicate TIP            # sibling copy on same parents
-jj bookmark create NAME -r REV
-jj bookmark rename OLD NEW
-jj bookmark delete NAME [NAME...]
-jj abandon DUP_TIP          # drop the duplicate snapshot after the user asks
+jj op restore OP            # hard-break rollback; OP captured at skill start
 ```
 
 `jj restore` without `--from` restores `@` from its parent (throws away WC edits).
-
-## Drop backups (user-requested only)
-
-```bash
-jj bookmark delete backup/pre-resolve-TOPIC-STAMP backup/pre-resolve-TOPIC-STAMP-dup
-jj abandon DUP_TIP
-```
-
-Do not run this unless the user asked. The non-`dup` bookmark may have followed the live rewritten tip.
 
 ## Workspaces (long / parallel)
 

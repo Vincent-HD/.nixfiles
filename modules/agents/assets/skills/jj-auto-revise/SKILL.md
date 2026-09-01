@@ -23,7 +23,7 @@ Companions: later squash→resplit into a stacked PR → `jj-resplit-stack`. Con
 - Print the **progress block** at prompt boundaries (stay vs new rev) and before/after absorb, squash, or split. Not after every file edit.
 - HEREDOC `-m` or `--use-destination-message`. Never open an editor (`nano` / `$EDITOR`).
 - No pager. Agent shells are PTYs: bare `jj status` / `jj log` / `jj diff` / `jj op *` / `jj help` / `jj bookmark list` / `jj config list` open `less` and hang forever (often with empty captured output). `timeout(1)` does not help — `less` ignores SIGTERM. Prefix **every** standalone `jj` (and `git log` / `git diff`) with `PAGER=cat GIT_PAGER=cat`. Exports do not persist across agent shell calls. Helper scripts already set this plus `ui.paginate=never`. Never `jj op show -p` unpiped — use `| head`.
-- No interactive `-i`. No push. No backup/duplicate stacks (companions own those).
+- No interactive `-i`. No push. No backup/duplicate stacks.
 - `@` is conflicted → one sentence: stop, use `jj-solve-conflict`. Do not inline that workflow.
 - User asks to resplit history / stacked PRs / squash-blob-onto-main → one sentence: use `jj-resplit-stack`.
 
@@ -178,7 +178,7 @@ Still **no push**. Same stretch of work as HEAD → keep editing / amend only if
 - Describing a mixed WC with a message that covers half the diff (only when both halves are substantial)
 - Bare `jj squash` / `jj commit` / `jj describe` / `jj split` without `-m` or `--use-destination-message` (opens an editor)
 - Rewriting an ancestor message on absorb/squash when you only meant to land a follow-up
-- Inventing a backup/duplicate bookmark ritual (that is `jj-resplit-stack` / `jj-solve-conflict`)
+- Inventing a backup/duplicate bookmark ritual
 - Resolving conflicts or resplitting a stack in this skill
 - Interactive `jj split -i` / `jj squash -i` / `jj absorb -i` when filesets suffice
 - Bare `jj status` / `jj log` / `jj diff` / `jj help` / `jj op show -p` / `jj bookmark list` on an agent PTY (hangs in `less`)

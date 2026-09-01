@@ -1,11 +1,12 @@
 ---
 name: jj-solve-conflict
 description: >
-  Resolve Jujutsu (jj) conflicts after rebase, duplicate, absorb, or merge: backup first
-  (bookmark + duplicate), teleport with jj new (not edit), resolve oldest-first, squash
-  resolutions into the conflicted rev, and keep a running conflict count. Use when the
-  user says "fix conflicts", "jj resolve", "unresolved conflicts", "rebase conflict",
-  "conflicted commits", or jj hints to `jj new <rev>` then `jj squash`.
+  Resolve Jujutsu (jj) conflicts after rebase, duplicate, absorb, or merge: capture
+  the current op id first, teleport with jj new (not edit), resolve oldest-first,
+  squash resolutions into the conflicted rev, and keep a running conflict count.
+  Use when the user says "fix conflicts", "jj resolve", "unresolved conflicts",
+  "rebase conflict", "conflicted commits", or jj hints to `jj new <rev>` then
+  `jj squash`.
 ---
 
 # jj solve conflict
@@ -20,21 +21,22 @@ Official loop (jj docs + `jj rebase` hint): conflicts are first-class — the re
 
 ## Hard rules
 
-- Backup **before** the first resolution. Do not abandon backup bookmarks.
+- **Op restore (mandatory, first).** Before any rewrite, capture `OP=$(PAGER=cat GIT_PAGER=cat jj op log -n 1 -T 'self.id().short()' --no-graph)`. Echo `OP` in the first user-visible message. Do not create backup bookmarks or `jj duplicate` snapshots. Do not `jj op restore` unless the user asks. At the end of the run, print `jj op restore $OP`.
 - **Oldest conflict first** (`roots(conflicts() & SCOPE)`). Never start at the tip.
 - Teleport with `jj new <conflicted>` (inspectable). Avoid `jj edit` on conflicted revs — official FAQ: harder to inspect the resolution (`jj diff` is the point of `new`).
 - Squash with `--use-destination-message` so nano/the editor never opens.
 - No pager. Agent shells are PTYs: bare `jj status` / `jj log` / `jj diff` / `jj op *` / `jj help` / `jj bookmark list` open `less` and hang forever. Prefix **every** standalone `jj` with `PAGER=cat GIT_PAGER=cat`. Helper scripts already set this plus `ui.paginate=never`. Never `jj op show -p` unpiped.
-- No interactive `-i`. No force-push. No `jj op restore` unless the user asks or a backup is the only way out — then report the op id first.
+- No interactive `-i`. No force-push. `jj undo` only the last step if the just-made squash is wrong.
 - Scope to **the user's stack**. Independent DAG roots (other feature bookmarks) stay conflicted unless the user included them.
 - Preserve original file formatting. Reformatting a generated snapshot/lockfile turns every descendant into a whole-file 3-way.
 - After the stack is clean: restore `@` to the original working-copy rev (or an empty child of the tip). Abandon leftover empty resolution WCs.
 
 ## Progress (mandatory)
 
-Every user-visible message while this skill runs includes a **progress block**. Do not wait until the end. Update it after inventory, before tackling a conflict, and after each squash.
+Every user-visible message while this skill runs includes a **progress block**. Do not wait until the end. Update it after inventory, before tackling a conflict, and after each squash. Include `OP` from the first message onward.
 
 ```markdown
+**OP:** `<id>` — rollback: `jj op restore <id>`
 **Conflicts:** N remaining · M files across K commits
 **Stack:** <bookmark or change-id range>  (ignored: <other roots, if any>)
 **Now:** tackling 1 / K — `<change_id>` `<first line>`
@@ -52,11 +54,13 @@ When the same 1–2 files repeat across many commits, say so once (“48 commits
 
 ```bash
 PAGER=cat GIT_PAGER=cat jj root
+OP=$(PAGER=cat GIT_PAGER=cat jj op log -n 1 -T 'self.id().short()' --no-graph)
+echo "OP=$OP"
 # helper disables the pager itself:
 #   bash ~/.agents/skills/jj-solve-conflict/scripts/inventory.sh 'conflicts()'
 ```
 
-Collect, then **show the progress block before editing files**:
+Echo `OP` before editing files. Collect, then **show the progress block**:
 
 ```bash
 export PAGER=cat GIT_PAGER=cat
@@ -79,32 +83,14 @@ Pick `SCOPE` (example: `mylxuvkm::` or `bookmark_name::`). Work only `conflicts(
 
 Note the original WC: `ORIG=@` change id and its parent tip.
 
-## 1. Backup (mandatory)
-
-```bash
-STAMP=$(date +%Y%m%d-%H%M)
-TOPIC=${TOPIC:-conflicts}
-TIP=$(PAGER=cat jj log -r 'heads(SCOPE)' -T 'change_id.short()' --no-graph | head -1)
-OP=$(PAGER=cat jj op log -n 1 -T 'self.id().short()' --no-graph)
-
-jj bookmark create "backup/pre-resolve-${TOPIC}-${STAMP}" -r "$TIP"
-
-# content-identical sibling stack; survives rewriting the live stack
-jj duplicate "backup/pre-resolve-${TOPIC}-${STAMP}"
-# pin whatever change id `jj duplicate` printed for the duplicated tip:
-jj bookmark create "backup/pre-resolve-${TOPIC}-${STAMP}-dup" -r <duplicate-tip>
-```
-
-Report in the progress block: bookmark names, tip change/commit ids, `OP` (`jj op restore $OP` is the safety net). Do not push these bookmarks.
-
-## 2. Loop (oldest first)
+## 1. Loop (oldest first)
 
 ```text
 while conflicts remain in SCOPE:
   FIRST = roots(conflicts() & SCOPE)   # jj's own hint: `jj new <first>`
   tell the user the progress block for FIRST
   jj new FIRST -m "resolve conflicts"
-  resolve files (section 3)
+  resolve files (section 2)
   jj diff --stat           # inspect resolution vs conflicted parent (never bare `jj diff`)
   jj squash --from @ --into FIRST --use-destination-message
   recount: conflicts() & SCOPE
@@ -123,7 +109,7 @@ Teleport extras:
 
 `jj edit FIRST` is allowed only when `jj new` cannot represent the tree (rare). Say so in **TLDR**.
 
-## 3. Resolve tactics
+## 2. Resolve tactics
 
 Inspect markers or `jj resolve --list` first. Then pick the **narrowest** tactic. Details: [reference.md](reference.md).
 
@@ -147,7 +133,7 @@ After any whole-side take, diff the file against the **pre-rebase** tip (`evolog
 
 **Generated files:** never `json.dumps(indent=2)` / formatter-rewrite the whole snapshot. Splice. If a first merge already reformatted the file, **rewrite that merge** (squash into the first conflicted rev) with original indentation before continuing — otherwise every descendant conflicts as a whole file.
 
-## 4. Squash and recount
+## 3. Squash and recount
 
 ```bash
 export PAGER=cat GIT_PAGER=cat
@@ -156,11 +142,11 @@ jj log -r 'conflicts() & SCOPE' --no-graph \
   -T 'change_id.short() ++ " " ++ description.first_line() ++ "\n"' | wc -l
 ```
 
-Expect: `Rebased N descendant commits` and `Existing conflicts were resolved or abandoned from K commits`. Update **Done:** with K. Repeat from step 2 until `conflicts() & SCOPE` is empty.
+Expect: `Rebased N descendant commits` and `Existing conflicts were resolved or abandoned from K commits`. Update **Done:** with K. Repeat from step 1 until `conflicts() & SCOPE` is empty.
 
 Leave other roots (`tlsxppxt::` etc.) as they are.
 
-## 5. Verify + restore WC
+## 4. Verify + restore WC
 
 ```bash
 # no markers on the tip
@@ -174,21 +160,15 @@ jj abandon <empty leftover resolve WCs>
 
 Do not `jj describe` an empty leftover `@`. Do not mash a codegen regen into an unrelated rev; if the tip's generated file is still wrong, put the fix on `@` described as that fix, or squash into the rev that owns the file.
 
-Report backups, remaining foreign conflicts, and that nothing was pushed.
-
-**Do not delete backups yourself.** In the closing message, give the user copy-paste commands (real names from step 1). The duplicate is the real snapshot (different change id). The non-`dup` bookmark often follows the rewritten live tip — deleting it only drops the name.
+Report remaining foreign conflicts and that nothing was pushed. Closing message **must** include the rollback command with the real `OP` from step 0:
 
 ```bash
-# drop backup names (safe; live stack stays)
-jj bookmark delete backup/pre-resolve-${TOPIC}-${STAMP} backup/pre-resolve-${TOPIC}-${STAMP}-dup
-
-# also drop the duplicated sibling commit (the actual copy)
-jj abandon <duplicate-tip>
+jj op restore $OP
 ```
 
 ## Git fallback (no `jj root`)
 
-Still **no push**. Backup branch, then the host's usual rebase/merge conflict loop. No duplicate/auto-rebase — tell the user jj would have been better.
+Still **no push**. Capture `HEAD=$(git rev-parse HEAD)` first, echo it, and print `git reset --hard $HEAD` at the end (only if something hard-broke; confirm first). No duplicate/auto-rebase — tell the user jj would have been better.
 
 ## Anti-patterns
 
@@ -198,9 +178,9 @@ Still **no push**. Backup branch, then the host's usual rebase/merge conflict lo
 - `:ours` on a generated file without checking later commits still add to it
 - Hand-merging `pnpm-lock.yaml` instead of `pnpm i`
 - Reformatting a whole snapshot as the merge
-- Deleting backup bookmarks/duplicates unless the user asked
+- Creating backup bookmarks or `jj duplicate` snapshots “to be safe”
 - Resolving an unrelated second DAG root “while you're here”
-- Pushing backup bookmarks
+- Skipping the opening `OP=` echo or the closing `jj op restore $OP`
 - `jj op restore` as the first reaction (undo only the last step with `jj undo` if the just-made squash is wrong)
 - Bare `jj status` / `jj log` / `jj diff` / `jj help` / `jj op show -p` on an agent PTY (hangs in `less`)
 - Hand-symlinking this skill into `~/.agents/skills` (Home Manager owns that path)

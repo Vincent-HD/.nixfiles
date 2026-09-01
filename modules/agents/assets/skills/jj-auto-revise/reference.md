@@ -97,4 +97,4 @@ Abandoning `@` gives you a new empty WC. Do not abandon a described concern you 
 
 ## Bookmarks
 
-`jj bookmark set NAME -r @` is optional and local. This skill does not create, duplicate, or delete `backup/*` bookmarks.
+`jj bookmark set NAME -r @` is optional and local. This skill does not create, duplicate, or delete `backup/*` bookmarks. Companions capture `jj op log` and print `jj op restore` instead.
