@@ -220,6 +220,18 @@ description; do not create `WIP`, `update`, `changes`, or other vague subjects.
 - **`reference-repos.md` is NixOS-config-only.** Only list other people's NixOS / nix-darwin / Home Manager
   configuration repositories. Never add application, packaging, skills, tooling, or template repos.
 
+### Local web UI service registry
+
+- **Keep `modules/dms/plugins/service-hub/services.json` as the source of truth** for human-facing web
+  interfaces exposed by this setup. Each entry includes an `id`, `name`, short `description`, Material
+  Symbols `icon` (or a direct image URL such as a GitHub `raw.githubusercontent.com` URL), display-only
+  `port`, and launch `url`.
+- When adding or changing a locally bound human-facing HTTP(S) UI, update the registry. Prefer a
+  `localhost` launch URL when the service enforces loopback-origin authentication; add a custom
+  `/etc/hosts` alias only when the service explicitly supports non-loopback `Host` headers.
+- Keep API-only, MCP, CDP, and internal control endpoints out of the registry. Services on another host
+  should use that host's LAN address in `/etc/hosts` instead of `127.0.0.1`.
+
 ---
 
 ## Agent Learnings

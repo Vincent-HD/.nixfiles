@@ -47,6 +47,12 @@ When you need a tool, or you are about to add or create an MCP server, ask Execu
 - Do not add a client-local MCP in Cursor, Codex, or VS Code for something Executor already exposes.
 - If the tool is missing, ask to add it to the Executor catalog so every client gets it, instead of wiring a one-off server into a single agent.
 
+## Local web UI service registry
+
+- Keep `modules/dms/plugins/service-hub/services.json` as the source of truth for human-facing web interfaces exposed by this setup. Each entry includes an `id`, `name`, short `description`, a Material Symbols `icon` or direct image URL (including GitHub raw URLs), display-only `port`, and launch `url`.
+- When adding or changing a locally bound human-facing HTTP(S) UI, update the registry. Prefer a `localhost` launch URL when the service enforces loopback-origin authentication; add a custom `/etc/hosts` alias only when the service explicitly supports non-loopback `Host` headers.
+- Keep API-only, MCP, CDP, and internal control endpoints out of the registry. Services on another host should use that host's LAN address in `/etc/hosts` instead of `127.0.0.1`.
+
 ## Response sections and feedback
 
 When proposing work, requesting feedback, or showcasing changes:

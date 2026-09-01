@@ -50,6 +50,7 @@
           "showScreenSharingIcon": false,
           "showVpnIcon": false
         },
+        "serviceHub",
         "workspaceSwitcher"
       ],
       "name": "Main Bar",

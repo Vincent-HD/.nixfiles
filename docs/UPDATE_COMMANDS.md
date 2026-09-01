@@ -76,6 +76,17 @@ nix run github:Mic92/nix-update -- --flake lightjj
 nix run github:Mic92/nix-update -- --flake opencodex --use-update-script
 ```
 
+### codeburn
+
+- **File**: `packages/codeburn/default.nix`
+- **Pattern**: tagged GitHub source for the npm lockfile plus the published npm CLI artifact and production dependency closure
+- **Flake output**: `.#codeburn`
+- **Note**: The package-specific updater refreshes the tagged source hash and npm artifact integrity, then lets `nix-update` recalculate the lockfile-derived dependency cache.
+
+```bash
+nix run github:Mic92/nix-update -- --flake codeburn --use-update-script
+```
+
 ### agent-browser
 
 - **File**: `packages/agent-browser/default.nix`

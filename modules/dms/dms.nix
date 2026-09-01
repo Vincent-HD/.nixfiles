@@ -3,13 +3,26 @@
   # NixOS: install the DMS integration and the services used by its session,
   # while leaving startup to the Home Manager user service below.
   config.flake.modules.nixos.dms =
-    { ... }:
+    { pkgs, ... }:
+    let
+      # NVIDIA 595 exposes NVENC API 13.0; FFmpeg 9 requires 13.1.
+      gpuScreenRecorderPackage = pkgs.gpu-screen-recorder.override {
+        ffmpeg = pkgs.ffmpeg_8;
+      };
+    in
     {
       imports = [ inputs.dms.nixosModules.dank-material-shell ];
 
       programs.dank-material-shell = {
         enable = true;
         systemd.enable = false;
+      };
+
+      # Install the privileged KMS helper wrapper so video recording does not
+      # fall back to an interactive Polkit authentication prompt.
+      programs.gpu-screen-recorder = {
+        enable = true;
+        package = gpuScreenRecorderPackage;
       };
 
       services.power-profiles-daemon.enable = true;
@@ -20,6 +33,13 @@
   # video capture, and the first-party action widget used for EasyEffects.
   config.flake.modules.homeManager.dms =
     { config, pkgs, ... }:
+    let
+      # Keep the user-visible executable on the same FFmpeg/NVENC-compatible
+      # build as the NixOS KMS wrapper above.
+      gpuScreenRecorderPackage = pkgs.gpu-screen-recorder.override {
+        ffmpeg = pkgs.ffmpeg_8;
+      };
+    in
     {
       imports = [
         inputs.dms.homeModules.dank-material-shell
@@ -32,7 +52,7 @@
         pkgs.curl
         pkgs.file
         pkgs.ffmpeg
-        pkgs.gpu-screen-recorder
+        gpuScreenRecorderPackage
         pkgs.grim
         pkgs.img2pdf
         pkgs.imagemagick
@@ -143,6 +163,14 @@
                   showText = false;
                 }
               ];
+            };
+          };
+
+          # Declarative launcher for the local web-service registry beside the plugin.
+          serviceHub = {
+            src = ./plugins/service-hub;
+            settings = {
+              enabled = true;
             };
           };
         };

@@ -1,0 +1,12 @@
+{
+  "id": "serviceHub",
+  "name": "Service Hub",
+  "description": "Declarative launcher for local web interfaces",
+  "version": "0.1.0",
+  "author": "Vincent",
+  "type": "widget",
+  "capabilities": ["dankbar-widget"],
+  "component": "./ServiceHubWidget.qml",
+  "icon": "hub",
+  "requires_dms": ">=1.5.0"
+}

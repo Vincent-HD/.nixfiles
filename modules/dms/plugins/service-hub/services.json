@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "groups": [
+    {
+      "id": "agent-services",
+      "name": "Agent services",
+      "icon": "smart_toy",
+      "services": [
+        {
+          "id": "executor",
+          "name": "Executor",
+          "description": "Local MCP catalog and tool server",
+          "icon": "https://executor.sh/favicon-192.png",
+          "port": 4789,
+          "url": "http://localhost:4789"
+        },
+        {
+          "id": "opencodex",
+          "name": "OpenCodex",
+          "description": "Local Codex provider dashboard",
+          "icon": "https://raw.githubusercontent.com/lidge-jun/opencodex/main/gui/public/favicon.png",
+          "port": 10100,
+          "url": "http://localhost:10100"
+        }
+      ]
+    },
+    {
+      "id": "streaming",
+      "name": "Streaming",
+      "icon": "sports_esports",
+      "services": [
+        {
+          "id": "sunshine",
+          "name": "Sunshine",
+          "description": "Game streaming and remote desktop server",
+          "icon": "https://raw.githubusercontent.com/LizardByte/Sunshine/master/sunshine.svg",
+          "port": 47990,
+          "url": "https://localhost:47990"
+        }
+      ]
+    }
+  ]
+}

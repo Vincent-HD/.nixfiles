@@ -207,6 +207,7 @@ Terminal helpers|code|Open a project in Visual Studio Code|code .
 Terminal helpers|cursor-agent|Start the Cursor coding agent|cursor-agent
 Terminal helpers|opencode|Start the configured OpenCode coding agent|opencode
 Terminal helpers|codex|Start the Codex coding agent|codex
+Terminal helpers|codeburn|Analyze local AI coding-agent spend and usage|codeburn --help
 CATALOG
   fi
 

@@ -11,6 +11,7 @@
       executorPackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.executor;
       agentBrowserPackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.agent-browser;
       archOpsPackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.arch-ops-server;
+      codeburnPackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.codeburn;
       executorDataDirectory = "${config.home.homeDirectory}/.executor";
       agentBrowserProxyPort = 4790;
       context7TokenPath = "${config.home.homeDirectory}/.config/agent-mcp/context7-token";
@@ -81,6 +82,14 @@
           transport = "stdio";
           command = lib.getExe archOpsPackage;
           args = [ ];
+        }
+        {
+          slug = "codeburn";
+          name = "CodeBurn";
+          description = "Local coding-agent usage and savings analytics.";
+          transport = "stdio";
+          command = lib.getExe codeburnPackage;
+          args = [ "mcp" ];
         }
         {
           slug = "agent-browser";

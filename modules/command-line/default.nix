@@ -9,6 +9,7 @@
       ...
     }:
     let
+      codeburnPackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.codeburn;
       fdCommand = "${pkgs.fd}/bin/fd --hidden --follow --exclude .git";
       batPreview = "${pkgs.bat}/bin/bat --color=always --style=numbers --line-range=:200 {} 2>/dev/null || true";
       inshellisensePackage = pkgs.inshellisense;
@@ -22,6 +23,8 @@
         pkgs.carapace
         pkgs.catimg
         pkgs.choose
+        # Codeburn reads local agent sessions and reports token spend.
+        codeburnPackage
         pkgs.deadnix
         pkgs.doggo
         pkgs.duf

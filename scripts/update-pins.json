@@ -119,6 +119,20 @@
       ]
     },
     {
+      "name": "codeburn",
+      "type": "nix-update",
+      "description": "Codeburn npm release, tagged lockfile, and Node dependency closure",
+      "command": [
+        "nix",
+        "run",
+        "github:Mic92/nix-update",
+        "--",
+        "--flake",
+        "codeburn",
+        "--use-update-script"
+      ]
+    },
+    {
       "name": "executor",
       "type": "nix-update",
       "description": "Executor's current-platform npm binary",
