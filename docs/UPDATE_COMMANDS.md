@@ -222,6 +222,21 @@ nix run github:Mic92/nix-update -- --flake plannotator --use-update-script
 
 These packages are packaged in a `nix-update`-friendly shape, but the upstream tracking model means the naive command is not necessarily correct.
 
+### gamescope-lanczos
+
+- **File**: `packages/gamescope-lanczos/default.nix`
+- **Flake output**: `.#gamescope-lanczos`
+- **Source**: recursive checkout of `ThomasEricB/gamescope-lanczos-downscaling` at a reviewed commit
+- **Why**: the fork currently publishes a moving `master` branch without releases. Updating it must include its Git submodules and requires reviewing fork changes against the local relocation and current-STB compatibility patches.
+- **How**: choose an upstream commit, prefetch it recursively, update `version`, `rev`, and `hash`, then build the executable and WSI variants before evaluating `pc-fixe`; runtime NVIDIA, Steam, and WSI behavior still requires testing after activation.
+
+```bash
+git ls-remote https://github.com/ThomasEricB/gamescope-lanczos-downscaling.git refs/heads/master
+nix run nixpkgs#nix-prefetch-git -- --url https://github.com/ThomasEricB/gamescope-lanczos-downscaling.git --rev <rev> --fetch-submodules --quiet
+nix build .#gamescope-lanczos --no-link
+nix eval .#nixosConfigurations.pc-fixe.config.system.build.toplevel.drvPath --raw
+```
+
 ### crosspipe
 
 - **File**: `packages/crosspipe/default.nix`
@@ -381,7 +396,7 @@ nix flake update context7-skills
 ### mattpocock-skills
 
 - **File**: `flake.nix`
-- **Why**: Provides the selected upstream `grill-me`, `handoff`, and `research` Agent Skills through Home Manager. `bro` is a local snapshot.
+- **Why**: Provides selected upstream Matt Pocock Agent Skills, including `grill-me`, `grill-with-docs`, `handoff`, and `research`, through Home Manager. `bro` is a local snapshot.
 - **How**: Refresh the locked source, then review the upstream skill changes before applying Home Manager.
 
 ```bash

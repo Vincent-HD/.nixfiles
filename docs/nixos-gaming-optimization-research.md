@@ -45,6 +45,28 @@ This configuration already has a good gaming foundation:
 
 The local nixpkgs currently provides `linux-zen`, `ananicy-cpp`, and `ananicy-rules-cachyos`; it does not expose `linuxPackages_cachyos`. The dedicated kernel input now supplies `linuxPackages-cachyos-latest-x86_64-v3` as the default and keeps `linuxPackages` available in the `stock` specialization. The host also builds a custom CPUID-fault-emulation module and uses NVIDIA; evaluation confirms both follow whichever kernel entry is selected.
 
+## Gamescope Lanczos usage
+
+The host's `programs.gamescope` package is the commit-pinned [Gamescope Lanczos fork](https://github.com/ThomasEricB/gamescope-lanczos-downscaling), while Steam's Gamescope launch environment and Gamescope session are configured to use the same package. Lanczos filtering remains opt-in through Gamescope's `-F`/`--filter` argument, so existing launch commands keep their behavior until a filter is selected.
+
+The package and WSI builds validate compilation and store integration only; NVIDIA rendering, Steam runtime discovery, and end-to-end WSI behavior still require testing after a NixOS activation.
+
+For a 1080p display with a 4K internal render resolution, use this Steam launch option:
+
+```text
+gamescope -w 3840 -h 2160 -W 1920 -H 1080 -F lanczos -f -- %command%
+```
+
+The fork also supports chained filters when extra ringing reduction is useful:
+
+```text
+gamescope -w 3840 -h 2160 -W 1920 -H 1080 -F lanczos:bilateral,hdeband -f -- %command%
+```
+
+If an NVIDIA `VK_KHR_present_wait` crash is encountered, add `GAMESCOPE_WSI_HIDE_PRESENT_WAIT_EXT=1` to the launch environment; the workaround stays opt-in.
+
+Tune the render/output dimensions to the game and display. Compare frametime stability and image quality before making a filter global; the default filter is intentionally unchanged.
+
 ## Important conflict to avoid
 
 Do not enable every “gaming optimizer” at once. CachyOS explicitly warns about combining GameMode and Ananicy because both can change process niceness. This repository already enables GameMode. If Ananicy or sched-ext is introduced, the priority behavior should be tested deliberately, with one change at a time ([CachyOS rules README](https://github.com/CachyOS/ananicy-rules), [CachyOS sched-ext guide](https://wiki.cachyos.org/configuration/sched-ext/)).

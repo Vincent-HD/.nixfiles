@@ -108,6 +108,14 @@ Purpose: identify the platform whose package source or release artifact an updat
 
 Use when updating a package with platform-selected source hashes. Run the update on the target platform; do not synchronize hashes for other systems.
 
+### Prefetch a commit-pinned GitHub source with submodules
+
+```bash
+nix run nixpkgs#nix-prefetch-git -- --url <git-url> --rev <commit> --fetch-submodules --quiet
+```
+
+Purpose: obtain the fixed-output hash for a reproducible derivation whose upstream source is pinned to a commit and includes Git submodules. Review the commit and its build changes before updating the package.
+
 ### Check a package output on a target platform
 
 ```bash

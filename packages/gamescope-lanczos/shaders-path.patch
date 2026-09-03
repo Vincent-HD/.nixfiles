@@ -1,0 +1,7 @@
+diff --git a/src/Utils/DirHelpers.cpp b/src/Utils/DirHelpers.cpp
+index df0cf34..2b82176 100644
+--- a/src/Utils/DirHelpers.cpp
++++ b/src/Utils/DirHelpers.cpp
+@@ -28 +28 @@
+-        return "/usr";
++        return "@out@";

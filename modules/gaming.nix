@@ -100,6 +100,17 @@
           echo "Installed $proton_name. Fully restart Steam, then choose it in the game's Compatibility settings."
         '';
       };
+
+      # Use the pinned fork for both the compositor and its optional Vulkan WSI layer.
+      gamescopeLanczos = pkgs.callPackage ../packages/gamescope-lanczos { };
+      gamescopeLanczosWsi = gamescopeLanczos.override {
+        enableExecutable = false;
+        enableWsi = true;
+      };
+      gamescopeLanczosWsi32 = pkgs.pkgsi686Linux.callPackage ../packages/gamescope-lanczos {
+        enableExecutable = false;
+        enableWsi = true;
+      };
     in
     {
       # Keep the module available for manual game-session activation without loading it at boot.
@@ -113,17 +124,28 @@
         extraCompatPackages = [ pkgs.proton-ge-bin ];
         # Steam launch options need Gamescope available inside Steam's runtime environment.
         extraPackages = [
-          pkgs.gamescope
+          gamescopeLanczos
           pkgs.mangohud
         ];
         # GameScope runs Steam inside a dedicated compositor session.
-        gamescopeSession.enable = true;
+        gamescopeSession = {
+          enable = true;
+          # Load the fork's WSI layer for games launched in the dedicated session.
+          env.ENABLE_GAMESCOPE_WSI = "1";
+        };
       };
 
-      # GameScope is the compositor used for Steam Deck-style fullscreen gaming sessions.
+      # Replace nixpkgs Gamescope with the Lanczos/NVIDIA-fix fork.
       programs.gamescope = {
         enable = true;
+        package = gamescopeLanczos;
+        # Register the fork's WSI layer below instead of nixpkgs's upstream layer.
+        enableWsi = false;
       };
+
+      # Expose the fork's WSI layer to both 64-bit and 32-bit Vulkan applications.
+      hardware.graphics.extraPackages = [ gamescopeLanczosWsi ];
+      hardware.graphics.extraPackages32 = [ gamescopeLanczosWsi32 ];
 
       programs.gamemode.enable = true;
 

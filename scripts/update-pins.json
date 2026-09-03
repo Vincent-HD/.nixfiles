@@ -397,6 +397,24 @@
       ]
     },
     {
+      "name": "gamescope-lanczos",
+      "type": "manual",
+      "description": "Commit-pinned Gamescope Lanczos/NVIDIA fork; review the upstream commit before updating",
+      "enabled": false,
+      "command": [
+        "nix",
+        "run",
+        "nixpkgs#nix-prefetch-git",
+        "--",
+        "--url",
+        "https://github.com/ThomasEricB/gamescope-lanczos-downscaling.git",
+        "--rev",
+        "<rev>",
+        "--fetch-submodules",
+        "--quiet"
+      ]
+    },
+    {
       "name": "cpuid-fault-emulation",
       "type": "manual",
       "description": "Vendored cpuid_fault_emulation source tree; replace only after auditing a manually downloaded update",

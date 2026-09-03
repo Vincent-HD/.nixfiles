@@ -44,6 +44,7 @@
       imports = [
         inputs.dms.homeModules.dank-material-shell
         inputs.dms.homeModules.niri
+        inputs.tokitoki.homeManagerModules.default
       ];
 
       home.packages = [
@@ -64,6 +65,8 @@
         pkgs.wl-clipboard
         pkgs.zbar
       ];
+
+      programs.tokitoki.enable = true;
 
       programs.dank-material-shell = {
         enable = true;

@@ -700,6 +700,22 @@
         "type": "github"
       }
     },
+    "nixpkgs_4": {
+      "locked": {
+        "lastModified": 1787940818,
+        "narHash": "sha256-vFzVv78WlyEbTyV5BbrnicnV159wC0YPOcBe3QagyBI=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "f6107e546a5012172d93e79f1f7950da02ad798f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixpkgs-26.05-darwin",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
     "noctalia": {
       "inputs": {
         "nixpkgs": [
@@ -790,7 +806,8 @@
         "quick-capture": "quick-capture",
         "screen-capture-toolbar": "screen-capture-toolbar",
         "sops-nix": "sops-nix",
-        "spicetify-nix": "spicetify-nix"
+        "spicetify-nix": "spicetify-nix",
+        "tokitoki": "tokitoki"
       }
     },
     "screen-capture-toolbar": {
@@ -909,6 +926,21 @@
         "owner": "nix-systems",
         "repo": "default",
         "type": "github"
+      }
+    },
+    "tokitoki": {
+      "inputs": {
+        "nixpkgs": "nixpkgs_4"
+      },
+      "locked": {
+        "lastModified": 1788376173,
+        "narHash": "sha256-p3ahr1JxYC9UiyQOFGIzZwIP4b1P/vwhsrIX0b99A5U=",
+        "path": "/home/vincent/lab/tokitoki",
+        "type": "path"
+      },
+      "original": {
+        "path": "/home/vincent/lab/tokitoki",
+        "type": "path"
       }
     },
     "treefmt-nix": {

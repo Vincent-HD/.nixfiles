@@ -138,6 +138,9 @@
       url = "github:noctalia-dev/noctalia-shell/272cd91408b5ff6e329e6397eed042fe422069e7";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # Local Tokitoki flake while developing the package and shell integrations.
+    tokitoki.url = "path:/home/vincent/lab/tokitoki";
   };
 
   outputs =

@@ -11,7 +11,11 @@
       custom.agentSetup.skills = {
         # Select only these directories from their pinned upstream source trees.
         context7-mcp = "${inputs.context7-skills}/plugins/claude/context7/skills/context7-mcp";
-        grill-me = "${inputs.mattpocock-skills}/skills/productivity/grilling";
+        # User-invoked grilling entry points and their delegated disciplines.
+        grill-me = "${inputs.mattpocock-skills}/skills/productivity/grill-me";
+        grill-with-docs = "${inputs.mattpocock-skills}/skills/engineering/grill-with-docs";
+        grilling = "${inputs.mattpocock-skills}/skills/productivity/grilling";
+        domain-modeling = "${inputs.mattpocock-skills}/skills/engineering/domain-modeling";
         handoff = "${inputs.mattpocock-skills}/skills/productivity/handoff";
         research = "${inputs.mattpocock-skills}/skills/engineering/research";
         # Local snapshot of mattpocock wait-what, renamed bro for /bro. No CONTEXT.md.
