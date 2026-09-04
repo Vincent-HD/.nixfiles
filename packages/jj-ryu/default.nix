@@ -12,14 +12,14 @@ let
     };
     "x86_64-linux" = {
       artifact = "ryu-linux-x64.tar.gz";
-      hash = "sha256-AhroefnYU5uzFKX+WyHZFgbUzIX/Ns7i/2boqM94yXw=";
+      hash = "sha256-fM3DQZYW5pJ6EaR1u1u0J4Sx44u0EUKW3JLU29xi/us=";
     };
   };
   source = sources.${stdenvNoCC.hostPlatform.system};
 in
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "jj-ryu";
-  version = "0.0.1-alpha.11";
+  version = "0.0.1-alpha.12";
 
   src = fetchurl {
     url = "https://github.com/dmmulroy/jj-ryu/releases/download/v${finalAttrs.version}/${source.artifact}";

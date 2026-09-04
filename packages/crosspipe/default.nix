@@ -13,15 +13,18 @@
   libxml2,
 }:
 
-stdenv.mkDerivation {
+stdenv.mkDerivation (finalAttrs: {
   pname = "crosspipe";
-  version = "0.1.1-pr11-unstable-2026-03-12";
+  version = "0-unstable-2026-02-05";
+  name = "${finalAttrs.pname}-${finalAttrs.version}";
 
+  # Track upstream main through an exact commit so the package stays reproducible;
+  # the update registry resolves the next main-branch commit when requested.
   src = fetchFromGitHub {
     owner = "pinpox";
     repo = "Crosspipe";
-    rev = "4625c101e31fece886d43348a22bd5eab1816f93";
-    hash = "sha256-idDpGzeyJn4seoN9aIQ6Xon66rAwUjMYrqH2B4USDBI=";
+    rev = "43c626119f0c2fd2a0eabf9f0698f43bf467cb3d";
+    hash = "sha256-vzR8/hW8QhbNYMP2XQOQFnKd0kHhIOJrlQ+KtXT9F50=";
   };
 
   nativeBuildInputs = [
@@ -48,4 +51,4 @@ stdenv.mkDerivation {
     mainProgram = "crosspipe";
     platforms = lib.platforms.linux;
   };
-}
+})

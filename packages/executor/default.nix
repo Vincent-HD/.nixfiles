@@ -10,7 +10,7 @@ let
     "x86_64-linux" = {
       platform = "linux";
       architecture = "x64";
-      hash = "sha512-O6R9VJdYkFokLvcKegfFG3T/gN7I7w2QKrpntyZRDMe3SO8uV8qqE5objqo44lHb6poKtGMUHRx7ggUBAL9ixQ==";
+      hash = "sha512-2GyuJ8kDE6fFDRGxEuTXD7hB/+tIX7ip0M0YLnkZiIMfi+Gfa4x6S5FFK1/9SW5Qn7YGlAu88X1K12/iD4Ntfw==";
     };
     "aarch64-linux" = {
       platform = "linux";
@@ -32,7 +32,7 @@ let
 in
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "executor";
-  version = "1.6.3";
+  version = "1.6.7";
 
   # Executor publishes one self-contained Bun binary for each OS/architecture.
   src = fetchurl {

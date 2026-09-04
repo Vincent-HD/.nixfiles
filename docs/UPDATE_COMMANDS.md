@@ -218,6 +218,17 @@ nix run github:Mic92/nix-update -- --flake t3code --use-update-script
 nix run github:Mic92/nix-update -- --flake plannotator --use-update-script
 ```
 
+### crosspipe
+
+- **File**: `packages/crosspipe/default.nix`
+- **Pattern**: `stdenv.mkDerivation` + `fetchFromGitHub` snapshot from upstream `main`
+- **Flake output**: `.#crosspipe`
+- **Note**: The package keeps an exact commit and fixed-output hash for reproducibility; the updater resolves the current `main` branch head and refreshes both the snapshot version and source hash.
+
+```bash
+nix run github:Mic92/nix-update -- --flake crosspipe --version branch=main
+```
+
 ## Branch-Pinned Packages
 
 These packages are packaged in a `nix-update`-friendly shape, but the upstream tracking model means the naive command is not necessarily correct.
@@ -226,27 +237,14 @@ These packages are packaged in a `nix-update`-friendly shape, but the upstream t
 
 - **File**: `packages/gamescope-lanczos/default.nix`
 - **Flake output**: `.#gamescope-lanczos`
-- **Source**: recursive checkout of `ThomasEricB/gamescope-lanczos-downscaling` at a reviewed commit
-- **Why**: the fork currently publishes a moving `master` branch without releases. Updating it must include its Git submodules and requires reviewing fork changes against the local relocation and current-STB compatibility patches.
-- **How**: choose an upstream commit, prefetch it recursively, update `version`, `rev`, and `hash`, then build the executable and WSI variants before evaluating `pc-fixe`; runtime NVIDIA, Steam, and WSI behavior still requires testing after activation.
+- **Source**: recursive checkout of the fork's moving `master` branch
+- **Why**: the fork has no releases, so its updater resolves `refs/heads/master`, records the commit date/revision, and recursively hashes all Git submodules. The local shader relocation, watchdog hardening, and current-STB compatibility patches remain in the package and are reviewed separately.
+- **How**: run the registered updater, then build the executable and WSI variants before evaluating `pc-fixe`; successful compilation does not establish NVIDIA rendering, Steam, or WSI runtime behavior, which still requires testing after activation.
 
 ```bash
-git ls-remote https://github.com/ThomasEricB/gamescope-lanczos-downscaling.git refs/heads/master
-nix run nixpkgs#nix-prefetch-git -- --url https://github.com/ThomasEricB/gamescope-lanczos-downscaling.git --rev <rev> --fetch-submodules --quiet
+nix run .#update-pins -- --only gamescope-lanczos
 nix build .#gamescope-lanczos --no-link
 nix eval .#nixosConfigurations.pc-fixe.config.system.build.toplevel.drvPath --raw
-```
-
-### crosspipe
-
-- **File**: `packages/crosspipe/default.nix`
-- **Why**: It is pinned to a specific commit on `pinpox/Crosspipe`, not an upstream release.
-- **Risk**: `nix-update --version branch` follows the default branch head, which may be older or different from the custom commit you intentionally pinned.
-- **How**: Only update after checking the exact target commit/branch manually, then prefetch the new source hash.
-
-```bash
-git ls-remote https://github.com/pinpox/Crosspipe.git
-nix-prefetch-git https://github.com/pinpox/Crosspipe.git --rev <rev>
 ```
 
 ### cpuid-fault-emulation

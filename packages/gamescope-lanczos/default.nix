@@ -49,10 +49,26 @@
   luajit,
   catch2_3,
   makeBinaryWrapper,
+  writeShellScript,
+  bun,
+  gitMinimal,
+  nix-prefetch-git,
   enableExecutable ? true,
   enableWsi ? false,
 }:
 let
+  # Resolve the moving fork branch and recursively prefetch its submodules for nix-update.
+  updateScript = writeShellScript "update-gamescope-lanczos" ''
+    export PATH="${
+      lib.makeBinPath [
+        bun
+        gitMinimal
+        nix-prefetch-git
+      ]
+    }:$PATH"
+    exec ${bun}/bin/bun ${./update.ts} "$@"
+  '';
+
   # Keep the shader collection exposed by the nixpkgs Gamescope package.
   frogShaders = fetchFromGitHub {
     owner = "misyltoad";
@@ -201,4 +217,7 @@ stdenv.mkDerivation (finalAttrs: {
     mainProgram = "gamescope";
     platforms = lib.platforms.linux;
   };
+
+  # Let the repository updater refresh the moving fork without changing build inputs or patches.
+  passthru.updateScript = [ updateScript ];
 })

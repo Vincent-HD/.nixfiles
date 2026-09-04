@@ -386,32 +386,34 @@
     },
     {
       "name": "crosspipe",
-      "type": "manual",
-      "description": "Pinned to a specific Crosspipe commit; update only after manually choosing the target revision",
-      "enabled": false,
+      "type": "nix-update",
+      "description": "Crosspipe snapshot from the upstream main branch",
       "command": [
-        "nix-prefetch-git",
-        "https://github.com/pinpox/Crosspipe.git",
-        "--rev",
-        "<rev>"
+        "nix",
+        "run",
+        "github:Mic92/nix-update",
+        "--",
+        "--flake",
+        "crosspipe",
+        "--version",
+        "branch=main"
       ]
     },
     {
       "name": "gamescope-lanczos",
-      "type": "manual",
-      "description": "Commit-pinned Gamescope Lanczos/NVIDIA fork; review the upstream commit before updating",
-      "enabled": false,
+      "type": "nix-update",
+      "description": "Gamescope Lanczos fork master revision with recursive submodule hashing",
+      "systems": [
+        "x86_64-linux"
+      ],
       "command": [
         "nix",
         "run",
-        "nixpkgs#nix-prefetch-git",
+        "github:Mic92/nix-update",
         "--",
-        "--url",
-        "https://github.com/ThomasEricB/gamescope-lanczos-downscaling.git",
-        "--rev",
-        "<rev>",
-        "--fetch-submodules",
-        "--quiet"
+        "--flake",
+        "gamescope-lanczos",
+        "--use-update-script"
       ]
     },
     {

@@ -10,7 +10,7 @@
 
 buildNpmPackage (finalAttrs: {
   pname = "codeburn";
-  version = "0.9.23";
+  version = "0.9.24";
   nodejs = nodejs_24;
 
   # The repository tag supplies the lockfile used to materialize Codeburn's
@@ -20,15 +20,15 @@ buildNpmPackage (finalAttrs: {
     owner = "getagentseal";
     repo = "codeburn";
     rev = "v${finalAttrs.version}";
-    hash = "sha256-tM2lpVvfcVDqJbuSi0IRn3vtMqou7psjeSEOaQrDf3U=";
+    hash = "sha256-opz1jon0MTPy8dCgQ2Ar4mG/PET7XD2PjLgwlle+RB8=";
   };
 
   npmArtifact = fetchurl {
     url = "https://registry.npmjs.org/codeburn/-/codeburn-${finalAttrs.version}.tgz";
-    hash = "sha512-0/u52Lg8hjGy18vDEZrQgPT91EyOsVa8LkLCLOkYiM+YbuWITgon2Qsrt2i9A4JEuw2gyz0YLD6w8NwNdPBaJA==";
+    hash = "sha512-jK5T46Mh1TSEns6mABZFdYh96oZH6QukZ+ueYYzUk8YuMF8dzLNDeHnIAlE3AlaI0QiSq0E9Dl8IPW2H+EkU2Q==";
   };
 
-  npmDepsHash = "sha256-22FANlY5IyBr7zISNC1Lz2FmFqHuAxTKyT1WcVGkwmQ=";
+  npmDepsHash = "sha256-VQ7+SvDDr83tZCj53kiBFHoUx7syBFvRzgPmOJoOvDg=";
   npmInstallFlags = [ "--omit=dev" ];
   dontNpmBuild = true;
 

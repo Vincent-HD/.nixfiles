@@ -135,6 +135,15 @@ nix build ".#packages.${SYSTEM}.<pkg>" --no-link
 
 Purpose: validate the platform-specific artifact and catch fixed-output hash mismatches before rebuilding the full host configuration.
 
+### Inspect a fixed-output derivation after a hash mismatch
+
+```bash
+nix derivation show <derivation.drv> \
+  | jq '.derivations[] | .env | {name, version, src, outputHash, nativeBuildInputs}'
+```
+
+Purpose: compare the declared fixed-output hash and the source/toolchain used by a failing derivation. This helps distinguish a stale source hash from a change in the fetcher or build toolchain.
+
 ### Syntax-check generated shell configuration
 
 ```bash
@@ -856,6 +865,12 @@ For an evaluation-only pass that avoids building check derivations:
 
 ```bash
 cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" nix flake check --no-build
+```
+
+When diagnosing an evaluation failure, include the full Nix stack trace:
+
+```bash
+cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" nix flake check --no-build --show-trace
 ```
 
 ## Runtime Audio Checks
