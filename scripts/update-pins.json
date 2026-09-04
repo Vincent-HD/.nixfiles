@@ -51,6 +51,17 @@
       ]
     },
     {
+      "name": "ponytail",
+      "type": "flake-input",
+      "description": "Ponytail's selected skills and lifecycle hook source",
+      "command": [
+        "nix",
+        "flake",
+        "update",
+        "ponytail"
+      ]
+    },
+    {
       "name": "spicetify-nix",
       "type": "flake-input",
       "description": "Spicetify Nix/Home Manager integration and pinned extensions",

@@ -29,6 +29,10 @@
           mcpServers = cursorMcpServers;
         };
 
+        # Cursor's supported Ponytail integration is an always-on user rule,
+        # not a lifecycle hook adapter.
+        ".cursor/rules/ponytail.mdc".source = "${inputs.ponytail}/.cursor/rules/ponytail.mdc";
+
         # Use the absolute package path because GUI-launched Cursor may not
         # inherit the Home Manager profile PATH, especially on macOS.
         ".cursor/hooks.json".source = (pkgs.formats.json { }).generate "cursor-hooks.json" {

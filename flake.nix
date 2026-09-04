@@ -31,6 +31,13 @@
       flake = false;
     };
 
+    # Selected Ponytail skills and lifecycle hook sources. Codex hooks and the
+    # Cursor rule are wired below; the rest of the upstream repository is unused.
+    ponytail = {
+      url = "github:DietrichGebert/ponytail";
+      flake = false;
+    };
+
     codex-desktop-linux = {
       url = "github:ilysenko/codex-desktop-linux/main";
       inputs.nixpkgs.follows = "nixpkgs";

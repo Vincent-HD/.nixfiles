@@ -778,6 +778,22 @@
         "type": "github"
       }
     },
+    "ponytail": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1788525329,
+        "narHash": "sha256-ytmLscDv7OVFyX/9gsfGaZmTpEnaMDTZnwzUtcbbcS0=",
+        "owner": "DietrichGebert",
+        "repo": "ponytail",
+        "rev": "974d940a1c5344210874150b98ff0d2c861fab6a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "DietrichGebert",
+        "repo": "ponytail",
+        "type": "github"
+      }
+    },
     "quick-capture": {
       "flake": false,
       "locked": {
@@ -820,6 +836,7 @@
         "nixpkgs": "nixpkgs_3",
         "nixpkgs-darwin": "nixpkgs-darwin",
         "noctalia": "noctalia",
+        "ponytail": "ponytail",
         "quick-capture": "quick-capture",
         "screen-capture-toolbar": "screen-capture-toolbar",
         "sops-nix": "sops-nix",

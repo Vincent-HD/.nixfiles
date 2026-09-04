@@ -5,6 +5,13 @@ let
     let
       plannotatorPackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.plannotator;
       executorPackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.executor;
+      ponytailRoot = inputs.ponytail;
+      ponytailHook =
+        hook:
+        pkgs.writeShellScript "ponytail-codex-${hook}" ''
+          export PLUGIN_DATA="''${HOME}/.codex/ponytail"
+          exec ${lib.getExe pkgs.nodejs} "${ponytailRoot}/hooks/${hook}.js"
+        '';
     in
     {
       model = "gpt-5.5";
@@ -48,6 +55,46 @@ let
               command = lib.getExe plannotatorPackage;
               timeout = 345600;
               statusMessage = "Reviewing plan in Plannotator";
+            }
+          ];
+        }
+      ];
+
+      # Ponytail's Codex lifecycle hooks keep its core rules in the session and
+      # every subagent, while the prompt hook tracks /ponytail mode switches.
+      hooks.SessionStart = [
+        {
+          matcher = "startup|resume|clear|compact";
+          hooks = [
+            {
+              type = "command";
+              command = ponytailHook "ponytail-activate";
+              timeout = 5;
+              statusMessage = "Loading Ponytail mode";
+            }
+          ];
+        }
+      ];
+      hooks.SubagentStart = [
+        {
+          hooks = [
+            {
+              type = "command";
+              command = ponytailHook "ponytail-subagent";
+              timeout = 5;
+              statusMessage = "Loading Ponytail mode";
+            }
+          ];
+        }
+      ];
+      hooks.UserPromptSubmit = [
+        {
+          hooks = [
+            {
+              type = "command";
+              command = ponytailHook "ponytail-mode-tracker";
+              timeout = 5;
+              statusMessage = "Tracking Ponytail mode";
             }
           ];
         }

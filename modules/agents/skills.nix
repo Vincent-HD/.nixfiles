@@ -18,6 +18,10 @@
         domain-modeling = "${inputs.mattpocock-skills}/skills/engineering/domain-modeling";
         handoff = "${inputs.mattpocock-skills}/skills/productivity/handoff";
         research = "${inputs.mattpocock-skills}/skills/engineering/research";
+        # Keep Ponytail's coding workflows without its benchmark and help cards.
+        ponytail = "${inputs.ponytail}/skills/ponytail";
+        ponytail-review = "${inputs.ponytail}/skills/ponytail-review";
+        ponytail-audit = "${inputs.ponytail}/skills/ponytail-audit";
         # Local snapshot of mattpocock wait-what, renamed bro for /bro. No CONTEXT.md.
         bro = ./assets/skills/bro;
         # One-shot French re-pitching with technical vocabulary kept in English.
