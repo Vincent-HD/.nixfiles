@@ -153,6 +153,15 @@ nix eval '.#nixosConfigurations.'"$HOST"'.pkgs.<pkg>.meta.position' --raw
 
 Purpose: identify the exact nixpkgs package version and source file before overriding or pinning it.
 
+### Verify a package variant's build features
+
+```bash
+nix eval --json nixpkgs#<pkg>.cmakeFlags
+nix run nixpkgs#<pkg> -- --version
+```
+
+Purpose: inspect feature flags on a specialized package variant and confirm the compiled configuration reported by its executable before wiring it into a Home Manager module.
+
 ### Inspect the rendered Home Manager package list
 
 ```bash

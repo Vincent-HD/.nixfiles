@@ -129,13 +129,14 @@
 
       programs.btop = {
         enable = true;
-        package = pkgs.btop.overrideAttrs (previousAttrs: {
-          cmakeFlags =
-            previousAttrs.cmakeFlags
-            ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
-              "-DBTOP_GPU=OFF"
-            ];
-        });
+        # Use nixpkgs' CUDA-enabled build on Linux for NVIDIA GPU telemetry.
+        package =
+          if pkgs.stdenv.hostPlatform.isLinux then
+            pkgs.btop-cuda
+          else
+            pkgs.btop.overrideAttrs (previousAttrs: {
+              cmakeFlags = previousAttrs.cmakeFlags ++ [ "-DBTOP_GPU=OFF" ];
+            });
       };
 
       programs.fastfetch.enable = true;

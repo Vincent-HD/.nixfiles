@@ -1,4 +1,0 @@
-interface:
-  display_name: "Antislop"
-  short_description: "File anti-pattern rules when refactoring sloppy code"
-  default_prompt: "Use $antislop to record what to avoid and what to do instead."

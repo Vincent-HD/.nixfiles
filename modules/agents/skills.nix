@@ -30,8 +30,6 @@
         # Conflicted rebase/merge: capture op id, oldest-first jj new + squash, running count.
         jj-solve-conflict = ./assets/skills/jj-solve-conflict;
         papercuts = ./assets/skills/papercuts;
-        # Local snapshot of astahmer's antislop skill; CLI lives in assets/antislop.
-        antislop = ./assets/skills/antislop;
         reference-repository = ./assets/skills/reference-repository;
       };
     };
