@@ -43,6 +43,7 @@ in
             #hm.plasma
             hm.cursorPointer
             hm.niri
+            hm.graphics
             hm.dms
             hm.coding
             hm.agentCommon

@@ -339,6 +339,16 @@ nix flake update codex-desktop-linux
 nix flake update dms
 ```
 
+### dankcalendar
+
+- **File**: `flake.nix`
+- **Why**: Provides the official `dcal` package and Home Manager module used by DMS's calendar backend.
+- **How**: Refresh the upstream DankCalendar input, then re-run the NixOS evaluation.
+
+```bash
+nix flake update dankcalendar
+```
+
 ### screen-capture-toolbar
 
 - **File**: `flake.nix`

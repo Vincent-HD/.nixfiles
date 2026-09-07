@@ -6,6 +6,7 @@
     {
       imports = [
         inputs.niri.nixosModules.niri
+        inputs.dank-greeter.nixosModules.default
       ];
 
       nixpkgs.overlays = [ inputs.niri.overlays.niri ];
@@ -16,7 +17,16 @@
 
       programs.niri.enable = true;
 
+      programs.dms-greeter = {
+        enable = true;
+        compositor.name = "niri";
+        configHome = "/home/${config.flake.username}";
+      };
+
       xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
+
+      services.gnome.gnome-keyring.enable = true;
+      security.pam.services.greetd.enableGnomeKeyring = true;
 
       # The portal dispatcher is run with XDG_CURRENT_DESKTOP=gnome below, so
       # use the common portals.conf rather than a niri-specific config file.
@@ -39,12 +49,6 @@
 
       services.greetd = {
         enable = true;
-        settings = {
-          default_session = {
-            command = "niri-session";
-            user = config.flake.username;
-          };
-        };
       };
 
       services.greetd.restart = true;
@@ -253,6 +257,9 @@
             # NixOS Chromium/Electron: prefer Ozone Wayland over XWayland. Niri applies this only to processes
             # it spawns; it does not propagate to systemd’s global env (see niri “Miscellaneous” → environment).
             "NIXOS_OZONE_WL" = "1";
+            # DMS's dynamic GTK palette is also the Qt platform-theme fallback.
+            "QT_QPA_PLATFORMTHEME" = "gtk3";
+            "QT_QPA_PLATFORMTHEME_QT6" = "gtk3";
           };
 
           input = {

@@ -9,6 +9,14 @@
         system = pkgs.stdenv.hostPlatform.system;
         config.allowUnfree = true;
       };
+      # Keep the CUDA-enabled stress tool reproducible without enabling CUDA support for every package.
+      cudaPkgs = import inputs.nixpkgs {
+        system = pkgs.stdenv.hostPlatform.system;
+        config = {
+          allowUnfree = true;
+          cudaSupport = true;
+        };
+      };
 
       mkBunRunner =
         name: script:
@@ -58,6 +66,7 @@
         gamescope-lanczos = pkgs.callPackage ../packages/gamescope-lanczos { };
         lsfg-vk = unfreePkgs.callPackage ../packages/lsfg-vk { };
         persist-dms = mkBunRunner "persist-dms" ../scripts/persist-dms.ts;
+        gpu-burn = cudaPkgs.gpu-burn;
       };
 
       apps = {

@@ -1,0 +1,83 @@
+--- share/quickshell/dms/Modules/Settings/WidgetsTabSection.qml
++++ share/quickshell/dms/Modules/Settings/WidgetsTabSection.qml
+@@ -201,6 +201,17 @@
+         menu.open();
+     }
+ 
++    function pluginSettingsPath(widgetId) {
++        const rawId = String(widgetId || "");
++        const pluginId = rawId.split(":")[0];
++        const plugins = PluginService.availablePlugins;
++        const plugin = plugins ? plugins[pluginId] : null;
++        if (!plugin || !plugin.settingsPath)
++            return "";
++        const path = String(plugin.settingsPath);
++        return path.startsWith("file://") ? path : "file://" + path;
++    }
++
+     // Host-sized PopupWindow
+     component WidgetSettingsMenu: Item {
+         id: menuRoot
+@@ -337,6 +337,39 @@
+         }
+     }
+ 
++    WidgetSettingsMenu {
++        id: pluginSettingsContextMenu
++
++        menuWidth: 420
++        menuHeight: 620
++
++        DankFlickable {
++            anchors.fill: parent
++            anchors.margins: Theme.spacingL
++            clip: true
++            contentWidth: width
++            contentHeight: pluginSettingsLoader.item ? pluginSettingsLoader.item.implicitHeight : 0
++
++            Loader {
++                id: pluginSettingsLoader
++                width: parent.width
++                height: item ? item.implicitHeight : 0
++                source: {
++                    const widget = pluginSettingsContextMenu.currentWidgetData;
++                    return root.pluginSettingsPath(widget ? widget.id : "");
++                }
++                onLoaded: {
++                    if (!item)
++                        return;
++                    item.pluginService = PluginService;
++                    item.width = pluginSettingsLoader.width;
++                    if ("popoutService" in item && typeof PopoutService !== "undefined")
++                        item.popoutService = PopoutService;
++                }
++            }
++        }
++    }
++
+     onItemsChanged: resetWorkingOrder()
+     Component.onCompleted: resetWorkingOrder()
+ 
+@@ -1060,6 +1060,22 @@
+                         }
+ 
++                        DankActionButton {
++                            id: pluginSettingsMenuButton
++                            visible: root.pluginSettingsPath(modelData.id) !== ""
++                            buttonSize: 32
++                            iconName: "more_vert"
++                            iconSize: 18
++                            iconColor: Theme.outline
++                            onEntered: {
++                                sharedTooltip.show(I18n.tr("Options"), pluginSettingsMenuButton, 0, 0, "bottom");
++                            }
++                            onExited: {
++                                sharedTooltip.hide();
++                            }
++                            onClicked: root.openWidgetMenu(pluginSettingsContextMenu, pluginSettingsMenuButton, modelData, index)
++                        }
++
+                         DankActionButton {
+                             id: visibilityButton
+                             visible: modelData.id !== "spacer"
+                             buttonSize: 32

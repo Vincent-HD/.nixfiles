@@ -1118,6 +1118,47 @@ nvidia-smi dmon -s u -c 1
 
 Purpose: see which processes are using the GPU and whether encoder / decoder engines are active.
 
+### Run a repeatable Vulkan GPU benchmark
+
+```bash
+timeout <seconds>s nix run nixpkgs#vkmark -- \
+  --winsys xcb \
+  --use-device <vulkan-device-uuid> \
+  --size 800x600 \
+  --present-mode immediate \
+  --benchmark 'vertex:duration=100' \
+  --benchmark 'texture:duration=100' \
+  --benchmark 'shading:duration=100' \
+  --benchmark 'effect2d:background-resolution=1920x1080:duration=100' \
+  > <output-file> 2>&1
+```
+
+Purpose: compare a fixed Vulkan workload before and after a GPU configuration change. Use the same device UUID and scene list for every run; discard `ErrorOutOfDateKHR` / score-zero runs caused by compositor swapchain resizing. `duration` is in seconds.
+
+### Run a repeatable high-resolution off-screen OpenGL benchmark
+
+```bash
+timeout <seconds>s nix run nixpkgs#glmark2 -- \
+  --off-screen \
+  --size <width>x<height> \
+  --swap-mode immediate \
+  --benchmark 'jellyfish:duration=30' \
+  --benchmark 'terrain:bloom=true:tilt-shift=true:repeat-overlay=12:duration=30' \
+  --benchmark 'refract:model=asteroid-high:texture=nasa3:index=1.33:duration=30' \
+  --benchmark 'shading:model=asteroid-high:shading=phong:num-lights=8:duration=30' \
+  > <output-file> 2>&1
+```
+
+Purpose: compare GPU settings at a real display resolution without a compositor swapchain. Keep the scene list and duration unchanged, retain five runs per state, and compare medians rather than a single score.
+
+### Run the reproducible CUDA GPU stress test
+
+```bash
+nix run .#gpu-burn -- -i 0 -tc -m 70% <seconds>
+```
+
+Purpose: stress the selected NVIDIA GPU with CUDA/Tensor Cores. Run it with one-second `nvidia-smi` telemetry and an explicit thermal abort; treat arithmetic errors, Xid messages, or `SW_THERMAL_SLOWDOWN` as failures.
+
 ### Inspect the currently deployed Niri config
 
 ```bash

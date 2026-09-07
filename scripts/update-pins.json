@@ -337,6 +337,17 @@
       ]
     },
     {
+      "name": "dankcalendar",
+      "type": "flake-input",
+      "description": "DankCalendar dcal package and Nix/Home Manager modules",
+      "command": [
+        "nix",
+        "flake",
+        "update",
+        "dankcalendar"
+      ]
+    },
+    {
       "name": "screen-capture-toolbar",
       "type": "manual",
       "description": "Commit-pinned DMS toolbar; edit the reviewed revision before refreshing the lock",

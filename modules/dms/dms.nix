@@ -1,4 +1,16 @@
 { inputs, ... }:
+let
+  dmsShellPackage = pkgs:
+    inputs.dms.packages.${pkgs.stdenv.hostPlatform.system}.dms-shell.overrideAttrs (
+      previousAttrs: {
+        postInstall = (previousAttrs.postInstall or "") + ''
+          chmod u+w "$out/share/quickshell/dms/Modules/Settings" \
+            "$out/share/quickshell/dms/Modules/Settings/WidgetsTabSection.qml"
+          patch -d "$out" -p0 < "${./assets/dms-plugin-settings-menu.patch}"
+        '';
+      }
+    );
+in
 {
   # NixOS: install the DMS integration and the services used by its session,
   # while leaving startup to the Home Manager user service below.
@@ -9,14 +21,19 @@
       gpuScreenRecorderPackage = pkgs.gpu-screen-recorder.override {
         ffmpeg = pkgs.ffmpeg_8;
       };
+      dmsPackage = dmsShellPackage pkgs;
     in
     {
       imports = [ inputs.dms.nixosModules.dank-material-shell ];
 
       programs.dank-material-shell = {
         enable = true;
+        package = dmsPackage;
         systemd.enable = false;
       };
+
+      # DMS patches adw-gtk3 copies with its live generated palette for GTK3.
+      environment.systemPackages = [ pkgs.adw-gtk3 ];
 
       # Install the privileged KMS helper wrapper so video recording does not
       # fall back to an interactive Polkit authentication prompt.
@@ -39,11 +56,13 @@
       gpuScreenRecorderPackage = pkgs.gpu-screen-recorder.override {
         ffmpeg = pkgs.ffmpeg_8;
       };
+      dmsPackage = dmsShellPackage pkgs;
     in
     {
       imports = [
         inputs.dms.homeModules.dank-material-shell
         inputs.dms.homeModules.niri
+        inputs.dankcalendar.homeModules.dank-calendar
         inputs.tokitoki.homeManagerModules.default
       ];
 
@@ -70,6 +89,7 @@
 
       programs.dank-material-shell = {
         enable = true;
+        package = dmsPackage;
 
         # Use the user service as the single DMS instance. The Niri includes and
         # generated binds stay disabled because this repository owns config.kdl.
@@ -82,7 +102,12 @@
 
         # persist-dms owns this generated file. It contains only settings that
         # differ from the DMS SettingsSpec defaults; plugin settings stay below.
-        settings = builtins.fromJSON (builtins.readFile ./assets/generated-settings.json);
+        settings =
+          (builtins.fromJSON (builtins.readFile ./assets/generated-settings.json))
+          // {
+            # DMS 1.6's calendar backend value selects DankCalendar's dcal IPC service.
+            calendarBackend = "dankcal";
+          };
 
         clipboardSettings = {
           disabled = false;
@@ -179,11 +204,22 @@
         };
       };
 
-      # Satty is the annotation editor for DMS/Niri screenshots. The same
-      # variable is exported to Niri-spawned commands and the DMS user service.
-      home.sessionVariables.DMS_SCREENSHOT_EDITOR = "satty";
+      # Install dcal and keep its background daemon available to the DMS calendar backend.
+      programs.dank-calendar = {
+        enable = true;
+        systemd.enable = true;
+      };
+
+      # Keep GTK3 and Qt applications on DMS's generated GTK palette.
+      home.sessionVariables = {
+        DMS_SCREENSHOT_EDITOR = "satty";
+        QT_QPA_PLATFORMTHEME = "gtk3";
+        QT_QPA_PLATFORMTHEME_QT6 = "gtk3";
+      };
       systemd.user.services.dms.Service.Environment = [
         "DMS_SCREENSHOT_EDITOR=satty"
+        "QT_QPA_PLATFORMTHEME=gtk3"
+        "QT_QPA_PLATFORMTHEME_QT6=gtk3"
         "PATH=${config.home.profileDirectory}/bin:/run/current-system/sw/bin:/run/wrappers/bin"
       ];
     };

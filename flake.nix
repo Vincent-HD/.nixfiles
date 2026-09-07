@@ -115,6 +115,18 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # DankCalendar provides the official dcal package and Home Manager module.
+    dankcalendar = {
+      url = "github:AvengeMedia/dankcalendar";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    # DMS's greetd login screen, currently the 1.6 release line.
+    dank-greeter = {
+      url = "github:AvengeMedia/dank-greeter";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Pinned screen capture toolbar: photo and GPU-backed video recording from
     # the DMS bar. Keep the plugin source in the flake lock instead of installing
     # it imperatively through the DMS registry.
