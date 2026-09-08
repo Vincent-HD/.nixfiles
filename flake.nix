@@ -161,6 +161,7 @@
     };
 
     # Local Tokitoki flake while developing the package and shell integrations.
+    # CI overrides this with checks/tokitoki-stub because the checkout is private.
     tokitoki.url = "path:/home/vincent/lab/tokitoki";
   };
 

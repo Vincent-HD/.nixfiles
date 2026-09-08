@@ -1,15 +1,14 @@
 { inputs, ... }:
 let
-  dmsShellPackage = pkgs:
-    inputs.dms.packages.${pkgs.stdenv.hostPlatform.system}.dms-shell.overrideAttrs (
-      previousAttrs: {
-        postInstall = (previousAttrs.postInstall or "") + ''
-          chmod u+w "$out/share/quickshell/dms/Modules/Settings" \
-            "$out/share/quickshell/dms/Modules/Settings/WidgetsTabSection.qml"
-          patch -d "$out" -p0 < "${./assets/dms-plugin-settings-menu.patch}"
-        '';
-      }
-    );
+  dmsShellPackage =
+    pkgs:
+    inputs.dms.packages.${pkgs.stdenv.hostPlatform.system}.dms-shell.overrideAttrs (previousAttrs: {
+      postInstall = (previousAttrs.postInstall or "") + ''
+        chmod u+w "$out/share/quickshell/dms/Modules/Settings" \
+          "$out/share/quickshell/dms/Modules/Settings/WidgetsTabSection.qml"
+        patch -d "$out" -p0 < "${./assets/dms-plugin-settings-menu.patch}"
+      '';
+    });
 in
 {
   # NixOS: install the DMS integration and the services used by its session,
@@ -102,12 +101,10 @@ in
 
         # persist-dms owns this generated file. It contains only settings that
         # differ from the DMS SettingsSpec defaults; plugin settings stay below.
-        settings =
-          (builtins.fromJSON (builtins.readFile ./assets/generated-settings.json))
-          // {
-            # DMS 1.6's calendar backend value selects DankCalendar's dcal IPC service.
-            calendarBackend = "dankcal";
-          };
+        settings = (builtins.fromJSON (builtins.readFile ./assets/generated-settings.json)) // {
+          # DMS 1.6's calendar backend value selects DankCalendar's dcal IPC service.
+          calendarBackend = "dankcal";
+        };
 
         clipboardSettings = {
           disabled = false;

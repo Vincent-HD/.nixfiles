@@ -30,7 +30,7 @@ jobs:
         run: nix fmt -- --ci
 
       - name: Check flake
-        run: nix flake check --print-build-logs
+        run: nix flake check --print-build-logs --override-input tokitoki path:./checks/tokitoki-stub
 
       - name: Evaluate all systems
-        run: nix flake check --all-systems --no-build
+        run: nix flake check --all-systems --no-build --override-input tokitoki path:./checks/tokitoki-stub

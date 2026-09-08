@@ -12,6 +12,7 @@ buildNpmPackage (finalAttrs: {
   pname = "codeburn";
   version = "0.9.24";
   nodejs = nodejs_24;
+  nativeBuildInputs = [ makeWrapper ];
 
   # The repository tag supplies the lockfile used to materialize Codeburn's
   # production dependencies; the npm artifact supplies the published CLI and
