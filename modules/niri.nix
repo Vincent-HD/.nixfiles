@@ -70,6 +70,30 @@
       niriExe = lib.getExe config.programs.niri.package;
       runNiriActions =
         actions: lib.concatStringsSep "\n" (map (action: "${niriExe} msg action ${action}") actions);
+      # Brave PWAs set a profile-specific app-id and often fill in the title after map,
+      # so open-floating window-rules cannot match Bitwarden reliably.
+      floatLateTitles = pkgs.writeShellApplication {
+        name = "niri-float-late-titles";
+        runtimeInputs = [
+          config.programs.niri.package
+          pkgs.jq
+        ];
+        text = ''
+          niri msg -j event-stream | jq --unbuffered -r '
+            if .WindowsChanged then
+              .WindowsChanged.windows[]
+            elif .WindowOpenedOrChanged then
+              .WindowOpenedOrChanged.window
+            else
+              empty
+            end
+            | select(.title == "Bitwarden" and (.is_floating | not))
+            | .id
+          ' | while read -r id; do
+            niri msg action move-window-to-floating --id "$id"
+          done
+        '';
+      };
     in
     {
       options.custom.niri.audioBinds = {
@@ -161,6 +185,10 @@
           # Ask compatible applications to omit their client-side title bars.
           prefer-no-csd = true;
 
+          spawn-at-startup = [
+            { argv = [ (lib.getExe floatLateTitles) ]; }
+          ];
+
           window-rules = [
             {
               matches = [
@@ -173,17 +201,6 @@
                 {
                   app-id = "firefox$";
                   title = "^Picture-in-Picture$";
-                }
-              ];
-              open-floating = true;
-            }
-            # Brave extension pop-outs (e.g. Bitwarden) use app-id brave-<extension-id>-Default,
-            # not brave-browser.
-            {
-              matches = [
-                {
-                  app-id = "^brave-.+";
-                  title = "^Bitwarden$";
                 }
               ];
               open-floating = true;

@@ -1187,6 +1187,17 @@ grep -n 'recent\|WheelScroll\|focus-follows' ~/.config/niri/config.kdl
 
 Purpose: compare the live config on disk with the generated config from `nix eval`.
 
+### Compare a live Niri window to `open-*` window-rules
+
+```bash
+niri msg windows
+rg -n 'window-rule|match app-id|match title|open-floating|spawn-at-startup' ~/.config/niri/config.kdl
+nix eval '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$USER"'.programs.niri.settings.window-rules' --json
+niri msg -j event-stream
+```
+
+Purpose: check the window's current `app-id` / title / floating state against the deployed and generated rules. `open-floating` only applies at map time, so title-only matches fail when the client sets the title later. Use `event-stream` to see the title/app-id at map time versus after the client updates them.
+
 ### Inspect a portion of the live Niri config
 
 ```bash
