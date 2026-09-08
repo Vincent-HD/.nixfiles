@@ -23,10 +23,10 @@ nix run .#update-pins -- --validate fast
 nix run .#update-pins -- --list
 ```
 
-Commit-pinned inputs (`noctalia` and the three DMS plugin sources) are disabled manual entries.
-Running `nix flake update <name>` cannot advance a revision embedded in `flake.nix`; edit the
-reviewed revision first, then refresh its lock entry. `noctalia` is additionally denylisted to make
-the intentional v4 hold visible.
+Commit-pinned inputs (`noctalia`, `code-cursor-nix`, and the three DMS plugin sources) are disabled
+manual entries. Running `nix flake update <name>` cannot advance a revision embedded in `flake.nix`;
+edit the reviewed revision first, then refresh its lock entry. `noctalia` is additionally denylisted
+to make the intentional v4 hold visible.
 
 `herdr` is also a disabled manual entry because its URL selects a fixed tag. Choose and test a new
 release in `flake.nix` before refreshing its lock entry.
@@ -188,7 +188,7 @@ nix run .#update-curseforge -- --check
 - **Flake output**: `.#lsfg-vk`
 - **Platform**: `x86_64-linux`
 - **Important**: LSFG-VK v2 is licensed CC BY-NC-ND 4.0 and is evaluated through the repository's unfree package set. Keep builds local; do not publish the result to a public or commercial binary cache.
-- **Note**: The package-specific updater discovers the newest v2 release/RC tag from the official forge, resolves annotated tags to their commit, prefetches the source hash, and updates the version, revision, and hash together.
+- **Note**: The package-specific updater discovers the newest stable v2 release tag from the official forge, deliberately ignores release candidates, resolves annotated tags to their commit, prefetches the source hash, and updates the version, revision, and hash together.
 
 ```bash
 nix run github:Mic92/nix-update -- --flake lsfg-vk --use-update-script
@@ -382,8 +382,12 @@ nix flake update dms-plugins
 ### code-cursor-nix
 
 - **File**: `flake.nix`
-- **Why**: Provides an automatically updated Cursor package for Linux and macOS.
-- **How**: Refresh the moving flake input through the normal update runner or directly with:
+- **Why**: Provides the Cursor editor package. Pinned to `3.18.25`
+  (`c4fca1bf91a6249e04dc35211210393e32b5fee1`) because Linux 3.19.x can quit with a clean
+  exit or SIGBUS during heavier work. Nightly and Stable currently share that 3.19 line.
+- **How**: Change the reviewed commit in `flake.nix` after a patched 3.19 ships, then refresh
+  the lock entry. The registry entry is manual/disabled because refreshing the unchanged
+  revision is a no-op.
 
 ```bash
 nix flake update code-cursor-nix

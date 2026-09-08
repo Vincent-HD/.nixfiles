@@ -385,8 +385,9 @@
     },
     {
       "name": "code-cursor-nix",
-      "type": "flake-input",
-      "description": "Auto-updating Cursor editor package",
+      "type": "manual",
+      "description": "Commit-pinned Cursor 3.18.25; edit the reviewed revision before refreshing the lock",
+      "enabled": false,
       "command": [
         "nix",
         "flake",

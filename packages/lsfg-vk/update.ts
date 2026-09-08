@@ -11,13 +11,9 @@ type SourceTag = {
 };
 
 const sourceUrl = "https://git.lsfg-vk.dev/lsfg-vk.git";
-const v2TagPattern = /^2\.\d+\.\d+(?:-rc(\d+))?$/;
+const stableV2TagPattern = /^2\.\d+\.\d+$/;
 
 const compareTags = (left: SourceTag, right: SourceTag): number => {
-  const leftMatch = v2TagPattern.exec(left.name);
-  const rightMatch = v2TagPattern.exec(right.name);
-  if (leftMatch === null || rightMatch === null) return 0;
-
   const leftParts = left.name.split(".").map((part) => Number.parseInt(part, 10));
   const rightParts = right.name.split(".").map((part) => Number.parseInt(part, 10));
   for (let index = 0; index < leftParts.length; index += 1) {
@@ -26,9 +22,7 @@ const compareTags = (left: SourceTag, right: SourceTag): number => {
     }
   }
 
-  const leftReleaseCandidate = leftMatch[1] === undefined ? Number.MAX_SAFE_INTEGER : Number.parseInt(leftMatch[1], 10);
-  const rightReleaseCandidate = rightMatch[1] === undefined ? Number.MAX_SAFE_INTEGER : Number.parseInt(rightMatch[1], 10);
-  return leftReleaseCandidate - rightReleaseCandidate;
+  return 0;
 };
 
 const remoteTags = (await $`git ls-remote --tags ${sourceUrl}`.text())
@@ -44,7 +38,7 @@ const remoteTags = (await $`git ls-remote --tags ${sourceUrl}`.text())
 
 const tags = new Map<string, { object?: string; revision?: string }>();
 for (const tag of remoteTags) {
-  if (!v2TagPattern.test(tag.name)) continue;
+  if (!stableV2TagPattern.test(tag.name)) continue;
   const entry = tags.get(tag.name) ?? {};
   if (tag.dereferenced) {
     entry.revision = tag.object;

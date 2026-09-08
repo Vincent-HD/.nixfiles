@@ -10,23 +10,20 @@ Add LSFG-VK to the `pc-fixe` NixOS gaming setup so that:
 - per-game profiles remain editable through the upstream UI;
 - installation, rollback, and runtime validation are documented.
 
-This is an implementation handoff. It does not install or configure LSFG-VK yet.
+Status: implemented for the final v2.0.0 release; this document records the integration and
+verification contract for the package currently in the repository.
 
 ## Selected version track
 
-Implement the **v2 release-candidate line described by the linked documentation**, not the stable
+Implement the **final v2.0.0 release described by the linked documentation**, not the stable
 `pkgs.lsfg-vk` and `pkgs.lsfg-vk-ui` packages currently in the locked nixpkgs.
 
 The locked nixpkgs packages are version 1.0.0, while the current documentation explicitly targets
 v2 and documents the v2 CLI, profile model, and `lsfg-vk.dll` integration. Upstream has moved its
-authoritative repository away from the now-stale GitHub mirror. At the time of planning, the
-official repository's newest tag is `2.0.0-rc1`; its annotated tag resolves to immutable commit
-`f715073ee39377fbe2bd856db01b458b920b126e`. Pin that commit and record `2.0.0-rc1` as the package
-version.
-
-If the user later prefers stability over the linked v2 feature set, the smaller alternative is to
-install nixpkgs' 1.0.0 `lsfg-vk` and `lsfg-vk-ui` packages. Do not combine those v1 packages with
-the v2 instructions below.
+authoritative repository away from the now-stale GitHub mirror. The final `2.0.0` tag resolves to
+immutable commit `2333707d55b68ddd8066fd95404c3b7d07e00d3a`; the package pins that commit and its
+fixed-output source hash. The updater intentionally tracks stable v2 tags only and ignores `-rc`
+tags, so a future release candidate cannot replace the stable package in a routine update.
 
 Sources:
 
@@ -40,7 +37,7 @@ Sources:
 | File | Planned responsibility |
 | --- | --- |
 | `packages/lsfg-vk/default.nix` | Build the pinned v2 layer, CLI, UI, desktop file, and icon from source. |
-| `packages/lsfg-vk/update.ts` | Resolve official v2 release/RC tags, annotated-tag commits, and source hashes. |
+| `packages/lsfg-vk/update.ts` | Resolve stable official v2 release tags, annotated-tag commits, and source hashes. |
 | `modules/packages.nix` | Expose `packages.x86_64-linux.lsfg-vk` for direct builds and update automation. |
 | `modules/lsfg-vk.nix` | Add the package to the host profile and Steam FHS environment without managing mutable profiles. |
 | `hosts/pc-fixe/default.nix` | Compose `nixos.lsfgVk` into the Linux host only. |
@@ -59,8 +56,8 @@ Create `packages/lsfg-vk/default.nix` using `llvmPackages.stdenv.mkDerivation (f
 `fetchgit` with:
 
 - URL `https://git.lsfg-vk.dev/lsfg-vk.git`;
-- version `2.0.0-rc1` and immutable revision
-  `f715073ee39377fbe2bd856db01b458b920b126e`;
+- version `2.0.0` and immutable revision
+  `2333707d55b68ddd8066fd95404c3b7d07e00d3a`;
 - no submodule fetch unless a future pinned revision adds `.gitmodules`;
 - Linux-only metadata, `lib.licenses."cc-by-nc-nd-40"`, the official homepage/source URL, and
   `lsfg-vk-ui` as the main
@@ -88,6 +85,10 @@ LSFGVK_INSTALL_LIBRARIES=OFF
 LSFGVK_MANAGED=ON
 LSFGVK_LAYER_MULTILIB_X86=OFF
 ```
+
+The host also builds the layer-only i686 variant with `LSFGVK_LAYER_MULTILIB_X86=ON`; it installs
+`liblsfg-vk-layer.x86.so` and `VkLayer_LSFGVK_frame_generation.x86.json` alongside the 64-bit
+package for Steam/Proton multilib applications.
 
 Do not pass documentation-only options blindly. In particular, verify every flag against the
 pinned commit's `CMakeLists.txt`; the current source and website have changed names across v2
@@ -149,7 +150,7 @@ Managing it declaratively would either prevent UI edits or create activation con
 After activation, the user will:
 
 1. Own and install **Lossless Scaling** through Steam.
-2. Select its `lsfg-vk` beta branch as required by the v2 installation guide.
+2. Select its `lsfg-vk` branch as required by the v2 installation guide.
 3. Start `lsfg-vk-ui` and point it at `lsfg-vk.dll` only if auto-discovery does not find the Steam
    installation.
 4. Create a profile, select multiplier/flow scale/performance mode, and add the correct game
@@ -169,9 +170,9 @@ Sources:
 
 Keep the derivation `nix-update` compatible: use one version field, one immutable `fetchgit`
 revision, and one source hash. The package-specific `packages/lsfg-vk/update.ts` updater is needed
-because the official forge exposes annotated tags outside GitHub's release API. It must discover
-stable/RC v2 tags, resolve the peeled commit for annotated tags, prefetch the source hash, and
-update version, revision, and hash together while rejecting development branches.
+because the official forge exposes annotated tags outside GitHub's release API. It discovers stable
+v2 tags only, resolves the peeled commit for annotated tags, prefetches the source hash, and updates
+version, revision, and hash together while ignoring release candidates and development branches.
 
 Register the package in `scripts/update-pins.json` as an x86_64-linux `nix-update` entry using
 `--use-update-script`, and document the exact command and verification sequence in
@@ -210,6 +211,7 @@ After `sudo nixos-rebuild test --flake .#pc-fixe`:
    ```bash
    vulkaninfo | rg 'VK_LAYER_LSFGVK_frame_generation'
    lsfg-vk-cli validate
+   lsfg-vk-cli healthcheck
    ```
 
 2. Confirm Steam-runtime discovery separately:
@@ -258,10 +260,11 @@ Sources:
 - The package is visible in both the system profile and Steam FHS environment.
 - `lsfg-vk-ui`, `lsfg-vk-cli`, `vulkaninfo`, and `vkcube` are available after activation.
 - Host and `steam-run` both enumerate `VK_LAYER_LSFGVK_frame_generation`.
-- `lsfg-vk-cli validate` reports no missing package-managed files.
+- `lsfg-vk-cli validate` reports valid configuration syntax and keys.
+- `lsfg-vk-cli healthcheck` reports no legacy, duplicate, or missing package-managed files.
 - A `vkcube` profile activates, and `DISABLE_LSFGVK=1` bypasses it.
 - One Proton game activates a profile without regressing MangoHud or Gamescope.
-- The update registry and `docs/UPDATE_COMMANDS.md` cover future v2 prerelease bumps.
+- The update registry and `docs/UPDATE_COMMANDS.md` cover future stable v2 releases; routine updates ignore prerelease tags.
 - Linux host evaluation, formatting, and repository checks pass.
 
 ## Explicit non-goals
@@ -269,5 +272,4 @@ Sources:
 - Installing or licensing Lossless Scaling through Steam.
 - Managing game-specific profiles declaratively in the first change.
 - Flatpak Vulkan-layer installation; the current Steam package is native NixOS.
-- Adding a 32-bit LSFG-VK layer unless a concrete native 32-bit Vulkan application requires it.
 - Changing NVIDIA, Gamescope, Niri, kernel, or gaming-optimization settings.

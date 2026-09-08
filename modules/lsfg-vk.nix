@@ -4,17 +4,24 @@
     { pkgs, ... }:
     let
       lsfgVk = pkgs.callPackage ../packages/lsfg-vk { };
+      lsfgVk32 = pkgs.pkgsi686Linux.callPackage ../packages/lsfg-vk {
+        buildCli = false;
+        buildUi = false;
+        multilib = true;
+      };
     in
     {
-      # Install the layer, CLI, UI, and Vulkan validation tools in the host profile.
+      # Install both Vulkan layer architectures, the CLI/UI, and validation tools in the host profile.
       environment.systemPackages = [
         lsfgVk
+        lsfgVk32
         pkgs.vulkan-tools
       ];
 
-      # Place the layer package inside Steam's FHS environment for Proton-launched Vulkan apps.
+      # Place both layer architectures inside Steam's FHS environment for Proton-launched Vulkan apps.
       programs.steam.extraPackages = [
         lsfgVk
+        lsfgVk32
         pkgs.vulkan-tools
       ];
     };

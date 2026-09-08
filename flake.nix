@@ -64,7 +64,9 @@
       inputs.nixpkgs.follows = "nixpkgs-darwin";
     };
 
-    code-cursor-nix.url = "github:jacopone/code-cursor-nix";
+    # Linux Cursor 3.19.x can exit cleanly / SIGBUS during heavier work.
+    # Hold 3.18.25 until a patched 3.19 ships; Nightly and Stable are the same 3.19.7+ builds.
+    code-cursor-nix.url = "github:jacopone/code-cursor-nix/c4fca1bf91a6249e04dc35211210393e32b5fee1";
 
     nixcord = {
       url = "github:FlameFlag/nixcord";

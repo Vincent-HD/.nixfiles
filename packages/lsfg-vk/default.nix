@@ -10,6 +10,9 @@
   bun,
   gitMinimal,
   nix-prefetch-git,
+  buildCli ? true,
+  buildUi ? true,
+  multilib ? false,
 }:
 
 let
@@ -26,36 +29,35 @@ let
 in
 llvmPackages.stdenv.mkDerivation (finalAttrs: {
   pname = "lsfg-vk";
-  version = "2.0.0-rc1";
+  version = "2.0.0";
 
   src = fetchgit {
     url = "https://git.lsfg-vk.dev/lsfg-vk.git";
-    rev = "f715073ee39377fbe2bd856db01b458b920b126e";
-    hash = "sha256-+2Zslbt4A3opMsCgu3/BMA2PJm6vzIFwhsS9Iml9H3Y=";
+    rev = "2333707d55b68ddd8066fd95404c3b7d07e00d3a";
+    hash = "sha256-vp0/adJdVV73C2RFjcEE90KjWiZJQhiqqOlYQ89RG+Y=";
   };
 
   nativeBuildInputs = [
     cmake
     ninja
-    qt6.wrapQtAppsHook
-  ];
+  ]
+  ++ lib.optionals buildUi [ qt6.wrapQtAppsHook ];
 
-  buildInputs = [
-    qt6.qtdeclarative
-    vulkan-headers
-  ];
+  buildInputs = [ vulkan-headers ] ++ lib.optionals buildUi [ qt6.qtdeclarative ];
 
   strictDeps = true;
 
   cmakeFlags = [
     "-G Ninja"
     "-DLSFGVK_BUILD_LAYER=ON"
-    "-DLSFGVK_BUILD_CLI=ON"
-    "-DLSFGVK_BUILD_UI=ON"
+    "-DLSFGVK_BUILD_CLI=${if buildCli then "ON" else "OFF"}"
+    "-DLSFGVK_BUILD_UI=${if buildUi then "ON" else "OFF"}"
     "-DLSFGVK_INSTALL_LIBRARIES=OFF"
-    "-DLSFGVK_LAYER_MULTILIB_X86=OFF"
+    "-DLSFGVK_LAYER_MULTILIB_X86=${if multilib then "ON" else "OFF"}"
     "-DLSFGVK_MANAGED=ON"
-    "-DLSFGVK_LAYER_LIBRARY_PATH=${placeholder "out"}/lib/liblsfg-vk-layer.so"
+    "-DLSFGVK_LAYER_LIBRARY_PATH=${placeholder "out"}/lib/liblsfg-vk-layer${
+      if multilib then ".x86" else ""
+    }.so"
   ];
 
   meta = {

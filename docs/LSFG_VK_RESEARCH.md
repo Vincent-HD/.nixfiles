@@ -1,8 +1,12 @@
 # LSFG-VK research handoff
 
-Research date: 2026-08-29
+Research date: 2026-09-08 (updated for the v2.0.0 final release)
 
 Scope: current LSFG-VK v2 documentation and source only. Sources used are the official documentation at [lsfg-vk.dev](https://lsfg-vk.dev/), the official self-hosted source repository at [git.lsfg-vk.dev/lsfg-vk](https://git.lsfg-vk.dev/lsfg-vk/), and its official GitHub source mirror where the current files are directly browsable at [github.com/PancakeTAS/lsfg-vk](https://github.com/PancakeTAS/lsfg-vk). No configuration change is proposed here.
+
+The official [v2.0.0 release](https://lsfg-vk.dev/blog/release-v2.0.0/) supersedes the earlier RC
+research: it includes the 32-bit layer and separates configuration validation (`validate`) from
+installation health checks (`healthcheck`).
 
 ## Executive handoff
 
@@ -16,7 +20,9 @@ Do not copy old v1 wiki instructions into the implementation. Current v2 uses `V
 
 - Lossless Scaling must already be installed through Steam: [installation guide](https://lsfg-vk.dev/docs/installation/), [official Steam app](https://store.steampowered.com/app/993090/Lossless_Scaling/).
 - LSFG-VK is intended for Linux systems with Vulkan support. The project says that a GPU with a Vulkan driver should generally work, while warning that users have reported extremely poor performance on dedicated Intel GPUs: [project overview](https://lsfg-vk.dev/).
-- The target application must use Vulkan, not OpenGL. The current troubleshooting guide also asks for a 64-bit application; for a 32-bit Proton application it suggests trying `PROTON_USE_WOW64=1`, but says that failure leaves the application unsupported: [basic troubleshooting](https://lsfg-vk.dev/docs/troubleshooting/basic-troubleshooting-steps/).
+- The target application must use Vulkan, not OpenGL. The final release includes a 32-bit layer,
+  but the troubleshooting guide still notes that some 32-bit Proton applications may require
+  `PROTON_USE_WOW64=1` and remain runtime-dependent: [basic troubleshooting](https://lsfg-vk.dev/docs/troubleshooting/basic-troubleshooting-steps/).
 - A source build requires common build tools, a C++20-or-newer compiler, CMake 3.10 or newer, Ninja (recommended), and the Vulkan SDK. Qt6 and Qt6Quick are required only for `lsfg-vk-ui`: [building from source](https://lsfg-vk.dev/docs/installation/building-from-source/).
 - The v2 migration note says the required Vulkan version was dropped to 1.2 to broaden GPU compatibility. The current source creates the internal frame-generation device with Vulkan 1.2 and uses external memory/semaphore file-descriptor extensions, timeline semaphores, and synchronization2: [migration note](https://lsfg-vk.dev/blog/important-changes-to-lsfg-vk/), [current pipeline source](https://github.com/PancakeTAS/lsfg-vk/blob/develop/lsfg-vk-pipeline/src/lsfgvk.cpp).
 - Dual-GPU support is not a current feature; the project overview lists it as future work. The current layer passes the application’s physical device to the internal generation pipeline, so an implementation should not invent a separate-GPU configuration path: [project overview](https://lsfg-vk.dev/), [current layer wrapper](https://github.com/PancakeTAS/lsfg-vk/blob/develop/lsfg-vk-layer/src/wrapper.cpp).
@@ -24,11 +30,12 @@ Do not copy old v1 wiki instructions into the implementation. Current v2 uses `V
 ### Installation and file layout
 
 - The current installation page recommends a distribution package when one exists. Otherwise, it directs users to a prebuilt archive from `builds.lsfg-vk.dev`, compiled on Ubuntu 22.04, and extracts it under `~/.local`: [installation guide](https://lsfg-vk.dev/docs/installation/), [build archive index](https://builds.lsfg-vk.dev/).
-- The manual install is not self-cleaning. The docs require tracking the extracted files; `lsfg-vk-cli validate -l` can list manually installed files later: [installation guide](https://lsfg-vk.dev/docs/installation/), [validation](https://lsfg-vk.dev/docs/cli/validation/).
+- The manual install is not self-cleaning. The docs require tracking the extracted files; `lsfg-vk-cli healthcheck -l` can list manually installed files later: [installation guide](https://lsfg-vk.dev/docs/installation/), [validation](https://lsfg-vk.dev/docs/cli/validation/).
 - A source install defaults to `/usr/local`. The build can enable the layer, CLI, and UI independently; `LSFGVK_LAYER_LIBRARY_PATH` controls the path written into the Vulkan manifest; `LSFGVK_LAYER_MULTILIB_X86` enables a 32-bit multilib layer; and `LSFGVK_MANAGED=ON` tells the project that a package manager owns the files: [building from source](https://lsfg-vk.dev/docs/installation/building-from-source/), [top-level CMake](https://github.com/PancakeTAS/lsfg-vk/blob/develop/CMakeLists.txt).
 - The current layer CMake installs the shared library to `${CMAKE_INSTALL_LIBDIR}` and the generated manifest to `${CMAKE_INSTALL_DATAROOTDIR}/vulkan/implicit_layer.d`. The CLI and UI are installed as normal executables; the UI also installs a desktop file and icon: [layer CMake](https://github.com/PancakeTAS/lsfg-vk/blob/develop/lsfg-vk-layer/CMakeLists.txt), [CLI CMake](https://github.com/PancakeTAS/lsfg-vk/blob/develop/lsfg-vk-cli/CMakeLists.txt), [UI CMake](https://github.com/PancakeTAS/lsfg-vk/blob/develop/lsfg-vk-ui/CMakeLists.txt).
 - The current manifest identifies the layer as `VK_LAYER_LSFGVK_frame_generation`, has type `GLOBAL`, contains a configured `library_path`, and disables itself when `DISABLE_LSFGVK=1`: [manifest template](https://github.com/PancakeTAS/lsfg-vk/blob/develop/lsfg-vk-layer/VkLayer_LSFGVK_frame_generation.json.in).
-- The v2 migration note says prebuilt releases include a 32-bit layer. A source package must deliberately decide whether to build/install that optional artifact: [migration note](https://lsfg-vk.dev/blog/important-changes-to-lsfg-vk/), [layer CMake](https://github.com/PancakeTAS/lsfg-vk/blob/develop/lsfg-vk-layer/CMakeLists.txt).
+- The final v2.0.0 release includes a 32-bit layer. This package builds the source equivalent with
+  `LSFGVK_LAYER_MULTILIB_X86=ON` and installs its `.x86` library and manifest: [release notes](https://lsfg-vk.dev/blog/release-v2.0.0/), [layer CMake](https://github.com/PancakeTAS/lsfg-vk/blob/develop/lsfg-vk-layer/CMakeLists.txt).
 - The current source is licensed CC BY-NC-ND 4.0, not the old v1 license. Check redistribution and packaging implications before publishing a Nix package: [official source license](https://git.lsfg-vk.dev/lsfg-vk/tree/LICENSE.txt), [migration note](https://lsfg-vk.dev/blog/important-changes-to-lsfg-vk/).
 
 ### Vulkan layer registration and activation
@@ -65,7 +72,7 @@ Do not copy old v1 wiki instructions into the implementation. Current v2 uses `V
 
 ### Validation and diagnostics
 
-- Run `lsfg-vk-cli validate`; it checks TOML syntax/keys and reports legacy, duplicate, and missing installation files. `lsfg-vk-cli validate -l` lists manually installed files for removal: [validation](https://lsfg-vk.dev/docs/cli/validation/).
+- Run `lsfg-vk-cli validate` to check TOML syntax and keys. Run `lsfg-vk-cli healthcheck` to check for legacy, duplicate, and missing installation files; use `lsfg-vk-cli healthcheck -l` to list installed files: [validation](https://lsfg-vk.dev/docs/cli/validation/).
 - Run `vulkaninfo | grep -i VK_LAYER_LSFGVK_frame_generation` to check loader visibility. Launch a small Vulkan program such as `vkcube` and look for LSFG-VK profile/multiplier/flow/performance log messages; compare with `DISABLE_LSFGVK=1 vkcube`: [getting started](https://lsfg-vk.dev/docs/getting-started/), [basic troubleshooting](https://lsfg-vk.dev/docs/troubleshooting/basic-troubleshooting-steps/).
 - For loader diagnostics, use `VK_LOADER_DEBUG=layer`; if the layer appears only when `LSFGVK_ENV=1` is set, profile detection is probably wrong. The guide also recommends checking terminal/log output: [basic troubleshooting](https://lsfg-vk.dev/docs/troubleshooting/basic-troubleshooting-steps/).
 - `lsfg-vk-cli benchmark` runs a default 10-second, 1920x1080 generation benchmark. It supports DLL, FP16, size, flow, multiplier, performance-mode, GPU, and duration options; benchmark throughput is a pipeline estimate, not proof of a game’s final displayed FPS: [benchmarking](https://lsfg-vk.dev/docs/cli/benchmark/), [CLI reference](https://lsfg-vk.dev/docs/cli/).
@@ -73,10 +80,13 @@ Do not copy old v1 wiki instructions into the implementation. Current v2 uses `V
 
 ### Limitations and rollback
 
-- Current limitations include Vulkan-only operation, unreliable/unsupported 32-bit cases, no current dual-GPU support, poor reported dedicated-Intel performance, Vsync/VRR latency and pacing constraints, Steam DLL visibility issues, and interactions with other Vulkan layers: [project overview](https://lsfg-vk.dev/), [basic troubleshooting](https://lsfg-vk.dev/docs/troubleshooting/basic-troubleshooting-steps/), [pacing modes](https://lsfg-vk.dev/docs/configuration/pacing-modes/).
+- Current limitations include Vulkan-only operation, runtime-dependent 32-bit application support,
+  no current dual-GPU support, poor reported dedicated-Intel performance, Vsync/VRR latency and
+  pacing constraints, Steam DLL visibility issues, and interactions with other Vulkan layers:
+  [project overview](https://lsfg-vk.dev/), [basic troubleshooting](https://lsfg-vk.dev/docs/troubleshooting/basic-troubleshooting-steps/), [pacing modes](https://lsfg-vk.dev/docs/configuration/pacing-modes/).
 - Steam’s built-in overlay and other performance overlays may report the wrong frame rate because multiple Vulkan layers can be loaded in an unpredictable order: [performance overlays](https://lsfg-vk.dev/docs/troubleshooting/performance-overlays/).
 - To disable the layer immediately for a test, set `DISABLE_LSFGVK=1`; to disable a game permanently, remove its launch option or profile match: [environment variables](https://lsfg-vk.dev/docs/configuration/environment-variables/), [getting started](https://lsfg-vk.dev/docs/getting-started/).
-- For a manual install, use `lsfg-vk-cli validate -l` and delete the listed v2 files; remove legacy v1 files reported by `validate` to avoid conflicts. If a package manager installed LSFG-VK, uninstall through that package manager instead of manually deleting files: [validation](https://lsfg-vk.dev/docs/cli/validation/).
+- For a manual install, use `lsfg-vk-cli healthcheck -l` and delete the listed v2 files; remove legacy v1 files reported by `healthcheck` to avoid conflicts. If a package manager installed LSFG-VK, uninstall through that package manager instead of manually deleting files: [validation](https://lsfg-vk.dev/docs/cli/validation/).
 - The migration note specifically says to uninstall v1 correctly before v2 because the config layout changed: [migration note](https://lsfg-vk.dev/blog/important-changes-to-lsfg-vk/).
 
 ## NixOS-specific inferences and implementation plan
@@ -89,7 +99,9 @@ The following are implementation recommendations inferred from the upstream fact
 
 3. Build the current v2 layer and CLI with CMake/Ninja. Set the package-manager flag (`LSFGVK_MANAGED=ON`) and set `LSFGVK_LAYER_LIBRARY_PATH` to the final absolute Nix-store path, for example the final `$out/lib/liblsfg-vk-layer.so`. Keep UI support optional and add Qt6/Qt6Quick runtime/build dependencies only when the UI is enabled. This follows the upstream CMake knobs; the exact Nix attribute names must be resolved by the implementing agent.
 
-4. Verify the installed output contains the 64-bit library, the manifest at `$out/share/vulkan/implicit_layer.d/VkLayer_LSFGVK_frame_generation.json`, and `lsfg-vk-cli`. Decide explicitly whether the 32-bit layer is built and test it separately; do not claim 32-bit support merely because the 64-bit package builds.
+4. Verify the installed output contains the 64-bit library and manifest, `lsfg-vk-cli`, plus the
+   i686 `liblsfg-vk-layer.x86.so` and `VkLayer_LSFGVK_frame_generation.x86.json` artifacts. Test
+   the i686 build separately; a 64-bit build alone does not prove multilib support.
 
 5. Make Vulkan loader discovery a first-class acceptance test. A Nix-store manifest is outside the traditional `/usr` and `~/.local` paths, so the implementation must verify that the active NixOS environment exposes the package’s `share/vulkan/implicit_layer.d` directory to the Vulkan loader. If discovery fails, fix the Nix package/session integration narrowly and confirm with `vulkaninfo`; do not paper over it with an unverified global `LD_PRELOAD` scheme.
 
@@ -102,7 +114,7 @@ The following are implementation recommendations inferred from the upstream fact
 9. Add focused validation to the implementation handoff:
 
    - build/evaluate the Nix package and host configuration;
-   - run `lsfg-vk-cli validate` and confirm no legacy/duplicate/missing-file warning;
+   - run `lsfg-vk-cli validate` for the configuration, then `lsfg-vk-cli healthcheck` for legacy/duplicate/missing-file warnings;
    - run `vulkaninfo | grep -i VK_LAYER_LSFGVK_frame_generation`;
    - run `vkcube` with a matching test profile and compare with `DISABLE_LSFGVK=1 vkcube`;
    - run `lsfg-vk-cli benchmark` once to establish a GPU baseline;

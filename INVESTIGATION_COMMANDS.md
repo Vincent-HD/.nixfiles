@@ -135,6 +135,26 @@ nix build ".#packages.${SYSTEM}.<pkg>" --no-link
 
 Purpose: validate the platform-specific artifact and catch fixed-output hash mismatches before rebuilding the full host configuration.
 
+### Build a package through nixpkgs multilib
+
+```bash
+nix build --impure --no-link --print-out-paths --expr '
+let
+  flake = builtins.getFlake "path:/home/vincent/.nixfiles";
+  pkgs = import flake.inputs.nixpkgs {
+    system = "x86_64-linux";
+    config.allowUnfree = true;
+  };
+in pkgs.pkgsi686Linux.callPackage (flake.outPath + "/packages/<pkg>") {
+  <feature-flag> = <value>;
+}
+'
+```
+
+Purpose: realize an i686-only package variant and inspect its output separately from the host
+architecture. Pass feature flags to disable unrelated components when validating a multilib library
+or Vulkan layer.
+
 ### Inspect a fixed-output derivation after a hash mismatch
 
 ```bash
