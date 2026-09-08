@@ -223,9 +223,14 @@
           grep = "rg";
           help = "tldr";
           la = "eza --all --long --git --icons=auto";
+          # Date-sorted eza variants: newest modified first.
+          lad = "eza --all --long --git --icons=auto --sort=modified --reverse";
           ll = "eza --long --git --icons=auto";
+          lld = "eza --long --git --icons=auto --sort=modified --reverse";
           ls = "eza --icons=auto";
+          lsd = "eza --icons=auto --sort=modified --reverse";
           lt = "eza --tree --level=2 --icons=auto";
+          ltd = "eza --tree --level=2 --icons=auto --sort=modified --reverse";
           ping = "gping";
           pkill = "pik";
           ps = "procs";

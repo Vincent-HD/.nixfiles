@@ -105,9 +105,13 @@ if [[ "$show_aliases" -eq 1 ]]; then
   grep      -> rg                          Search text recursively with ripgrep.
   help      -> tldr                        Show concise command examples.
   la        -> eza --all --long --git      List all files with details and Git state.
+  lad       -> eza ... --sort=modified -r  Same as la, newest-modified first.
   ll        -> eza --long --git            List files with details and Git state.
+  lld       -> eza ... --sort=modified -r  Same as ll, newest-modified first.
   ls        -> eza --icons=auto            List files with icons.
+  lsd       -> eza ... --sort=modified -r  Same as ls, newest-modified first.
   lt        -> eza --tree --level=2        Show a two-level directory tree.
+  ltd       -> eza ... --sort=modified -r  Same as lt, newest-modified first.
   ping      -> gping                       Ping a host with a live terminal graph.
   pkill     -> pik                         Interactively choose a process to terminate.
   ps        -> procs                       Show processes in a readable table.
