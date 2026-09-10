@@ -113,6 +113,13 @@ printf '%s\\n' '{"clockFormat":"HH:mm","cornerRadius":8,"configVersion":13}'
     await Bun.write(
       specPath,
       `.pragma library
+
+    .import "./SpecUtil.js" as Util
+
+function cloneDef(def) {
+  return Util.cloneDef(def);
+}
+
 var SPEC = {
   clockFormat: { def: "auto" },
   cornerRadius: { def: 16 },

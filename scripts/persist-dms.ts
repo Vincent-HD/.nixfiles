@@ -243,7 +243,9 @@ const findDmsSpec = async (override: string | undefined): Promise<string> => {
 
 const loadDefaults = async (specPath: string): Promise<{ defaults: JsonObject; nonPersistent: Set<string> }> => {
   const source = await Bun.file(specPath).text();
-  const executableSource = source.replace(/^\s*\.pragma library\s*\r?\n/, "");
+  // QML JS files open with directives such as `.pragma library` or
+  // `.import "./SpecUtil.js" as Util`, which plain JavaScript cannot parse.
+  const executableSource = source.replace(/^\s*\.(?:pragma|import)\b[^\n]*\r?\n?/gm, "");
   let evaluated: unknown;
   try {
     evaluated = runInNewContext(`${executableSource}\nSPEC`, Object.create(null), { filename: specPath });
