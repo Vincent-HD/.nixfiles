@@ -1044,14 +1044,17 @@
         "nixpkgs": "nixpkgs_4"
       },
       "locked": {
-        "lastModified": 1788737173,
-        "narHash": "sha256-AA29Toq8wcKUCYCSppH8LLyQP7vVKUPecMUPTyantBQ=",
-        "path": "/home/vincent/lab/tokitoki",
-        "type": "path"
+        "lastModified": 1788900335,
+        "narHash": "sha256-KEhNK6ugoQowcnrG+YycYiZXjRtOivZSzNx0+P0c35w=",
+        "owner": "astahmer",
+        "repo": "tokitoki",
+        "rev": "6674206630a5c63a6be66205a599c2e0ddced899",
+        "type": "github"
       },
       "original": {
-        "path": "/home/vincent/lab/tokitoki",
-        "type": "path"
+        "owner": "astahmer",
+        "repo": "tokitoki",
+        "type": "github"
       }
     },
     "treefmt-nix": {

@@ -192,7 +192,7 @@
           window-rules = [
             {
               matches = [
-                { title = "^Picture in Picture$"; }
+                { title = "^Picture in [Pp]icture$"; }
               ];
               open-floating = true;
             }

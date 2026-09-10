@@ -337,6 +337,17 @@
       ]
     },
     {
+      "name": "tokitoki",
+      "type": "flake-input",
+      "description": "Tokitoki usage analytics CLI and Home Manager module",
+      "command": [
+        "nix",
+        "flake",
+        "update",
+        "tokitoki"
+      ]
+    },
+    {
       "name": "dankcalendar",
       "type": "flake-input",
       "description": "DankCalendar dcal package and Nix/Home Manager modules",

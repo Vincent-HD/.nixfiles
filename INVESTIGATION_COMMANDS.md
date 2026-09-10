@@ -893,23 +893,6 @@ When diagnosing an evaluation failure, include the full Nix stack trace:
 cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" nix flake check --no-build --show-trace
 ```
 
-GitHub Actions cannot fetch the private local Tokitoki path input. Replay CI locally with the checked-in stub:
-
-```bash
-cd "$REPO" && nix fmt -- --ci
-cd "$REPO" && nix flake check --print-build-logs --override-input tokitoki path:./checks/tokitoki-stub
-cd "$REPO" && nix flake check --all-systems --no-build --override-input tokitoki path:./checks/tokitoki-stub
-```
-
-Purpose: match `.github/workflows/check.yml`. Use this whenever flake check fails with `path '//home/vincent/lab/tokitoki' does not exist`, or when validating CI after changing that workflow.
-
-A faster host-only smoke test of the same override:
-
-```bash
-cd "$REPO" && nix eval '.#nixosConfigurations.'"$HOST"'.config.system.build.toplevel.drvPath' --raw \
-  --override-input tokitoki path:./checks/tokitoki-stub
-```
-
 ## Runtime Audio Checks
 
 ### Inspect the live PipeWire graph

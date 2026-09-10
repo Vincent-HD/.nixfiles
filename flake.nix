@@ -160,9 +160,8 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # Local Tokitoki flake while developing the package and shell integrations.
-    # CI overrides this with checks/tokitoki-stub because the checkout is private.
-    tokitoki.url = "path:/home/vincent/lab/tokitoki";
+    # Tokitoki usage analytics CLI and Home Manager module.
+    tokitoki.url = "github:astahmer/tokitoki";
   };
 
   outputs =

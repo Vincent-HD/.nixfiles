@@ -339,6 +339,16 @@ nix flake update codex-desktop-linux
 nix flake update dms
 ```
 
+### tokitoki
+
+- **File**: `flake.nix`
+- **Why**: Provides the Tokitoki usage analytics package and Home Manager module used by DMS.
+- **How**: Refresh the upstream input, then re-run the NixOS evaluation and flake checks.
+
+```bash
+nix flake update tokitoki
+```
+
 ### dankcalendar
 
 - **File**: `flake.nix`
