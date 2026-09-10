@@ -101,6 +101,12 @@
         Unit = {
           Description = "Apply the typical RTX 3080 Ti FE LACT profile";
           After = [ "graphical-session.target" ];
+          # Re-run the applier whenever the profile asset content changes; without a
+          # trigger the generated unit is unchanged and the previous profile stays
+          # active. Hash the content so unrelated repository edits do not restart it.
+          X-Restart-Triggers = [
+            (builtins.hashString "sha256" (builtins.readFile ./graphics/assets/lact-settings.json))
+          ];
         };
         Service = {
           Type = "oneshot";

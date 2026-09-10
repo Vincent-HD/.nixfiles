@@ -186,7 +186,7 @@ description; do not create `WIP`, `update`, `changes`, or other vague subjects.
 - **Custom packages must be `nix-update` compatible.** When adding a new package that is not in
   nixpkgs, create it as a standalone derivation under `packages/<name>/default.nix` using the
   `finalAttrs` pattern. The module should then import it via `pkgs.callPackage`. This structure lets
-  `nix-update` locate and bump the version/hash automatically. See `packages/xerahs/default.nix`
+  `nix-update` locate and bump the version/hash automatically. See `packages/jj-ryu/default.nix`
   for the reference pattern.
 - **Every new pinned package or flake input must be added to the update automation registry.** For
   packages, make the derivation `nix-update` compatible (including a package-specific
