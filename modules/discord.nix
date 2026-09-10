@@ -16,7 +16,7 @@
 
             # Use Nixcord's package output so its pinned pnpm/SQLite toolchain matches
             # the fixed-output dependency hash published with the Nixcord revision.
-            package = inputs.nixcord.packages.${pkgs.system}.equicord;
+            package = inputs.nixcord.packages.${pkgs.stdenv.hostPlatform.system}.equicord;
           };
         };
 
