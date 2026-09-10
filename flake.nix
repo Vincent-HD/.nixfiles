@@ -161,7 +161,10 @@
     };
 
     # Tokitoki usage analytics CLI and Home Manager module.
-    tokitoki.url = "github:astahmer/tokitoki";
+    tokitoki = {
+      url = "github:astahmer/tokitoki";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
