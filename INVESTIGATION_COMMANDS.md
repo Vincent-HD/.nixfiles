@@ -873,6 +873,15 @@ nix build '.#nixosConfigurations.'"$HOST"'.config.system.build.toplevel' --dry-r
 
 Purpose: validate evaluation and see which derivations would build without creating a result link or realizing the build.
 
+### Build a nix-darwin host toplevel
+
+```bash
+cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" \
+nix build --no-link --print-out-paths '.#darwinConfigurations.'"$HOST"'.system'
+```
+
+Purpose: realize the complete macOS system closure and catch stale fixed-output hashes or package build failures before switching the host.
+
 ### Run full flake validation
 
 ```bash
