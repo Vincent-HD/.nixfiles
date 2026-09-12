@@ -15,6 +15,7 @@ in
       darwin.portless
       darwin.deskflow
       darwin.rustdesk
+      darwin.ghostty
 
       inputs.home-manager-darwin.darwinModules.home-manager
       {
@@ -41,6 +42,8 @@ in
             hm.lazydocker
             hm.work
             hm.localSend
+            hm.guiApps
+            hm.ghostty
           ];
 
           home.username = username;

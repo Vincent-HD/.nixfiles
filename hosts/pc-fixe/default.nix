@@ -70,6 +70,7 @@ in
             hm.kdeConnect
             hm.deskflow
             hm.localSend
+            hm.ghostty
           ];
 
           home.packages = [ inputs.self.packages.x86_64-linux.crosspipe ];

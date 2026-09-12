@@ -63,7 +63,6 @@
         pkgs.yq
       ]
       ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
-        pkgs.ghostty
         # GTK4 currently fails to link ripdrag on Apple Silicon macOS.
         pkgs.ripdrag
       ];
@@ -86,23 +85,6 @@
       # Point nh at this flake so `nh os`, `nh darwin`, and `nh home` can default here.
       home.sessionVariables = {
         NH_FLAKE = "${config.home.homeDirectory}/.nixfiles";
-      };
-
-      xdg.configFile."ghostty/config" = lib.mkIf pkgs.stdenv.hostPlatform.isLinux {
-        text = ''
-          # Close Ghostty surfaces without asking for confirmation.
-          confirm-close-surface = false
-          # Do not return OSC color probes that can leak into interactive input.
-          osc-color-report-format = none
-          # Use Zsh-compatible Meta sequences for word movement with modified arrows.
-          keybind = alt+arrow_left=esc:b
-          keybind = alt+arrow_right=esc:f
-          keybind = ctrl+arrow_left=esc:b
-          keybind = ctrl+arrow_right=esc:f
-          gtk-titlebar = false
-          window-decoration = false
-          window-show-tab-bar = never
-        '';
       };
 
       programs.bat = {
