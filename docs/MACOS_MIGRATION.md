@@ -166,29 +166,32 @@ Phase 1 - remove duplicate ownership (done 2026-09-13)
 2. Confirmed `codex` stays on Homebrew because the `hm.agentCodex` wrapper execs
    `/opt/homebrew/bin/codex`.
 
-Phase 2 - declare the retained casks (in progress)
+Phase 2 - declare the retained casks (done 2026-09-13)
 
 1. Ghostty is declared: `modules/ghostty.nix` shares one config across both hosts and adds the
    `ghostty` cask on Darwin only.
 2. Slack, ChatGPT, and Scroll Reverser moved from manual installs to `modules/gui-apps.nix`.
-3. Still open: move the Caskaydia Mono Nerd Font to `fonts.packages`, and declare the remaining
-   17 graphical casks.
+3. The Caskaydia Mono Nerd Font moved from a cask to `fonts.packages` in `modules/fonts.nix`,
+   which installs it on both hosts.
+4. The retained graphical casks are declared in `darwin.homebrew`, which now lists casks only.
 
-Phase 3 - unmanaged applications
+Phase 3 - unmanaged applications (done 2026-09-13)
 
-1. Classify Arc, ChatGPT, Google Chrome, Google Docs/Sheets/Slides, HTTPie, Scroll Reverser, Slack,
-   and Zwift as cask, removed, or external.
+1. Arc and HTTPie moved to the Trash, the Brave Slack web-app shortcut was deleted, and Google
+   Chrome and Zwift are pending a `sudo` removal.
+2. Google Docs/Sheets/Slides are `com.google.drivefs.shortcuts.*` Drive placeholders rather than
+   applications, so they stay untouched.
 
-Phase 4 - Mac App Store
+Phase 4 - Mac App Store (open)
 
-1. Declare the eight retained App Store applications through `homebrew.masApps` once the App Store
-   session is confirmed.
+1. The eight retained App Store applications are still owned by the App Store rather than by
+   `homebrew.masApps`. `brew bundle cleanup` ignores them, so leaving them undeclared does not
+   block activation; declaring them is optional tidiness that needs a confirmed App Store session.
 
-Phase 5 - tighten cleanup
+Phase 5 - tighten cleanup (done 2026-09-13)
 
-1. Flip `homebrew.onActivation.cleanup` from `"none"` to `"check"`. `"check"` runs
-   `brew bundle cleanup` and aborts activation on the first undeclared package, so it can only be
-   enabled after Phases 2-4 declare every retained item.
+1. `homebrew.onActivation.cleanup` is `"check"`, which runs `brew bundle cleanup` and aborts
+   activation on the first undeclared package. Phase 2 declared every retained cask before the flip.
 2. Keep invasive vendor and organization integrations external.
 3. Consider `"uninstall"` only after repeated successful checks. Never use `"zap"` on this
    work-managed machine.
@@ -196,6 +199,37 @@ Phase 5 - tighten cleanup
 Do not combine application migration with changing the Nix installer. The current configuration
 preserves the official multi-user Nix installation. Treat a Nix/Lix/Determinate migration as a
 separate change with its own rollback plan.
+
+## Application Preferences
+
+Three applications keep their settings in the standard per-user defaults domain, so
+`modules/darwin/macos-defaults.nix` declares them through `system.defaults.CustomUserPreferences`:
+Rectangle (`com.knollsoft.Rectangle`), AltTab (`com.lwouis.alt-tab-macos`), and Scroll Reverser
+(`com.pilotmoon.scroll-reverser`). The declared values reproduce the pre-migration plist exactly, so
+the first activation is value-preserving rather than a reset.
+
+This is a seed, not an enforcement loop. nix-darwin runs `defaults write` as the primary user during
+activation, and a running application holds its own in-memory copy, so:
+
+- Quit the application before switching, otherwise it flushes its settings over the declared values
+  when it exits.
+- A change made in the application's own UI wins until the next activation.
+- Only intended keys are declared. Sparkle update state (`SU*`, `lastVersion`), window frames, and
+  AltTab's `preferencesVersion` migration marker stay with the applications.
+
+Raycast is deliberately excluded. Its `com.raycast.macos` domain is 68 KB of internal bookkeeping
+keyed by extension UUIDs, and the real configuration lives in a 518 MB SQLite store under
+`~/Library/Application Support/com.raycast.macos`. It also syncs through Raycast's own cloud account.
+None of that is stable enough to declare, so Raycast keeps ownership of its own settings.
+
+### Verification
+
+```bash
+nix eval .#darwinConfigurations.macbook-pro.config.system.defaults.CustomUserPreferences --json
+defaults read com.knollsoft.Rectangle
+defaults read com.lwouis.alt-tab-macos
+defaults read com.pilotmoon.scroll-reverser
+```
 
 ## Validation
 
