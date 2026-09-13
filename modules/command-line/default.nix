@@ -65,6 +65,12 @@
       ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
         # GTK4 currently fails to link ripdrag on Apple Silicon macOS.
         pkgs.ripdrag
+      ]
+      # App Store upgrades are a manual step: homebrew.onActivation.upgrade is false, so
+      # mas must be reachable from an interactive shell. nix-darwin only injects it into
+      # the activation's brew bundle PATH, which leaves mas upgrade unavailable.
+      ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
+        pkgs.mas
       ];
 
       # Install the terminal inventory separately from the Nix module logic so it can evolve as a script.
