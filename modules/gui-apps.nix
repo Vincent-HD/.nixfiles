@@ -13,6 +13,12 @@
         # ChatGPT for macOS ships arm64-only, and Scroll Reverser is macOS-only.
         pkgs.chatgpt
         pkgs.scroll-reverser
+        # Google Chrome, unfree but allowed by the macOS host. The manually
+        # installed copy is restored by Google's updater, so the migration also
+        # disables that updater. Organization agents keep working because Chrome
+        # reads their native messaging hosts from the bundle-independent
+        # /Library/Google/Chrome/NativeMessagingHosts directory.
+        pkgs.google-chrome
       ];
     };
 }
