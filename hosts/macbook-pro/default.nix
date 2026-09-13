@@ -46,6 +46,7 @@ in
             hm.localSend
             hm.guiApps
             hm.ghostty
+            hm.bitwarden
           ];
 
           home.username = username;

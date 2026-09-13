@@ -4,7 +4,7 @@ This file tracks known technical debt that is intentionally deferred. Entries sh
 current compromise, the desired end state, and how to verify the replacement before removing the
 existing implementation.
 
-## Remove the Manual Google Chrome Copy and Calm Its Updater
+## Remove the Manual Google Chrome Copy
 
 ### Context
 
@@ -13,13 +13,18 @@ root-owned `/Applications/Google Chrome.app` (133.0.6943.54) is still on disk, a
 once already: a removal was followed minutes later by Google's updater stack running, and the bundle
 was present again with a fresh birth time.
 
-The restore path is Google's own updater, which Nix does not control:
+### Status (2026-09-13)
 
-- `/Library/LaunchDaemons/com.google.GoogleUpdater.wake.system.plist` runs
-  `GoogleUpdater --wake-all --system` every 3600 seconds and is loaded.
-- `/Library/Application Support/Google/GoogleUpdater` keeps its own state and staged packages.
-- The legacy Keystone plists (`com.google.keystone.{agent,daemon,xpcservice}`) are installed but
-  currently unloaded.
+The restore path is closed. `com.google.GoogleUpdater.wake.system` reports `disabled` in the
+system launchd domain, so the hourly `GoogleUpdater --wake-all --system` job that staged a
+replacement bundle no longer runs, and the legacy Keystone plists
+(`com.google.keystone.{agent,daemon,xpcservice}`) stay unloaded. `/Library/Application
+Support/Google/GoogleUpdater` still keeps its own state and staged packages, but nothing launches
+them any more. Only the `sudo` removal remains:
+
+```bash
+sudo rm -rf "/Applications/Google Chrome.app"
+```
 
 ### Desired End State
 
@@ -28,8 +33,6 @@ The restore path is Google's own updater, which Nix does not control:
 - Organization agents still work: Chrome reads their native messaging hosts from the
   bundle-independent `/Library/Google/Chrome/NativeMessagingHosts` directory, so a Nix-provided
   bundle keeps SentinelOne and CrowdStrike integration.
-- Mac App Store applications are either declared through `homebrew.masApps` or explicitly left to
-  the App Store; `brew bundle cleanup` ignores them either way.
 
 ### Verification
 
@@ -37,9 +40,46 @@ The restore path is Google's own updater, which Nix does not control:
   interval.
 - `brew bundle cleanup` exits 0 with no output.
 - The SentinelOne and CrowdStrike browser extensions still load in the Home Manager Chrome.
+- Launching Chrome from Spotlight or the Dock resolves to
+  `~/Applications/Home Manager Apps/Google Chrome.app`.
 
 ### Risk
 
-Google Drive for desktop is on the do-not-touch list and may share Google's updater with Chrome.
-Disabling that updater can stop Drive's automatic updates, so test Drive after the change. If Drive
-breaks, fall back to the Homebrew `google-chrome` cask, which keeps Google's updater in charge.
+Google Drive for desktop is on the do-not-touch list and shares Google's updater stack with Chrome.
+Disabling that updater also stops Drive from updating itself, so test Drive after the change. If
+Drive breaks, re-enable `com.google.GoogleUpdater.wake.system` and fall back to the Homebrew
+`google-chrome` cask, which keeps Google's updater in charge.
+
+## Remove the Duplicate App Store Bitwarden
+
+### Context
+
+Bitwarden is now installed twice: the App Store build at `/Applications/Bitwarden.app` (root-owned,
+installed 2025-08-25) and `pkgs.bitwarden-desktop` through `hm.bitwarden`. Home Manager outranks
+the App Store in the ownership tiers, and Bitwarden's SSH agent is a setting inside the installed
+bundle, so the Nix-managed copy is the one that should survive. Two copies also means two
+registrations for the `bitwarden://` URL scheme and two candidate locations for the agent socket.
+
+The Home Manager copy lands on the next `darwin-rebuild switch`, so remove the App Store build
+after that activation rather than before it.
+
+### Desired End State
+
+- Only `~/Applications/Home Manager Apps/Bitwarden.app` remains.
+
+### Verification
+
+- `ls -d /Applications/Bitwarden.app` reports no such file.
+- The Home Manager Bitwarden launches and unlocks, and `ssh-add -l` still lists keys served by its
+  SSH agent.
+- `open "bitwarden://"` resolves to the Home Manager bundle.
+
+### Why this is manual
+
+`homebrew.masApps` cannot uninstall it: removing an entry from `masApps` never removes the
+application, even under `onActivation.cleanup = "uninstall"`, because the App Store owns the
+install. The removal stays a `sudo` step:
+
+```bash
+sudo rm -rf /Applications/Bitwarden.app
+```
