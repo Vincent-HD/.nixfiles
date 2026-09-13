@@ -79,11 +79,20 @@ Verified on this machine: nixpkgs supplies `mas` 7.0.0, and `mas --help` lists b
 `install`, so the historical failure mode is gone. `brew bundle check` also correctly reports
 installed App Store apps as satisfied.
 
-A second documented limitation matters: **removing an entry from `masApps` does not uninstall the
+A second property matters more than the documentation suggests: `brew bundle cleanup` **does**
+consider installed App Store applications. An App Store app that is installed but absent from
+`masApps` makes `cleanup` return exit 1, and nix-darwin's `onActivation.cleanup = "check"` treats
+exit 1 as a hard failure and aborts activation with "found Homebrew packages not listed in the
+Brewfile". This is the one place App Store applications are not invisible to nix-darwin. It is
+easy to get wrong when moving a MAS app to Home Manager: dropping the `masApps` entry while the App
+Store copy is still on disk blocks the very activation that would install the replacement. Delete
+the store copy first, or in the same pass.
+
+A third documented limitation: **removing an entry from `masApps` does not uninstall the
 application**, even with `cleanup = "uninstall"`. App Store apps must be removed through the App
 Store, so an entry deleted here leaves a manual cleanup behind.
 
-A third trap appeared while removing two App Store apps. `mas uninstall` cannot be driven from an
+A fourth trap appeared while removing two App Store apps. `mas uninstall` cannot be driven from an
 elevated non-interactive context: it reads `SUDO_UID` and `SUDO_GID` to work out which user it is
 acting for, shells out to `/usr/bin/sudo` itself, and then trashes the bundle through
 `NSFileManager`. Run as root without a real `sudo` parent it fails on the missing uid, and with

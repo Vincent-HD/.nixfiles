@@ -221,24 +221,20 @@ this list, and why GarageBand and iMovie are neither declared nor owned.
 Safari, Google Drive for desktop together with the Docs, Sheets, and Slides shortcuts it generates,
 CrowdStrike Falcon, SentinelOne, and the MDM enrollment through `welii.mdm.getprimo.com`.
 
-### Pending manual removals
+### Completed removals (2026-09-13)
 
-All of these are root-owned and need `sudo`.
+Three root-owned bundles duplicated an application Home Manager already owns, and were deleted after
+the replacements landed:
 
-Three duplicate an application that Home Manager already owns. Each becomes safe to delete once the
-replacement launches:
-
-| Path | Installed | Replaced by |
+| Path | Was | Replaced by |
 | --- | --- | --- |
 | `/Applications/Slack.app` | 4.42.117 | Home Manager Slack 4.51.180 |
 | `/Applications/Google Chrome.app` | 133.0.6943.54 | Home Manager Chrome 152.0.7977.76, updater now disabled |
 | `/Applications/Bitwarden.app` | App Store build | `hm.bitwarden` |
 
-```bash
-sudo rm -rf "/Applications/Slack.app" "/Applications/Google Chrome.app" "/Applications/Bitwarden.app"
-```
-
-### Completed removals (2026-09-13)
+Bitwarden had to be deleted before the switch rather than after it, because an installed but
+undeclared App Store application fails the Homebrew cleanup check and aborts activation. That abort
+is what the 2026-09-13 switch hit; the bundle is gone now and `mas list` no longer registers it.
 
 GarageBand and iMovie were dropped from ownership entirely, with nothing replacing them, and were
 moved to `~/.Trash/nixfiles-cleanup/` on 2026-09-13. Emptying the Trash reclaims 4.4 GB, and
@@ -300,8 +296,8 @@ Phase 4 - Mac App Store (done 2026-09-13)
    `hm.bitwarden` owns it on both hosts instead. Keeping one owner also keeps the desktop's SSH
    agent honest, because the agent ships inside the application bundle.
 3. GarageBand and iMovie are also absent, and were removed on 2026-09-13. No Nix owner was possible
-   for either, and because `brew bundle cleanup` ignores App Store applications, leaving them
-   undeclared produced no drift while they were pending removal.
+   for either, and both were deleted rather than merely undeclared, because
+   `brew bundle cleanup` does report installed App Store applications that the Brewfile omits.
 4. Tailscale was evaluated for Home Manager and cannot go there: nixpkgs ships only the CLI on
    Darwin (`tailscale`, `tailscaled`, `get-authkey`, no `.app`), because the macOS tunnel needs
    a system extension that Nix cannot install. Homebrew has a standalone cask, `tailscale-app`,
@@ -309,12 +305,20 @@ Phase 4 - Mac App Store (done 2026-09-13)
    the same version the App Store build already runs, it installs through a `.pkg` that needs
    `sudo` and a re-approved system extension, and it is marked `auto_updates`, so moving it would
    trade a working extension for no declarative gain.
-5. Declaring rather than leaving them to the App Store is the recommendation made here.
-   `brew bundle cleanup` ignores App Store applications completely, so undeclared they are
-   invisible drift, while declared they are documented, reproducible on a fresh machine, and
-   verified by `brew bundle check`. The tradeoff is one hard limitation: removing an entry from
-   `masApps` never uninstalls the application, even under `cleanup = "uninstall"`, so App Store
-   removals always stay manual.
+5. Declaring them is not optional tidiness. `brew bundle cleanup` detects an installed App Store
+   application that the Brewfile omits and returns exit 1, and nix-darwin's `"check"` mode treats
+   that exit code as a hard failure and aborts activation with "found Homebrew packages not listed
+   in the Brewfile". Under `cleanup = "uninstall"` the same detection force-uninstalls the app.
+   This is what blocked the 2026-09-13 activation: Bitwarden was still installed from the App Store
+   while the Brewfile had dropped it in favour of Home Manager, so the switch refused to run until
+   the App Store copy was deleted. Declaring App Store applications therefore keeps them
+   documented, reproducible on a fresh machine, and verified by `brew bundle check`, without
+   leaving a landmine that blocks the next activation.
+
+   The tradeoff is one hard limitation: removing an entry from `masApps` never uninstalls the
+   application, even under `cleanup = "uninstall"`, so App Store removals always stay manual. The
+   two facts together mean an App Store application is best declared while installed, and its
+   bundle deleted in the same change that drops its entry.
 6. `brew bundle check` flags iMovie and Tailscale as unmet on this machine. Those are pending App
    Store updates, not missing applications, and they cannot block activation:
    `onActivation.cleanup = "check"` only reports packages that are installed but undeclared.

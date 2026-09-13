@@ -54,22 +54,31 @@ Drive breaks, re-enable `com.google.GoogleUpdater.wake.system` and fall back to 
 
 ### Context
 
-Bitwarden is now installed twice: the App Store build at `/Applications/Bitwarden.app` (root-owned,
+Bitwarden was installed twice: the App Store build at `/Applications/Bitwarden.app` (root-owned,
 installed 2025-08-25) and `pkgs.bitwarden-desktop` through `hm.bitwarden`. Home Manager outranks
 the App Store in the ownership tiers, and Bitwarden's SSH agent is a setting inside the installed
-bundle, so the Nix-managed copy is the one that should survive. Two copies also means two
+bundle, so the Nix-managed copy is the one that should survive. Two copies also meant two
 registrations for the `bitwarden://` URL scheme and two candidate locations for the agent socket.
 
-The Home Manager copy lands on the next `darwin-rebuild switch`, so remove the App Store build
-after that activation rather than before it.
+The App Store build had to go **before** the switch, not after it. `brew bundle cleanup` reports an
+installed App Store application that the Brewfile omits, and `onActivation.cleanup = "check"` aborts
+activation on that report, so dropping the `masApps` entry while the store copy was still on disk
+blocked the switch outright. The bundle was deleted on 2026-09-13; because the App Store receipt
+lives inside the bundle, `mas list` stopped registering the app at the same time.
+
+### Status (2026-09-13)
+
+The App Store bundle is gone and the `masApps` entry is gone. What remains is the activation that
+installs the Home Manager copy, and Bitwarden is uninstalled on this machine until it runs.
 
 ### Desired End State
 
-- Only `~/Applications/Home Manager Apps/Bitwarden.app` remains.
+- Only `~/Applications/Home Manager Apps/Bitwarden.app` is installed.
 
 ### Verification
 
-- `ls -d /Applications/Bitwarden.app` reports no such file.
+- `ls -d /Applications/Bitwarden.app` reports no such file. Done.
+- `darwin-rebuild switch` completes instead of aborting on the Homebrew check.
 - The Home Manager Bitwarden launches and unlocks, and `ssh-add -l` still lists keys served by its
   SSH agent.
 - `open "bitwarden://"` resolves to the Home Manager bundle.
