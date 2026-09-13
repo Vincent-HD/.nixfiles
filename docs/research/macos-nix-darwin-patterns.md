@@ -101,6 +101,24 @@ operation needs the user's own session. Run it from an interactive shell where `
 or move the bundle into the owner's Trash directly. Deleting the bundle is sufficient either way:
 the App Store receipt lives inside it, so the app stops being registered as installed.
 
+A fifth trap, and the one that actually broke activation here, is `mas upgrade`. It is not reached
+through the masApps preinstall path, which is why `--no-upgrade` alone does not prevent it:
+`Homebrew::Bundle::MacAppStore.batch_installable?` always returns true, so masApps are collected
+into a single batch, and `batch_install_package_type!` partitions that batch on
+`preinstall!` alone. `preinstall!` returns true for an installed-but-outdated app as long as
+`no_upgrade` is false, and `install_batch!` then calls `Bundle.system(mas, "upgrade", <ids>)`.
+`mas upgrade` shells out to `/usr/bin/sudo` internally, and nix-darwin already runs `brew bundle`
+through `sudo --user=<user> --set-home`, so the inner prompt has no terminal to read and the whole
+switch dies with "sudo: a terminal is required to read the password ... Installing Tailscale has
+failed!". With `no_upgrade` true, `preinstall!` returns false for every up-to-date-or-not installed
+app, `install_batch!` is never called, and activation leaves outdated App Store apps alone.
+
+So `homebrew.onActivation.upgrade = true` is a trap on a machine that uses `masApps`: one pending
+App Store update, anywhere, aborts every subsequent activation. It also matches the module's own
+warning, which fires when `autoUpdate` or `cleanup` is set, that Homebrew no longer upgrades during
+activation by default. Leaving `upgrade` at its default `false` keeps activation idempotent, and
+App Store upgrades become a deliberate manual step.
+
 ## Pattern 4: `system.defaults.CustomUserPreferences` for third-party settings
 
 `system.defaults` only models a fixed set of Apple domains. For third-party applications,
@@ -150,13 +168,43 @@ Some software is not migratable and trying is a mistake:
 - **Endpoint security and MDM.** CrowdStrike Falcon, SentinelOne, and Google Drive for desktop are
   managed externally and must never be touched by activation.
 
+## Pattern 8: the App Management grant belongs to the launching process
+
+Home Manager's Darwin app copying needs the `SystemPolicyAppBundles` TCC service, which macOS
+presents as App Management in System Settings > Privacy & Security. Copying a `.app` into
+`~/Applications/Home Manager Apps` and touching a file inside it both require it, because
+`/usr/bin/touch "$appBundle/.DS_Store"` is how `targets.darwin.copyApps` probes for the grant
+before it copies anything.
+
+The grant is recorded against the process responsible for the activation, not against the user or
+the Nix store. A terminal emulator that has been granted App Management can run the switch; an
+automation shell with no such grant cannot, and fails with "permission denied when trying to
+update apps, aborting activation" while the same command succeeds by hand. This is why a switch
+can pass in one launcher and fail in another with an identical flake.
+
+Two practical consequences:
+
+1. Run `darwin-rebuild switch` from the terminal you actually use, and grant App Management to it
+   when macOS first prompts.
+2. `targets.darwin.copyApps.enableChecks` can be turned off to skip the probe. That is a debugging
+   escape hatch, not a fix: activation then fails later with a raw permission error instead of a
+   readable one, and the apps still will not copy.
+
+One sharp edge makes this confusing to debug. The failure branch runs `tccutil reset
+SystemPolicyAppBundles` **before** it gives up, so every failed activation clears the grant for
+every process, not just the one that failed. A terminal that completed a switch an hour ago can
+fail the next one with no configuration change, because an intervening failure from some other
+launcher wiped its grant. When this error appears, the fix is to accept the prompt, not to hunt for
+a flake regression.
+
 ## Homebrew 7.0.0 changes that affect this setup
 
 Released 2026-09-13. The items that matter here:
 
 - **Self-updating casks are respected.** `brew upgrade` skips incompatible casks, and both it and
   `brew outdated` honour `HOMEBREW_NO_UPGRADE_AUTO_UPDATES_CASKS`, preserving the opt-out that
-  self-updating applications rely on. Relevant because activation runs with `upgrade = true`.
+  self-updating applications rely on. Relevant because this host used to run with
+  `upgrade = true`; it no longer does, see Pattern 3.
 - **Cleaner uninstalls.** `brew uninstall` avoids needless password prompts when files are already
   owned by the current user, and drops records for casks missing from the API.
 - **Faster batch installs.** `brew bundle` benefits from the same shared preparation and download

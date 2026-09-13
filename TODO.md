@@ -36,6 +36,7 @@ sudo rm -rf "/Applications/Google Chrome.app"
 
 ### Verification
 
+- `darwin-rebuild switch` completes instead of aborting on the Homebrew or App Management check.
 - `ls -d /Applications/Google\ Chrome.app` stays absent an hour after removal, past one wake
   interval.
 - `brew bundle cleanup` exits 0 with no output.
@@ -71,6 +72,13 @@ lives inside the bundle, `mas list` stopped registering the app at the same time
 The App Store bundle is gone and the `masApps` entry is gone. What remains is the activation that
 installs the Home Manager copy, and Bitwarden is uninstalled on this machine until it runs.
 
+The activation no longer stops on the Homebrew check: `homebrew.onActivation.upgrade` was `true`,
+which ran `brew bundle` without `--no-upgrade`, sent the outdated App Store Tailscale through
+`mas upgrade`, and died on the `sudo` prompt `mas` opens internally. It is `false` now, and the
+Brewfile check passes. The remaining stop is Home Manager's App Management check, which is a
+per-process macOS permission rather than a repository problem; see Pattern 8 in
+`docs/research/macos-nix-darwin-patterns.md`.
+
 ### Desired End State
 
 - Only `~/Applications/Home Manager Apps/Bitwarden.app` is installed.
@@ -78,7 +86,7 @@ installs the Home Manager copy, and Bitwarden is uninstalled on this machine unt
 ### Verification
 
 - `ls -d /Applications/Bitwarden.app` reports no such file. Done.
-- `darwin-rebuild switch` completes instead of aborting on the Homebrew check.
+- `darwin-rebuild switch` completes instead of aborting on the Homebrew or App Management check.
 - The Home Manager Bitwarden launches and unlocks, and `ssh-add -l` still lists keys served by its
   SSH agent.
 - `open "bitwarden://"` resolves to the Home Manager bundle.

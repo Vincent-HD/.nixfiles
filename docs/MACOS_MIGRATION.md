@@ -385,6 +385,15 @@ darwin-rebuild build --flake .#macbook-pro
 sudo darwin-rebuild switch --flake .#macbook-pro
 ```
 
+Run the switch from the terminal emulator you normally use. Home Manager's app copying needs the
+macOS App Management permission (`kTCCServiceSystemPolicyAppBundles`), and macOS records it against
+the process responsible for the activation rather than against the user. A terminal that holds the
+grant completes the switch; a process without it aborts with "permission denied when trying to
+update apps" even though the flake is fine. The check resets the service with `tccutil reset
+SystemPolicyAppBundles` before it fails, so accept the App Management prompt the next run raises and
+add the terminal under System Settings > Privacy & Security > App Management if no prompt appears.
+See Pattern 8 in `docs/research/macos-nix-darwin-patterns.md`.
+
 After activation:
 
 ```bash

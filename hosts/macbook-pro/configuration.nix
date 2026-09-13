@@ -19,13 +19,17 @@ in
         "flakes"
       ];
 
-      # Let nix-darwin refresh Homebrew and upgrade its managed packages on activation.
-      # `check` runs `brew bundle cleanup` and aborts activation if any cask is installed
-      # but undeclared, which keeps the machine from drifting away from the Brewfile.
+      # Let nix-darwin refresh Homebrew metadata on activation, but never upgrade.
+      # Activation runs `brew bundle` under sudo, and the `mas upgrade` Homebrew uses for
+      # an outdated App Store app opens its own sudo prompt, which nothing can answer
+      # there: one pending App Store update aborts the whole switch. `check` still runs
+      # `brew bundle cleanup`, so an installed-but-undeclared cask or App Store app
+      # aborts activation instead of silently drifting from the Brewfile.
+      # App Store upgrades are a manual, deliberate step.
       homebrew.onActivation = {
         cleanup = "check";
         autoUpdate = true;
-        upgrade = true;
+        upgrade = false;
         extraEnv.HOMEBREW_NO_ANALYTICS = "1";
       };
       homebrew.greedyCasks = true;
