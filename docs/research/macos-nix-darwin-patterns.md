@@ -247,7 +247,7 @@ resolves casks through the JSON API and has no core tap checked out.
 | Concern | This repository |
 | --- | --- |
 | Portable CLI tools | Home Manager (`hm.commandLine`, `hm.coding`) on both hosts |
-| Portable GUI apps with nixpkgs builds | Home Manager (`hm.guiApps`), including Slack, ChatGPT, Scroll Reverser, Google Chrome |
+| Portable GUI apps with nixpkgs builds | Home Manager (`hm.guiApps`), including ChatGPT and Scroll Reverser |
 | Fonts | `fonts.packages` through `modules/fonts.nix` on both hosts |
 | Third-party app settings | `system.defaults.CustomUserPreferences` for Rectangle, AltTab, Scroll Reverser |
 | Self-updating and privileged GUI apps | Homebrew casks declared in `darwin.homebrew` and per-feature modules |

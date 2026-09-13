@@ -35,17 +35,16 @@ portable CLI stack, so no formula reconciliation was left to do.
 - Homebrew taps: only `deskflow/tap`. `lizardbyte/homebrew` and `homebrew/services` were unused
   and untapped.
 - Home Manager applications: Brave, Bitwarden (new this pass), ChatGPT, Cursor, DataGrip, Discord,
-  Google Chrome, LocalSend, Scroll Reverser, Slack, T3 Code, Visual Studio Code.
-- Google's updater is disabled: `com.google.GoogleUpdater.wake.system` reports `disabled` in the
-  system launchd domain, which closes the restore path that recreated `/Applications/Google
-  Chrome.app` behind Nix's back. The manual bundle can finally be removed.
+  LocalSend, Scroll Reverser, T3 Code, Visual Studio Code.
+- Slack and Google Chrome are **not** Home Manager applications. They are pushed by the corporate
+  Fleet MDM agent at `/opt/orbit`, which reinstalls both bundles after any removal at a version
+  older than the nixpkgs build. They are org-owned and untouchable; see TODO.md for the evidence.
 - Mac App Store applications: GIPHY CAPTURE, Keynote, Numbers, Pages, Tailscale. Bitwarden is no
   longer in this group because Home Manager owns it, and GarageBand plus iMovie were dropped from
   the declaration as unmanaged.
-- Unmanaged drag-and-drop installs: only `/Applications/Google Chrome.app`. ChatGPT, Scroll
-  Reverser, and Slack moved to Home Manager; Arc, HTTPie, Zwift, WebStorm, and the Proton Mail
-  leftovers were moved to the Trash, and Google Chrome is declared in Home Manager but its
-  root-owned copy is still on disk.
+- Unmanaged drag-and-drop installs: none left. ChatGPT and Scroll Reverser moved to Home Manager;
+  Arc, HTTPie, Zwift, WebStorm, and the Proton Mail leftovers were moved to the Trash. Slack and
+  Google Chrome were handed back to the org that installs them.
 - External owners that activation must never touch: CrowdStrike Falcon
   (`com.crowdstrike.falcon.Agent` endpoint-security extension), SentinelOne
   (`com.sentinelone.network-monitoring` network extension), and Google Drive. The machine is
@@ -139,12 +138,12 @@ commands before trusting it.
 | kitty | Homebrew cask | remove | none | Cask removed 2026-09-13 in favour of Ghostty. | yes |
 | BlackHole 2ch, BlackHole 16ch | Homebrew cask | remove | none | Drivers in `/Library/Audio/Plug-Ins/HAL`. No installed cask depends on them. Removal needs `sudo`. | no |
 | Font Caskaydia Mono Nerd Font | Homebrew cask | move | nix-darwin + nixos | Cask removed 2026-09-13. `modules/fonts.nix` installs `nerd-fonts.caskaydia-mono` system-wide on both hosts (Nix 3.5.0 vs cask 3.4.0). | no |
-| Slack | unmanaged | migrate | home-manager | Installed 4.42.117, nixpkgs 4.51.180. Declared in `hm.guiApps`; delete `/Applications/Slack.app` after the Home Manager copy lands. | no |
+| Slack | unmanaged | external | none | MDM-installed by Fleet orbit. Reappears after `sudo rm -rf` at 4.42.117, older than the nixpkgs 4.51.180 build, so it cannot be Nix-managed. Removed from `hm.guiApps`. | no |
 | ChatGPT | unmanaged | migrate | home-manager | Bundle id `com.openai.codex`. Installed 26.908.40834, nixpkgs 26.803.81509 from the same `codex-app-prod` source. Declared in `hm.guiApps`. | no |
 | Scroll Reverser | unmanaged | migrate | home-manager | Installed 1.8.2, nixpkgs 1.9. Declared in `hm.guiApps`. | no |
 | Arc | unmanaged | remove | none | Moved to Trash 2026-09-13. The nixpkgs `arc-browser` attribute was dropped upstream as unmaintained. | yes |
 | HTTPie | unmanaged | remove | none | Moved to Trash 2026-09-13. Available as `pkgs.xh` or `pkgs.httpie` if it is ever needed again. | yes |
-| Google Chrome | unmanaged | migrate | home-manager | Declared in `hm.guiApps` for Darwin (nixpkgs 152.0.7977.76 against manual 133.0.6943.54). Google's updater is now disabled, so the root-owned bundle only needs a `sudo` removal; see TODO.md. | no |
+| Google Chrome | unmanaged | external | none | MDM-installed by Fleet orbit, like Slack. Reappears at 133.0.6943.54 against the nixpkgs 152.0.7977.76 build. Removed from `hm.guiApps`; Google's updater was never the writer. | no |
 | Bitwarden | Mac App Store | migrate | home-manager | nixpkgs `bitwarden-desktop` builds for `aarch64-darwin`. Now declared in `hm.bitwarden`; the root-owned App Store copy is removed after the Home Manager copy is verified. | no |
 | Zwift | unmanaged | remove | none | Root-owned bundle removed 2026-09-13. | yes |
 | WebStorm | unmanaged | remove | none | Standalone install at `~/Applications/WebStorm.app`; moved to the Trash 2026-09-13 with its `WebStorm2024.2` and `2024.3` state. DataGrip and JetBrains Toolbox remain. | yes |
@@ -181,10 +180,8 @@ Installed into `~/Applications/Home Manager Apps`:
 | Cursor | `hm.agentCursor` | |
 | DataGrip | `hm.work` | |
 | Discord | `hm.discord` | Nixcord with Vencord. |
-| Google Chrome | `hm.guiApps` | Darwin only. Manual root-owned copy pending removal. |
 | LocalSend | `hm.localSend` | |
 | Scroll Reverser | `hm.guiApps` | Darwin only. AppleDouble sidecars are stripped so the code signature stays valid. |
-| Slack | `hm.guiApps` | Manual root-owned copy pending removal. |
 | T3 Code (Nightly) | `hm.agentT3Code` | |
 | Visual Studio Code | `hm.agentVscode` | |
 
@@ -210,35 +207,38 @@ Homebrew font cask. `darwin.macosDefaults` owns appearance, Dock, and Finder, pl
 
 No Homebrew formulae and no Homebrew services are installed.
 
-### Tier 4 - Mac App Store (5 declared)
+### Tier 4 - Mac App Store (4 declared)
 
-GIPHY CAPTURE, Keynote, Numbers, Pages, and Tailscale, declared in `homebrew.masApps`. None has a
-cask or a nixpkgs build, so no higher tier can take them. See Phase 4 for why Bitwarden is not in
-this list, and why GarageBand and iMovie are neither declared nor owned.
+Keynote, Numbers, Pages, and Tailscale, declared in `homebrew.masApps`. None has a cask or a
+nixpkgs build, so no higher tier can take them. See Phase 4 for why Bitwarden is not in this list,
+and why GarageBand, iMovie, and GIPHY CAPTURE are neither declared nor owned.
 
 ### Tier 5 - external, never touched by activation
 
 Safari, Google Drive for desktop together with the Docs, Sheets, and Slides shortcuts it generates,
-CrowdStrike Falcon, SentinelOne, and the MDM enrollment through `welii.mdm.getprimo.com`.
+CrowdStrike Falcon, SentinelOne, `/Applications/Slack.app`, `/Applications/Google Chrome.app`,
+and the MDM enrollment through `welii.mdm.getprimo.com` with its Fleet orbit software installers.
 
 ### Completed removals (2026-09-13)
 
-Three root-owned bundles duplicated an application Home Manager already owns, and were deleted after
-the replacements landed:
+One root-owned bundle duplicated an application Home Manager owns, and was deleted after the
+replacement landed:
 
 | Path | Was | Replaced by |
 | --- | --- | --- |
-| `/Applications/Slack.app` | 4.42.117 | Home Manager Slack 4.51.180 |
-| `/Applications/Google Chrome.app` | 133.0.6943.54 | Home Manager Chrome 152.0.7977.76, updater now disabled |
 | `/Applications/Bitwarden.app` | App Store build | `hm.bitwarden` |
+
+`/Applications/Slack.app` and `/Applications/Google Chrome.app` are deliberately absent from that
+table. They were deleted and came back within minutes, because the org's Fleet agent installs them.
+Nothing in this repository can own them.
 
 Bitwarden had to be deleted before the switch rather than after it, because an installed but
 undeclared App Store application fails the Homebrew cleanup check and aborts activation. That abort
 is what the 2026-09-13 switch hit; the bundle is gone now and `mas list` no longer registers it.
 
-GarageBand and iMovie were dropped from ownership entirely, with nothing replacing them, and were
-moved to `~/.Trash/nixfiles-cleanup/` on 2026-09-13. Emptying the Trash reclaims 4.4 GB, and
-`mas list` no longer registers either app.
+GarageBand, iMovie, and GIPHY CAPTURE were dropped from ownership entirely, with nothing replacing
+them. GarageBand and iMovie were moved to `~/.Trash/nixfiles-cleanup/` on 2026-09-13; GIPHY CAPTURE
+was left installed but undeclared, and can be removed from the App Store UI.
 
 `mas uninstall` was the first choice because it also clears the App Store's record of the install,
 but it cannot be driven from an elevated non-interactive context. It reads `SUDO_UID` and
@@ -272,7 +272,7 @@ Phase 2 - declare the retained casks (done 2026-09-13)
 
 1. Ghostty is declared: `modules/ghostty.nix` shares one config across both hosts and adds the
    `ghostty` cask on Darwin only.
-2. Slack, ChatGPT, and Scroll Reverser moved from manual installs to `modules/gui-apps.nix`.
+2. ChatGPT and Scroll Reverser moved from manual installs to `modules/gui-apps.nix`.
 3. The Caskaydia Mono Nerd Font moved from a cask to `fonts.packages` in `modules/fonts.nix`,
    which installs it on both hosts.
 4. The retained graphical casks are declared in `darwin.homebrew`, which now lists casks only.
@@ -283,13 +283,13 @@ Phase 3 - unmanaged applications (done 2026-09-13)
    Slack web-app shortcut was deleted.
 2. Google Docs/Sheets/Slides are `com.google.drivefs.shortcuts.*` Drive placeholders rather than
    applications, so they stay untouched.
-3. Google Chrome is declared in `hm.guiApps` for Darwin. Removing the manual root-owned bundle has
-   to happen alongside disabling Google's updater, which restored it once; see TODO.md.
+3. Slack and Google Chrome turned out to be MDM-installed rather than manual copies, so they were
+   removed from `hm.guiApps` and moved to the do-not-touch list; see TODO.md.
 
 Phase 4 - Mac App Store (done 2026-09-13)
 
-1. Five App Store applications are declared through `homebrew.masApps` in `darwin.homebrew`:
-   GIPHY CAPTURE, Keynote, Numbers, Pages, and Tailscale. None of them has a cask or a nixpkgs
+1. Four App Store applications are declared through `homebrew.masApps` in `darwin.homebrew`:
+   Keynote, Numbers, Pages, and Tailscale. None of them has a cask or a nixpkgs
    build, so the App Store is genuinely the only source; that is the case `masApps` exists for.
 2. Bitwarden is deliberately absent from that list. nixpkgs builds `bitwarden-desktop` for
    `aarch64-darwin`, and Home Manager outranks the App Store in the ownership tiers, so

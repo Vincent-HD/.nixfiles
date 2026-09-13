@@ -29,8 +29,8 @@
         # supplies `mas` from nixpkgs and writes these into the Brewfile, so the
         # list stays under version control.
         #
-        # Keynote, Numbers, Pages, and GIPHY CAPTURE have no cask and no nixpkgs
-        # build, so the App Store is the only source. Tailscale stays here rather
+        # Keynote, Numbers, and Pages have no cask and no nixpkgs build, so the
+        # App Store is the only source. Tailscale stays here rather
         # than moving to the `tailscale-app` cask: nixpkgs ships only the CLI on
         # Darwin, both distributions carry the same version, and the cask still
         # installs through `sudo` with a system extension to re-approve while
@@ -43,7 +43,6 @@
         # `onActivation.cleanup = "uninstall"`, because the App Store owns the
         # install.
         masApps = {
-          "GIPHY CAPTURE" = 668208984;
           "Keynote" = 409183694;
           "Numbers" = 409203825;
           "Pages" = 409201541;

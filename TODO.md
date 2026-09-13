@@ -4,52 +4,96 @@ This file tracks known technical debt that is intentionally deferred. Entries sh
 current compromise, the desired end state, and how to verify the replacement before removing the
 existing implementation.
 
-## Remove the Manual Google Chrome Copy
+## Slack and Chrome Are Reinstalled by the Corporate MDM
 
 ### Context
 
-`pkgs.google-chrome` is declared in `hm.guiApps` for Darwin, so Home Manager now owns Chrome. The
-root-owned `/Applications/Google Chrome.app` (133.0.6943.54) is still on disk, and it came back
-once already: a removal was followed minutes later by Google's updater stack running, and the bundle
-was present again with a fresh birth time.
+Earlier revisions of this file blamed Google's updater for recreating `/Applications/Google
+Chrome.app`. That was wrong. The real owner is the Fleet MDM agent at `/opt/orbit`, and it
+reinstalls Slack the same way.
+
+Both bundles reappear after `sudo rm -rf` at versions *older* than the Home Manager copies, which
+no updater does: Slack 4.42.117 against 4.51.180, Chrome 133.0.6943.54 against 152.0.7977.76. Each
+reappearance is preceded by a DMG mount and an orbit software-installer run. The evidence:
+
+- A DMG labelled `Slack` mounts (`hfs: mounted Slack on device disk5s1`), then a second image for
+  Chrome, with root-owned staging directories under `/tmp/dmg_mount_*`.
+- `sentineld` logs `Monitoring of path '/private/tmp/.../install-script.sh' failed` at the same
+  second, which is how orbit executes a downloaded installer.
+- `/opt/orbit/bin/orbit/macos/stable/orbit` contains `install-script`, `post-install-script`,
+  `Installation failed after %d attempts`, and the symbol
+  `github.com/fleetdm/fleet/v4/server/fleet.(*OrbitClient).DownloadSoftwareInstaller`.
+- The machine is MDM-enrolled (User Approved) through `welii.mdm.getprimo.com`. Neither bundle has a
+  Homebrew cask receipt, and `pkgutil --pkgs` has no `com.google.Chrome`, so Homebrew and a plain
+  pkg install are both ruled out.
+- `com.google.GoogleUpdater.wake.system` is `disabled` in the system launchd domain, and
+  `managedappdistributiond` only observed the bundle's modification date change. Neither is the
+  writer.
+
+These are Fleet self-service software packages, not MDM-whitelisted apps:
+`com.apple.servicemanagement` whitelists SentinelOne bundle ids only.
 
 ### Status (2026-09-13)
 
-The restore path is closed. `com.google.GoogleUpdater.wake.system` reports `disabled` in the
-system launchd domain, so the hourly `GoogleUpdater --wake-all --system` job that staged a
-replacement bundle no longer runs, and the legacy Keystone plists
-(`com.google.keystone.{agent,daemon,xpcservice}`) stay unloaded. `/Library/Application
-Support/Google/GoogleUpdater` still keeps its own state and staged packages, but nothing launches
-them any more. Only the `sudo` removal remains:
-
-```bash
-sudo rm -rf "/Applications/Google Chrome.app"
-```
+The Home Manager copies of Slack and Chrome were removed from `hm.guiApps`. Managing them was
+pointless: the duplicate is org-owned, it is not removable through Nix, and `homebrew` cannot see it
+either. Both `/Applications/Slack.app` and `/Applications/Google Chrome.app` now sit on the
+do-not-touch list beside CrowdStrike, SentinelOne, Google Drive, and the MDM itself.
 
 ### Desired End State
 
-- `/Applications/Google Chrome.app` is gone and only the Home Manager copy remains.
-- Google's updater no longer restores a Chrome bundle behind Nix's back.
-- Organization agents still work: Chrome reads their native messaging hosts from the
-  bundle-independent `/Library/Google/Chrome/NativeMessagingHosts` directory, so a Nix-provided
-  bundle keeps SentinelOne and CrowdStrike integration.
+- No Home Manager or Homebrew entry claims Slack or Chrome on Darwin.
+- The org-installed bundles are left in place and are not counted as migration debt.
+- If either app is wanted in a Nix-managed form, it is launched from the vendor's own installer or
+  from the org package, not duplicated.
 
 ### Verification
 
-- `darwin-rebuild switch` completes instead of aborting on the Homebrew or App Management check.
-- `ls -d /Applications/Google\ Chrome.app` stays absent an hour after removal, past one wake
-  interval.
-- `brew bundle cleanup` exits 0 with no output.
-- The SentinelOne and CrowdStrike browser extensions still load in the Home Manager Chrome.
-- Launching Chrome from Spotlight or the Dock resolves to
-  `~/Applications/Home Manager Apps/Google Chrome.app`.
+- `rg -n 'slack|google-chrome' modules/` returns no package declarations for Darwin.
+- `brew bundle check` stays clean: neither bundle is a Homebrew-managed cask.
+- A `sudo rm -rf` of either bundle is followed by reappearance within minutes, which is the
+  expected MDM behaviour and not a regression.
 
 ### Risk
 
-Google Drive for desktop is on the do-not-touch list and shares Google's updater stack with Chrome.
-Disabling that updater also stops Drive from updating itself, so test Drive after the change. If
-Drive breaks, re-enable `com.google.GoogleUpdater.wake.system` and fall back to the Homebrew
-`google-chrome` cask, which keeps Google's updater in charge.
+The org can push a different version of either app at any time, including one older than what the
+user would otherwise run. Nothing in this repository can control that. Report version problems to
+the org rather than working around them locally.
+
+## Convert the Shared Shell Configuration to Zsh Only
+
+### Context
+
+The shared shell module was written for Linux first, so it enables Bash integration alongside Zsh
+for every tool that offers one: Atuin, fzf, Starship, yazi, and zoxide all set
+`enableBashIntegration = true` in `modules/command-line/default.nix`. Home Manager therefore
+generates Bash rc files and Bash startup hooks on both hosts.
+
+On macOS this is dead weight with a sharp edge. The system Bash is 3.2, the generated hooks are
+never exercised by an interactive session, and the Agent Skills scripts under
+`modules/agents/assets/skills/*/scripts/` still carry `#!/usr/bin/env bash` shebangs while the
+documented workflow is `zsh -lic`.
+
+### Desired End State
+
+- `enableBashIntegration` is dropped from the shared module, leaving Zsh as the only managed shell.
+- The Agent Skills helper scripts run under Zsh, or are rewritten as POSIX `sh` where they do not
+  need Zsh features, so a `zsh -lic` invocation and a direct execution agree.
+- No Home Manager Bash rc files are generated on either host.
+
+### Verification
+
+- `rg -n 'enableBashIntegration' modules/` returns nothing.
+- A fresh `darwin-rebuild switch` and `nixos-rebuild switch` both evaluate and activate.
+- `zsh -lic 'command -v atuin fzf starship yazi zoxide'` still resolves every tool.
+- Each skills script still runs after the shebang change: run the `jj-auto-revise` status script and
+  the `jj-resplit-stack` inventory script directly.
+
+### Risk
+
+Anything that shells out to `bash -c` for these tools stops getting their shell integration. The
+affected integration is cosmetic for all five tools, so the loss is bounded; confirm with the
+verification commands before removing the flags.
 
 ## Remove the Duplicate App Store Bitwarden
 
