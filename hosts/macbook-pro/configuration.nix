@@ -20,8 +20,10 @@ in
       ];
 
       # Let nix-darwin refresh Homebrew and upgrade its managed packages on activation.
+      # `check` runs `brew bundle cleanup` and aborts activation if any cask is installed
+      # but undeclared, which keeps the machine from drifting away from the Brewfile.
       homebrew.onActivation = {
-        cleanup = "none";
+        cleanup = "check";
         autoUpdate = true;
         upgrade = true;
         extraEnv.HOMEBREW_NO_ANALYTICS = "1";

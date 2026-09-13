@@ -1,5 +1,11 @@
 { ... }:
 {
+  # nix-darwin: declarative Homebrew ownership for the macOS host.
+  #
+  # Feature modules declare the casks they own (codex in darwin.agentCodex, deskflow +
+  # its tap in darwin.deskflow, ghostty in darwin.ghostty, rustdesk in darwin.rustdesk).
+  # This module owns the remaining native GUI applications: self-updating apps and
+  # privileged helpers that have no portable nixpkgs build.
   config.flake.modules.darwin.homebrew =
     { ... }:
     {
@@ -7,55 +13,17 @@
         enable = true;
         enableZshIntegration = true;
 
-        taps = [
-          "homebrew/services"
-        ];
-
-        # Preserve the current Homebrew formula ownership during the first migration.
-        brews = [
-          "jq"
-          "mas"
-          "thefuck"
-        ];
-
+        # No formulae: every portable tool comes from Home Manager.
         casks = [
           "alt-tab"
           "audiorelay"
-          "blackhole-16ch"
-          "blackhole-2ch"
-          "brave-browser"
-          "bruno"
           "cleanshot"
-          "cursor"
-          "dbeaver-community"
-          "discord"
-          "font-caskaydia-mono-nerd-font"
-          "ghostty"
-          "gitbutler"
-          "insomnia"
           "jetbrains-toolbox"
           "moonlight"
-          "msty"
-          "obs"
           "orbstack"
-          "proton-mail"
           "raycast"
           "rectangle"
-          "tabby"
-          "teamviewer"
-          "visual-studio-code"
         ];
-
-        masApps = {
-          Bitwarden = 1352778147;
-          GarageBand = 682658836;
-          "GIPHY CAPTURE" = 668208984;
-          iMovie = 408981434;
-          Keynote = 409183694;
-          Numbers = 409203825;
-          Pages = 409201541;
-          Tailscale = 1475387142;
-        };
       };
     };
 }

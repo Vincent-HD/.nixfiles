@@ -22,6 +22,7 @@ in
       nixos.printing
       nixos.gparted
       nixos.windowsMounts
+      nixos.fonts
       nixos.sunshine
       nixos.gaming
       nixos.lsfgVk

@@ -9,6 +9,8 @@ in
     modules = [
       darwin.macbookProConfiguration
       darwin.macosDefaults
+      darwin.fonts
+      darwin.homebrew
       inputs.sops-nix.darwinModules.sops
       darwin.secrets
       darwin.agentCodex

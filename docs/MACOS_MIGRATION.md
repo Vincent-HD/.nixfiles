@@ -29,14 +29,16 @@ installers, or the organization. That is expected until the inventory below is c
 Captured on `macbook-pro` after the module refactor landed. Home Manager already owned the whole
 portable CLI stack, so no formula reconciliation was left to do.
 
-- Homebrew casks installed: 28 before this pass, 23 after the Phase 1 and 2 removals
-  (`kitty`, `blackhole-2ch`, and `blackhole-16ch` are gone; the last two need `sudo`).
+- Homebrew casks installed: 28 before this pass, 14 now. `obs` and `teamviewer` are the only
+  undeclared casks left; both need `sudo` to remove.
 - Homebrew formulae installed: 0. `brew leaves` and `brew list --formula` are both empty.
+- Homebrew taps: only `deskflow/tap`. `lizardbyte/homebrew` and `homebrew/services` were unused
+  and untapped.
 - Home Manager applications: Brave, Cursor, DataGrip, Discord, LocalSend, T3 Code, Visual Studio Code.
 - Mac App Store applications: Bitwarden, GarageBand, GIPHY CAPTURE, iMovie, Keynote, Numbers, Pages,
   Tailscale.
-- Unmanaged drag-and-drop installs: ChatGPT, Scroll Reverser, Slack (migrating to Home Manager),
-  plus Google Chrome and Zwift (pending `sudo` removal).
+- Unmanaged drag-and-drop installs: none. ChatGPT, Scroll Reverser, and Slack moved to Home Manager;
+  Arc and HTTPie were moved to the Trash; Google Chrome and Zwift are pending a `sudo` removal.
 - External owners that activation must never touch: CrowdStrike Falcon
   (`com.crowdstrike.falcon.Agent` endpoint-security extension), SentinelOne
   (`com.sentinelone.network-monitoring` network extension), and Google Drive. The machine is
@@ -123,11 +125,13 @@ commands before trusting it.
 | Codex | Homebrew cask | keep | homebrew | Not a duplicate: the `hm.agentCodex` wrapper execs `/opt/homebrew/bin/codex`. The deprecated `codex-app` cask was removed 2026-09-13. | yes |
 | Deskflow | Homebrew cask | keep | homebrew | Declared in `darwin.deskflow` through `deskflow/tap`. | yes |
 | RustDesk | Homebrew cask | keep | homebrew | Declared in `darwin.rustdesk`. | yes |
-| AltTab, AudioRelay, Bruno, CleanShot, DBeaver, GitButler, Insomnia, JetBrains Toolbox, Moonlight, Msty, OBS, OrbStack, Proton Mail, Raycast, Rectangle, Tabby, TeamViewer | Homebrew cask | keep | homebrew | Undeclared until Phase 2. Native GUI, self-updating, or privileged-helper applications. | no |
+| AltTab, AudioRelay, CleanShot, JetBrains Toolbox, Moonlight, OrbStack, Raycast, Rectangle | Homebrew cask | keep | homebrew | Declared in `darwin.homebrew`. Native GUI, self-updating, or privileged-helper applications. | no |
+| Bruno, DBeaver, GitButler, Insomnia, Msty, Proton Mail, Tabby | Homebrew cask | remove | none | Casks removed 2026-09-13. | yes |
+| OBS, TeamViewer | Homebrew cask | remove | none | Cask removal needs `sudo` (OBS ships a camera system extension). | no |
 | Ghostty | Homebrew cask | keep | home-manager + homebrew | `hm.ghostty` now writes the shared config on both hosts and installs the package on Linux; the cask owns the macOS app because nixpkgs marks ghostty unsupported on Darwin. | no |
 | kitty | Homebrew cask | remove | none | Cask removed 2026-09-13 in favour of Ghostty. | yes |
 | BlackHole 2ch, BlackHole 16ch | Homebrew cask | remove | none | Drivers in `/Library/Audio/Plug-Ins/HAL`. No installed cask depends on them. Removal needs `sudo`. | no |
-| Font Caskaydia Mono Nerd Font | Homebrew cask | move | nix-darwin | Belongs in `fonts.packages`, not in the Brewfile. | no |
+| Font Caskaydia Mono Nerd Font | Homebrew cask | move | nix-darwin + nixos | Cask removed 2026-09-13. `modules/fonts.nix` installs `nerd-fonts.caskaydia-mono` system-wide on both hosts (Nix 3.5.0 vs cask 3.4.0). | no |
 | Slack | unmanaged | migrate | home-manager | Installed 4.42.117, nixpkgs 4.51.180. Declared in `hm.guiApps`; delete `/Applications/Slack.app` after the Home Manager copy lands. | no |
 | ChatGPT | unmanaged | migrate | home-manager | Bundle id `com.openai.codex`. Installed 26.908.40834, nixpkgs 26.803.81509 from the same `codex-app-prod` source. Declared in `hm.guiApps`. | no |
 | Scroll Reverser | unmanaged | migrate | home-manager | Installed 1.8.2, nixpkgs 1.9. Declared in `hm.guiApps`. | no |
