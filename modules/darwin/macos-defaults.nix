@@ -34,7 +34,31 @@
             alternateDefaultShortcuts = 1;
             footprintAnimationDurationMultiplier = 0;
             launchOnLogin = 1;
-            subsequentExecutionMode = 1;
+            # Repeat a side action to cycle 1/2 -> 2/3 -> 1/3 instead of moving to
+            # the next display, matching niri's `switch-preset-column-width`.
+            subsequentExecutionMode = 0;
+            # niri muscle memory on the Mac uses Ctrl+Option as the "Mod" chord,
+            # because Command would make these global hotkeys swallow the standard
+            # Cmd+H/M/T/R/F/Q/W application shortcuts. modifierFlags is NSEvent
+            # bits: 786432 is Control (262144) plus Option (524288), and 917504
+            # adds Shift. Key codes are ANSI: F is 3, M is 46, and the arrows are
+            # left 123, right 124, down 125, up 126.
+            maximize.keyCode = 3;
+            maximize.modifierFlags = 786432;
+            almostMaximize.keyCode = 46;
+            almostMaximize.modifierFlags = 786432;
+            leftHalf.keyCode = 123;
+            leftHalf.modifierFlags = 786432;
+            rightHalf.keyCode = 124;
+            rightHalf.modifierFlags = 786432;
+            topHalf.keyCode = 126;
+            topHalf.modifierFlags = 786432;
+            bottomHalf.keyCode = 125;
+            bottomHalf.modifierFlags = 786432;
+            previousDisplay.keyCode = 123;
+            previousDisplay.modifierFlags = 917504;
+            nextDisplay.keyCode = 124;
+            nextDisplay.modifierFlags = 917504;
             reflowTodo = {
               keyCode = 45;
               modifierFlags = 786432;
