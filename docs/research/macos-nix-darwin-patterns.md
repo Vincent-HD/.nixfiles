@@ -83,6 +83,15 @@ A second documented limitation matters: **removing an entry from `masApps` does 
 application**, even with `cleanup = "uninstall"`. App Store apps must be removed through the App
 Store, so an entry deleted here leaves a manual cleanup behind.
 
+A third trap appeared while removing two App Store apps. `mas uninstall` cannot be driven from an
+elevated non-interactive context: it reads `SUDO_UID` and `SUDO_GID` to work out which user it is
+acting for, shells out to `/usr/bin/sudo` itself, and then trashes the bundle through
+`NSFileManager`. Run as root without a real `sudo` parent it fails on the missing uid, and with
+`HOME` and `SUDO_*` filled in it still fails with `NSCocoaErrorDomain 513` because the trash
+operation needs the user's own session. Run it from an interactive shell where `sudo` is genuine,
+or move the bundle into the owner's Trash directly. Deleting the bundle is sufficient either way:
+the App Store receipt lives inside it, so the app stops being registered as installed.
+
 ## Pattern 4: `system.defaults.CustomUserPreferences` for third-party settings
 
 `system.defaults` only models a fixed set of Apple domains. For third-party applications,
