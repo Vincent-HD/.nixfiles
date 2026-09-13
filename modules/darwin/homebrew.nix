@@ -25,19 +25,30 @@
           "rectangle"
         ];
 
-        # Mac App Store: applications with no Nix build. nix-darwin supplies
-        # `mas` from nixpkgs and writes these into the Brewfile, so the list
-        # stays under version control. Bitwarden is deliberately absent because
-        # Home Manager owns it on both hosts; Tailscale stays here because the
-        # macOS tunnel needs the App Store build's network extension.
+        # Mac App Store: the applications nothing else can supply. nix-darwin
+        # supplies `mas` from nixpkgs and writes these into the Brewfile, so the
+        # list stays under version control.
+        #
+        # Keynote, Numbers, Pages, and GIPHY CAPTURE have no cask and no nixpkgs
+        # build, so the App Store is the only source. Tailscale stays here rather
+        # than moving to the `tailscale-app` cask: nixpkgs ships only the CLI on
+        # Darwin, both distributions carry the same version, and the cask still
+        # installs through `sudo` with a system extension to re-approve while
+        # marking itself `auto_updates`, so Homebrew would control nothing.
+        #
+        # Bitwarden is deliberately absent because Home Manager owns it on both
+        # hosts. GarageBand and iMovie are deliberately absent too: they are not
+        # managed at all, and `brew bundle cleanup` ignores App Store
+        # applications, so leaving them out declares that intent without any
+        # entry being needed. Note that removing an entry here never uninstalls
+        # the application, even under `onActivation.cleanup = "uninstall"`,
+        # because the App Store owns the install.
         masApps = {
-          "GarageBand" = 682658836;
           "GIPHY CAPTURE" = 668208984;
           "Keynote" = 409183694;
           "Numbers" = 409203825;
           "Pages" = 409201541;
           "Tailscale" = 1475387142;
-          "iMovie" = 408981434;
         };
       };
     };

@@ -121,9 +121,13 @@ makes `system.defaults` and app copying land in the right home directory. It coo
 
 Some software is not migratable and trying is a mistake:
 
-- **System extensions.** Tailscale on macOS needs the App Store build's network extension; the
-  nixpkgs package is CLI-only (`tailscale`, `tailscaled`, `get-authkey`, no `.app`). The App
-  Store app stays.
+- **System extensions.** Tailscale on macOS reaches the network through a system extension. nixpkgs
+  ships only the CLI on Darwin (`tailscale`, `tailscaled`, `get-authkey`, no `.app`), so Home
+  Manager cannot own the menu-bar application. A standalone cask does exist (`tailscale-app`, a
+  `.pkg` that also installs the extension), but this repository keeps the App Store build: the two
+  distribute the same version, the cask still installs through `sudo` and needs the extension
+  re-approved, and its `auto_updates` flag means Homebrew would control nothing. Note also that
+  Homebrew's `tailscale` is the CLI formula while `tailscale-app` is the GUI cask.
 - **Privileged helpers.** VPN clients, remote-desktop agents, and endpoint security.
 - **Endpoint security and MDM.** CrowdStrike Falcon, SentinelOne, and Google Drive for desktop are
   managed externally and must never be touched by activation.
