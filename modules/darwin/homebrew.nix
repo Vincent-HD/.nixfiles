@@ -37,12 +37,11 @@
         # marking itself `auto_updates`, so Homebrew would control nothing.
         #
         # Bitwarden is deliberately absent because Home Manager owns it on both
-        # hosts. GarageBand and iMovie are deliberately absent too: they are not
-        # managed at all, and `brew bundle cleanup` ignores App Store
-        # applications, so leaving them out declares that intent without any
-        # entry being needed. Note that removing an entry here never uninstalls
-        # the application, even under `onActivation.cleanup = "uninstall"`,
-        # because the App Store owns the install.
+        # hosts. GarageBand and iMovie are absent too and are neither declared
+        # nor managed; they were removed from the machine. Note that removing an
+        # entry here never uninstalls the application, even under
+        # `onActivation.cleanup = "uninstall"`, because the App Store owns the
+        # install.
         masApps = {
           "GIPHY CAPTURE" = 668208984;
           "Keynote" = 409183694;
