@@ -13,7 +13,7 @@ let
   sources = {
     "x86_64-linux" = {
       artifact = "plannotator-linux-x64";
-      hash = "sha256-R5uicXyqLad+Lhiwo9YfQldHzl+mh7JBN4Qr1VV09m0=";
+      hash = "sha256-ldslSssqmW6w2DKJq7uR384rDd7jeLY3UgXj6CUajbA=";
     };
     "aarch64-linux" = {
       artifact = "plannotator-linux-arm64";
@@ -32,7 +32,7 @@ let
 in
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "plannotator";
-  version = "0.27.12";
+  version = "0.27.14";
 
   src = fetchurl {
     url = "https://github.com/backnotprop/plannotator/releases/download/v${finalAttrs.version}/${source.artifact}";
@@ -44,7 +44,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     owner = "backnotprop";
     repo = "plannotator";
     rev = "v${finalAttrs.version}";
-    hash = "sha256-Z3k/YnGXB/OGL3BP+2Z/Ck1H28rJeA+ihdZ8EaXKwIA=";
+    hash = "sha256-okEuCmWKe7wBMwssMM+Dpxxi+1CS4jFfGmic24GZRhg=";
   };
 
   nativeBuildInputs = [ makeWrapper ];

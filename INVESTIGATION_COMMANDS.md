@@ -1236,6 +1236,21 @@ done
 
 Purpose: determine whether a sandboxed application sees the host browser desktop entry and which browser-related environment variables or fallback `xdg-open` it can use. An explicit absolute `BROWSER` executable takes precedence over `xdg-open`'s fallback browser list.
 
+### Diagnose a Nix-managed user service that is not running
+
+```bash
+systemctl --user show <unit>.service \
+  -p LoadState -p UnitFileState -p ActiveState -p SubState \
+  -p Result -p FragmentPath -p DropInPaths
+systemctl --user status <unit>.service --no-pager -l
+journalctl --user -u <unit>.service --since '24 hours ago' --no-pager
+readlink -f /run/current-system
+rg --files /run/current-system/etc/systemd/user /etc/systemd/user ~/.config/systemd/user \
+  | grep -F '/<unit>.service'
+```
+
+Purpose: distinguish a crashed service from a missing or dangling generated unit, and compare the live system generation with the checked-out Nix configuration. If the unit exists under `/etc/systemd/user` but is still `not-found`, inspect `~/.config/systemd/user/<unit>.service`: a dangling per-user symlink there shadows the valid system unit.
+
 ## Session-Specific / Less Reusable Commands
 
 These were useful in this session, but are more situational.

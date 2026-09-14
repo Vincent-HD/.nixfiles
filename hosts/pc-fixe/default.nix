@@ -46,6 +46,7 @@ in
             hm.niri
             hm.graphics
             hm.dms
+            hm.tokitokiDev
             hm.coding
             hm.agentCommon
             hm.agentSkills

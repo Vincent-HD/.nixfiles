@@ -349,6 +349,20 @@ nix flake update dms
 nix flake update tokitoki
 ```
 
+To run the widget against the local checkout instead of the pinned revision, set
+`TOKITOKI_DEV` before rebuilding. `modules/dms/tokitoki-dev.nix` defines `nrs`,
+which forwards the override without touching `flake.lock`:
+
+```bash
+TOKITOKI_DEV=1 nrs
+```
+
+The same rebuild spelled out, with no helper:
+
+```bash
+nh os switch --override-input tokitoki "path:$HOME/lab/tokitoki"
+```
+
 ### dankcalendar
 
 - **File**: `flake.nix`
