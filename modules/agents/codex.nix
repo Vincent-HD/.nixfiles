@@ -302,6 +302,62 @@ in
             codexComputerUseLinux = pkgs.writeShellScriptBin "codex-computer-use-linux" ''
               exec ${codexDesktopComputerUsePackage}/opt/codex-desktop/resources/plugins/openai-bundled/plugins/unified-computer-use/bin/codex-computer-use-linux "$@"
             '';
+
+            # Computer Use injects keyboard input through ydotool, which emits
+            # QWERTY scancodes that the compositor re-maps through the active XKB
+            # layout. ydotool has no keymap option and Niri cannot scope a layout
+            # to a single device, so an AZERTY session receives the wrong
+            # characters (a -> q, w -> z, m -> comma). Switch the active layout to
+            # the US entry for keyboard injection and restore the previous entry
+            # afterwards; pointer subcommands pass straight through.
+            ydotoolLayoutSwitching = pkgs.writeShellScriptBin "ydotool" ''
+              set -eu
+
+              real=${pkgs.ydotool}/bin/ydotool
+
+              case "''${1:-}" in
+                type | key) ;;
+                *)
+                  exec "$real" "$@"
+                  ;;
+              esac
+
+              socket="''${NIRI_SOCKET:-}"
+              if [ -z "$socket" ]; then
+                for candidate in "''${XDG_RUNTIME_DIR:-/run/user/$UID}"/niri.*.sock; do
+                  if [ -S "$candidate" ]; then
+                    socket="$candidate"
+                  fi
+                done
+              fi
+
+              us_index=""
+              previous_index=""
+              if [ -n "$socket" ] && command -v niri >/dev/null 2>&1; then
+                layouts="$(NIRI_SOCKET="$socket" niri msg keyboard-layouts 2>/dev/null || true)"
+                us_index="$(printf '%s\n' "$layouts" \
+                  | sed 's/^[[:space:]]*\*[[:space:]]*//' \
+                  | awk '/English \(US\)/ { print $1; exit }')"
+                previous_index="$(printf '%s\n' "$layouts" \
+                  | awk '/\*/ { sub(/^[[:space:]]*\*[[:space:]]*/, ""); print $1; exit }')"
+              fi
+
+              switched=0
+              if [ -n "$us_index" ] && [ -n "$previous_index" ] && [ "$us_index" != "$previous_index" ]; then
+                if NIRI_SOCKET="$socket" niri msg action switch-layout "$us_index" >/dev/null 2>&1; then
+                  switched=1
+                fi
+              fi
+
+              restore_layout() {
+                if [ "$switched" = 1 ]; then
+                  NIRI_SOCKET="$socket" niri msg action switch-layout "$previous_index" >/dev/null 2>&1 || true
+                fi
+              }
+              trap restore_layout EXIT INT TERM HUP
+
+              "$real" "$@"
+            '';
           in
           {
             # OpenAI does not publish a Linux Codex app yet; use the community
@@ -318,7 +374,10 @@ in
 
             # Keep the bundled doctor/setup/apps/windows/screenshot commands
             # available without exposing the app's internal Nix store layout.
-            home.packages = [ codexComputerUseLinux ];
+            home.packages = [
+              codexComputerUseLinux
+              ydotoolLayoutSwitching
+            ];
 
             # Match OpenCodex's native unit name so its health checks recognize it.
             systemd.user.services."opencodex-proxy" = {

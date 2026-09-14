@@ -288,8 +288,12 @@
             };
 
             keyboard.xkb = {
-              layout = lib.mkDefault "fr";
-              variant = lib.mkDefault "azerty";
+              # Keep French first so it stays the default layout. The trailing
+              # US entry exists only so Computer Use can switch to a layout that
+              # matches the QWERTY scancodes ydotool injects; the ydotool shim in
+              # the Codex module drives the switch around keyboard input.
+              layout = lib.mkDefault "fr,us";
+              variant = lib.mkDefault "azerty,";
             };
             # Windows-like hover focus, but never scroll the workspace just to satisfy pointer focus.
             focus-follows-mouse.enable = lib.mkDefault true;
