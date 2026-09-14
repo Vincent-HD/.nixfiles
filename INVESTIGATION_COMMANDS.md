@@ -68,6 +68,24 @@ nix eval --impure --expr '(builtins.getFlake "path:/home/vincent/.nixfiles").inp
 nix eval --impure --expr '(builtins.getFlake "path:/home/vincent/.nixfiles").inputs.home-manager.outPath' --raw
 ```
 
+### Check a pinned input for upstream drift
+
+```bash
+cd "$REPO" && nix flake metadata --json 2>/dev/null \
+| jq -r ".locks.nodes.\"<input>\".locked.rev"
+curl -sS "https://api.github.com/repos/<owner>/<repo>/commits/<branch>" \
+| jq -r '.sha[0:12] + " " + .commit.committer.date'
+```
+
+Purpose: compare a locked flake input revision against upstream HEAD before deciding to bump it.
+
+Use when:
+- a pinned upstream tool changed its configuration surface, module options, or docs you depend on
+- you want the size of a bump before running `nix flake update <input>`
+
+Note: after bumping, diff the new revision for the paths your config references before rebuilding, for example
+`git -C <upstream-clone> diff --stat <old-rev>..<new-rev> -- <path>`.
+
 ### Validate shared modules across configured hosts
 
 ```bash
@@ -1398,6 +1416,11 @@ Use when:
 command -v <cmd>
 readlink -f "$(command -v <cmd>)"
 head -n 20 "$(command -v <cmd>)"
+# wrappers usually exec a store path that shifts on every rebuild; prove it exists
+WRAPPER=$(command -v <cmd>)
+TARGET=$(sed -n 's/^exec \([^ ]*\).*/\1/p' "$WRAPPER")
+test -x "$TARGET" && echo "ok $TARGET" || echo "MISSING $TARGET"
 ```
 
-Purpose: separate CLI wrappers from desktop-entry launch paths when both share the same command name.
+Purpose: separate CLI wrappers from desktop-entry launch paths when both share the same command name,
+and catch wrappers whose hardcoded target vanished after an upstream rename or rebuild.

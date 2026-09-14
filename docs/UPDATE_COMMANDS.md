@@ -441,7 +441,7 @@ nix flake update context7-skills
 ### mattpocock-skills
 
 - **File**: `flake.nix`
-- **Why**: Provides selected upstream Matt Pocock Agent Skills, including `grill-me`, `grill-with-docs`, `handoff`, and `research`, through Home Manager. `bro` is a local snapshot.
+- **Why**: Provides selected upstream Matt Pocock Agent Skills through Home Manager: `grill-me`, `grill-with-docs`, `grilling`, `domain-modeling`, `handoff`, `research`, and the spec-to-review flow (`to-spec`, `to-tickets`, `implement`, `code-review`, and `setup-matt-pocock-skills`, which writes the per-repo docs the flow reads). `bro` is a local snapshot.
 - **How**: Refresh the locked source, then review the upstream skill changes before applying Home Manager.
 
 ```bash

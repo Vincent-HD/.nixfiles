@@ -14,6 +14,14 @@
         # User-invoked grilling entry points and their delegated disciplines.
         grill-me = "${inputs.mattpocock-skills}/skills/productivity/grill-me";
         grill-with-docs = "${inputs.mattpocock-skills}/skills/engineering/grill-with-docs";
+        # The main flow after grilling: spec, ticket breakdown, implementation, review.
+        to-spec = "${inputs.mattpocock-skills}/skills/engineering/to-spec";
+        to-tickets = "${inputs.mattpocock-skills}/skills/engineering/to-tickets";
+        implement = "${inputs.mattpocock-skills}/skills/engineering/implement";
+        code-review = "${inputs.mattpocock-skills}/skills/engineering/code-review";
+        # Bootstrap the flow needs: writes the per-repo tracker and domain docs under
+        # docs/agents/ that to-spec, to-tickets, and code-review read.
+        setup-matt-pocock-skills = "${inputs.mattpocock-skills}/skills/engineering/setup-matt-pocock-skills";
         grilling = "${inputs.mattpocock-skills}/skills/productivity/grilling";
         domain-modeling = "${inputs.mattpocock-skills}/skills/engineering/domain-modeling";
         handoff = "${inputs.mattpocock-skills}/skills/productivity/handoff";

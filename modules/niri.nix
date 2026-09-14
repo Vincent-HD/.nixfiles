@@ -70,8 +70,10 @@
       niriExe = lib.getExe config.programs.niri.package;
       runNiriActions =
         actions: lib.concatStringsSep "\n" (map (action: "${niriExe} msg action ${action}") actions);
-      # Brave PWAs set a profile-specific app-id and often fill in the title after map,
-      # so open-floating window-rules cannot match Bitwarden reliably.
+      # Brave extension pop-outs set a profile-specific app-id and often fill in the title
+      # after map, so an open-floating window-rule cannot match the Bitwarden pop-out
+      # reliably. Keep the app-id requirement: the Bitwarden desktop app also reports
+      # app-id and title "Bitwarden" and must stay tiled.
       floatLateTitles = pkgs.writeShellApplication {
         name = "niri-float-late-titles";
         runtimeInputs = [
@@ -87,7 +89,7 @@
             else
               empty
             end
-            | select(.title == "Bitwarden" and (.is_floating | not))
+            | select(.title == "Bitwarden" and (.is_floating | not) and ((.app_id // "") | test("^brave-")))
             | .id
           ' | while read -r id; do
             niri msg action move-window-to-floating --id "$id"

@@ -168,8 +168,9 @@ in
         lib = lib;
       };
 
-      # Linux Computer Use uses AT-SPI for application trees and prefers direct
-      # uinput access, with ydotool, portals, and X11/EWMH tools as fallbacks.
+      # Linux Computer Use uses AT-SPI for application trees and direct uinput
+      # access for pointer input; keyboard input needs the RemoteDesktop portal,
+      # xdotool on X11, or ydotool. X11/EWMH window control uses wmctrl/xprop.
       # Keep the complete host-side runtime setup next to the Codex module so
       # enabling the desktop client also makes its supported input paths usable.
       assertions = [
@@ -296,8 +297,10 @@ in
           let
             codexDesktopComputerUsePackage =
               inputs.codex-desktop-linux.packages.${pkgs.stdenv.hostPlatform.system}.codex-desktop-computer-use-ui;
+            # The backend binary ships inside upstream's bundled plugin; its
+            # directory is the plugin id (renamed to unified-computer-use).
             codexComputerUseLinux = pkgs.writeShellScriptBin "codex-computer-use-linux" ''
-              exec ${codexDesktopComputerUsePackage}/opt/codex-desktop/resources/plugins/openai-bundled/plugins/computer-use/bin/codex-computer-use-linux "$@"
+              exec ${codexDesktopComputerUsePackage}/opt/codex-desktop/resources/plugins/openai-bundled/plugins/unified-computer-use/bin/codex-computer-use-linux "$@"
             '';
           in
           {
