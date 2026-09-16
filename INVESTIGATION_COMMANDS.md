@@ -450,6 +450,26 @@ in {
 Purpose: verify that a package reaches both the system profile and a composed runtime such as
 Steam's FHS environment, while confirming that optional feature variables were not applied globally.
 
+### Check a prebuilt archive against a target platform's libraries
+
+```bash
+mkdir -p /tmp/<pkg>-src && tar --extract --file <archive> --directory /tmp/<pkg>-src
+patchelf --print-needed /tmp/<pkg>-src/lib/<binary>
+```
+
+```bash
+cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" \
+nix build --no-link --print-out-paths '.#nixosConfigurations.'"$HOST"'.pkgs.<dependency>'
+```
+
+Purpose: check that a wrapper or `autoPatchelfHook` `buildInputs` list really covers a vendor
+archive. The archive extracts locally and `patchelf` reads its `DT_NEEDED` entries, while the
+dependency packages themselves substitute from the binary cache even for a foreign platform, so
+this works on `aarch64-darwin` for an `x86_64-linux` package that cannot be built there. Any
+`--print-needed` name with no match under the realized store paths is a missing `buildInputs`
+entry. Libraries unpacked at runtime, for example from a JAR payload, never reach
+`autoPatchelfHook` and need an `LD_LIBRARY_PATH` wrapper instead.
+
 ### Debug a failing package build
 
 ```bash
@@ -798,6 +818,29 @@ nix eval '.#nixosConfigurations.'"$HOST"'.config.xdg.portal.config.niri' --json
 ```
 
 Purpose: verify which xdg-desktop-portal backend packages and session-specific portal defaults are actually active.
+
+### Read rendered config text from a derivation without building it
+
+```bash
+cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" \
+nix eval --raw '.#nixosConfigurations.'"$HOST"'.config.<list-of-derivations>' \
+  --apply 'xs: builtins.concatStringsSep " " (map (d: d.drvPath) xs)'
+```
+
+```bash
+nix derivation show /nix/store/<hash>-<name>.drv | python3 -c '
+import json, sys
+attrs = next(iter(json.load(sys.stdin)["derivations"].values()))
+print((attrs.get("structuredAttrs") or {}).get("text") or (attrs.get("env") or {}).get("text") or "")'
+```
+
+Purpose: read the text that a `writeTextDir` / `writeTextFile` output such as a
+`services.pipewire.configPackages` drop-in or an `xdg.configFile.<name>` would install, without
+realizing it. The text already lives in the `.drv` JSON, which is the only route when the target
+platform has no builder, for example reading an `x86_64-linux` drop-in from `aarch64-darwin`.
+Match the derivation name in the drv list to pick the right file. Note that `nix derivation show`
+nests everything under a `derivations` key, and that `--raw` cannot print a list, so list-valued
+options need `--json` or an `--apply` that joins them.
 
 ### Evaluate rendered filesystem mount options
 
