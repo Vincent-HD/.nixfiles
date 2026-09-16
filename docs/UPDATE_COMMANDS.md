@@ -42,7 +42,7 @@ skipped update cannot look successful.
 nix flake update ponytail
 ```
 
-The `codex` and `curseforge` outputs are Linux-only. The data-driven updater
+The `audiorelay`, `codex`, and `curseforge` outputs are Linux-only. The data-driven updater
 reads each entry's `systems` field and skips packages that do not support the
 current host. Run their normal commands on a Linux target. Passing
 `--system x86_64-linux` alone does not provide a Linux builder on
@@ -51,6 +51,19 @@ Darwin.
 ## nix-update Compatible Packages
 
 These packages use the `finalAttrs` pattern and are wired so `nix-update` can bump versions and hashes automatically.
+
+### audiorelay
+
+- **File**: `packages/audiorelay/default.nix`
+- **Pattern**: `stdenvNoCC.mkDerivation` + `fetchurl` from the vendor download archive
+- **Flake output**: `.#audiorelay`
+- **Platform**: `x86_64-linux`
+- **Note**: The vendor archive URL carries no version `nix-update` can discover on its own, so the package ships an update script.
+- **Updater**: Reads the current Linux archive version from `https://api.audiorelay.net/downloads`, then rewrites the version and hash together.
+
+```bash
+nix run github:Mic92/nix-update -- --flake audiorelay --use-update-script
+```
 
 ### codex
 

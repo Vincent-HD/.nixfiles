@@ -280,6 +280,7 @@ If you want to remove a feature, change the relevant host composition under `hos
 - `docs/MACOS_MIGRATION.md` is the current live-inventory and application-ownership plan for the
   MacBook Pro.
 - `docs/COMMAND_LINE_OVERVIEW.html` is a visual map of the shared terminal environment.
+- `docs/AUDIORELAY.md` covers the AudioRelay ports, permissions, and per-host device setup.
 - `docs/UPDATE_COMMANDS.md` documents every registered pinned package and flake-input update.
 - `docs/NIX_CLI_CHEATSHEET.md` describes the repository's validation ladder and Nix tooling.
 

@@ -261,6 +261,23 @@
       ]
     },
     {
+      "name": "audiorelay",
+      "type": "nix-update",
+      "description": "AudioRelay Linux jpackage archive",
+      "systems": [
+        "x86_64-linux"
+      ],
+      "command": [
+        "nix",
+        "run",
+        "github:Mic92/nix-update",
+        "--",
+        "--flake",
+        "audiorelay",
+        "--use-update-script"
+      ]
+    },
+    {
       "name": "cursor-agent",
       "type": "nix-update",
       "description": "Cursor Agent CLI current-platform release archive",

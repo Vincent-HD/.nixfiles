@@ -15,6 +15,7 @@ in
       nixos.dms
       nixos.graphics
       nixos.sound
+      nixos.audioRelay
       nixos.memoryPressure
       nixos.coding
       nixos.agentCodex
@@ -72,6 +73,7 @@ in
             hm.kdeConnect
             hm.deskflow
             hm.localSend
+            hm.audioRelay
             hm.ghostty
           ];
 

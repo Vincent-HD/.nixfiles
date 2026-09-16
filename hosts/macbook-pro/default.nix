@@ -11,6 +11,7 @@ in
       darwin.macosDefaults
       darwin.fonts
       darwin.homebrew
+      darwin.audioRelay
       inputs.sops-nix.darwinModules.sops
       darwin.secrets
       darwin.agentCodex
