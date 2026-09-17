@@ -15,8 +15,8 @@
       # tells the user to select:
       #   Virtual-Mic-Sink -> AudioRelay player outputs the phone mic here
       #   Virtual-Mic      -> comms apps pick this as an input device
-      # ponytail: the mic direction needs the extra loopback because browsers and
-      # Discord hide monitor sources from their input list. Drop it and point comms
+      # The mic direction needs the extra loopback because browsers and Discord
+      # hide monitor sources from their input list. Drop it and point comms
       # apps at "Monitor of Virtual-Mic-Sink" if upstream ever ships that device.
       services.pipewire.configPackages = [
         (pkgs.writeTextDir "share/pipewire/pipewire.conf.d/30-audiorelay.conf" ''

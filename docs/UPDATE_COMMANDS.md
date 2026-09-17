@@ -33,15 +33,6 @@ release in `flake.nix` before refreshing its lock entry.
 Selecting only a disabled manual entry exits with an error and does not run validations, so a
 skipped update cannot look successful.
 
-### ponytail
-
-- **Source**: `flake.nix` input `ponytail`
-- **Use**: selected Agent Skills, Codex lifecycle hooks, and Cursor's always-on rule
-
-```bash
-nix flake update ponytail
-```
-
 The `audiorelay`, `codex`, and `curseforge` outputs are Linux-only. The data-driven updater
 reads each entry's `systems` field and skips packages that do not support the
 current host. Run their normal commands on a Linux target. Passing
