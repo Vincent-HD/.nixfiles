@@ -15,17 +15,17 @@ let
     "aarch64-linux" = {
       platform = "linux";
       architecture = "arm64";
-      hash = "sha512-xZcoyHtxLwTYtTAXj2kkhj0Gj38dSOvIKynfRM7Ewe/NzpW/dxvRNO6qoEcdMHIsYew86EcBbD13WRC3zckASg==";
+      hash = "sha512-Opu3QmuUB4kYlcdSUHEy89h9FWNpN+GcOcpoz+T1ehfI1I+MHDlnepn3cjxFX3SVDO8zcWrYnDesmbTlZLYT0w==";
     };
     "x86_64-darwin" = {
       platform = "darwin";
       architecture = "x64";
-      hash = "sha512-fIOchRZGqvbu/d9VJwQYMrQg/s/l6Rs2oBhHl4s1gIrzz84VweYvml//jPJ/uH7hhT/9gnQzVkWgSzNh4sQJQg==";
+      hash = "sha512-7BEftSu2BCseSgTBjCAnZt2ePj4l6j7P3FOgvVfJkHkPaXN1grx65pmRiQudEEHyR7ZbewEM0pZUEa/szVmABA==";
     };
     "aarch64-darwin" = {
       platform = "darwin";
       architecture = "arm64";
-      hash = "sha512-0kYoIa27cN3H3el9F7OCe5o/EeCuo1kVRyIDz8OBjglkgVFEX4uTfHmCTbyrdTJmxxawvy4UWD31RvncL0ZKbw==";
+      hash = "sha512-28fwaFwDyHrpVG39hhN0uGdWOJgCr0C7EM8P11CUT3ifM4Kg2H2kSCk7VOMk6F7oDtaBdfOObvZkJOadC0CJtw==";
     };
   };
   source = sources.${stdenvNoCC.hostPlatform.system};

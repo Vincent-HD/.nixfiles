@@ -8,9 +8,20 @@
       # Brave restart. Keep a localhost CDP port on every launch so Agent Browser
       # `--auto-connect` can rediscover it. nixpkgs only forwards commandLineArgs
       # on Linux; the Homebrew cask on Darwin still needs a manual inspect toggle.
-      brave = pkgs.brave.override {
-        commandLineArgs = "--remote-debugging-port=9222 --remote-allow-origins=*";
-      };
+      brave =
+        (pkgs.brave.override {
+          commandLineArgs = "--remote-debugging-port=9222 --remote-allow-origins=*";
+        }).overrideAttrs
+          (
+            old:
+            lib.optionalAttrs pkgs.stdenv.hostPlatform.isDarwin {
+              # The dmg has two top-level entries (the .app plus a " " symlink to
+              # /Applications), so stdenv cannot infer a sourceRoot without sandbox.
+              # Fixed upstream in nixpkgs master (aa4644ed); drop this once
+              # nixpkgs-darwin is bumped past it.
+              sourceRoot = "Brave Browser.app";
+            }
+          );
     in
     {
       home.packages = [

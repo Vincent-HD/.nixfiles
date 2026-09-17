@@ -8,11 +8,11 @@
 
 let
   pname = "opencodex";
-  version = "2.54.0";
+  version = "2.56.0";
 
   src = fetchurl {
     url = "https://registry.npmjs.org/@bitkyc08/opencodex/-/opencodex-${version}.tgz";
-    hash = "sha256-DSJagsONMBbxSizZHDYYPOBzzpGkZbMzD2Fw7JGHawg=";
+    hash = "sha256-SUmNwLzKWLTi92LIRJn6MVyBsF1edUmTatlCdKcqoRE=";
   };
 
   bunLock = fetchurl {
@@ -56,7 +56,7 @@ let
     '';
 
     outputHashMode = "recursive";
-    outputHash = "sha256-LK48ufjA4nJwtwL5LXxe961bjvYXth7pAuD+7L+A4nc=";
+    outputHash = "sha256-V2+NRv53/7eLp0Um7XUoCZ3WyYoQWIaq/6Np6ysqYzw=";
   };
 in
 stdenvNoCC.mkDerivation (finalAttrs: {
