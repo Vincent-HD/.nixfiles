@@ -58,6 +58,12 @@ nixpkgs has no AudioRelay build, and `pkgs.blackhole` needs Xcode, so Homebrew o
 `darwin.audioRelay` declares three casks: `audiorelay`, `blackhole-2ch`, and
 `blackhole-16ch`. Installing the BlackHole HAL drivers requires `sudo`.
 
+The `audiorelay` cask selects the Apple silicon build on arm64 and both BlackHole drivers are
+universal binaries. An install that predates the cask's arm64 variant keeps its Intel binary,
+because Homebrew does not switch architectures while the version string is unchanged; macOS then
+warns that the app will stop opening. `brew reinstall --cask audiorelay` swaps in the arm64
+build.
+
 macOS gives applications no way to capture system output, only microphones, so a virtual audio
 device is mandatory in both directions, which is why upstream recommends installing both BlackHole
 variants and using one per direction.
