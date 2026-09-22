@@ -10,7 +10,7 @@
 
 buildNpmPackage (finalAttrs: {
   pname = "codeburn";
-  version = "0.9.24";
+  version = "0.9.25";
   nodejs = nodejs_24;
   nativeBuildInputs = [ makeWrapper ];
 
@@ -21,15 +21,15 @@ buildNpmPackage (finalAttrs: {
     owner = "getagentseal";
     repo = "codeburn";
     rev = "v${finalAttrs.version}";
-    hash = "sha256-opz1jon0MTPy8dCgQ2Ar4mG/PET7XD2PjLgwlle+RB8=";
+    hash = "sha256-MVgXl+fN9qZZmXhlgLXTX0toldDM1oH99Mc5bxScu7g=";
   };
 
   npmArtifact = fetchurl {
     url = "https://registry.npmjs.org/codeburn/-/codeburn-${finalAttrs.version}.tgz";
-    hash = "sha512-jK5T46Mh1TSEns6mABZFdYh96oZH6QukZ+ueYYzUk8YuMF8dzLNDeHnIAlE3AlaI0QiSq0E9Dl8IPW2H+EkU2Q==";
+    hash = "sha512-ozjgg463v2D3Tm2LqYpK2EySjFnpglq6cyZL2N/Bz3tC7sgif11ttf7OL6lt7+7VAY4HYj/rOZLG9u+3erecwA==";
   };
 
-  npmDepsHash = "sha256-VQ7+SvDDr83tZCj53kiBFHoUx7syBFvRzgPmOJoOvDg=";
+  npmDepsHash = "sha256-ucqpt5HTi8d8sD9eUl9ja7PyG0kyy1TASXgii/0xaNk=";
   npmInstallFlags = [ "--omit=dev" ];
   dontNpmBuild = true;
 
