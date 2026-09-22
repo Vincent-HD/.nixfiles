@@ -410,12 +410,9 @@ nix flake update dms-plugins
 ### code-cursor-nix
 
 - **File**: `flake.nix`
-- **Why**: Provides the Cursor editor package. Pinned to `3.18.25`
-  (`c4fca1bf91a6249e04dc35211210393e32b5fee1`) because Linux 3.19.x can quit with a clean
-  exit or SIGBUS during heavier work. Nightly and Stable currently share that 3.19 line.
-- **How**: Change the reviewed commit in `flake.nix` after a patched 3.19 ships, then refresh
-  the lock entry. The registry entry is manual/disabled because refreshing the unchanged
-  revision is a no-op.
+- **Why**: Provides the Cursor editor package. The Linux agent-loop crash was fixed upstream
+  in Cursor 3.19.13, so this input follows upstream releases again.
+- **How**: Refresh the input with the command below, then validate the affected host package.
 
 ```bash
 nix flake update code-cursor-nix

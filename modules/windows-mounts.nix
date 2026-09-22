@@ -10,6 +10,8 @@
   # 2) WSL: never mounted automatically. Only `wsl-mount` / `wsl-umount` (manual). No fstab, no systemd
   #    unit, no kernel module loaded at boot — nbd is modprobed inside the script when you run it.
   #    NEVER mount the VHDX while Windows/WSL is using it — risk of corruption.
+  #    Usage: wsl-mount [distro] [mountpoint] — e.g. `wsl-mount znope /mnt/znope`. Mounts read-write;
+  #    set WSL_MOUNT_RO=1 for a read-only mount when you only need to inspect or extract from it.
   #
   # Enable and fill values in modules/hosts/main/configuration.nix (custom.windowsMounts).
   config.flake.modules.nixos.windowsMounts =
@@ -86,8 +88,10 @@
             (pkgs.writeShellScriptBin "wsl-mount" ''
               set -euo pipefail
 
-              VHDX="${cfg.wslVhdxPath}"
-              MOUNT="/mnt/wsl"
+              DISTRO_ROOT="$(dirname "$(dirname "${cfg.wslVhdxPath}")")"
+              DISTRO="''${1:-$(basename "$(dirname "${cfg.wslVhdxPath}")")}"
+              MOUNT="''${2:-/mnt/wsl}"
+              VHDX="$DISTRO_ROOT/$DISTRO/ext4.vhdx"
               DEV="/dev/nbd0"
 
               if mountpoint -q "$MOUNT"; then
@@ -97,8 +101,15 @@
 
               if [ ! -f "$VHDX" ]; then
                 echo "Error: VHDX not found at $VHDX"
+                echo "Available distros in $DISTRO_ROOT:"
+                ls -1 "$DISTRO_ROOT" 2>/dev/null || true
                 echo "Is the Windows partition mounted at /mnt/windows (and path correct)?"
                 exit 1
+              fi
+
+              MOUNT_OPTS="rw"
+              if [ "''${WSL_MOUNT_RO:-0}" = "1" ]; then
+                MOUNT_OPTS="ro"
               fi
 
               sudo mkdir -p "$MOUNT"
@@ -108,18 +119,18 @@
               sleep 1
 
               if [ -b "''${DEV}p1" ]; then
-                sudo mount "''${DEV}p1" "$MOUNT"
+                sudo mount -o "$MOUNT_OPTS" "''${DEV}p1" "$MOUNT"
               else
-                sudo mount "$DEV" "$MOUNT"
+                sudo mount -o "$MOUNT_OPTS" "$DEV" "$MOUNT"
               fi
 
-              echo "Mounted WSL disk at $MOUNT"
+              echo "Mounted WSL disk ($DISTRO, $MOUNT_OPTS) at $MOUNT"
             '')
 
             (pkgs.writeShellScriptBin "wsl-umount" ''
               set -euo pipefail
 
-              MOUNT="/mnt/wsl"
+              MOUNT="''${1:-/mnt/wsl}"
               DEV="/dev/nbd0"
 
               if mountpoint -q "$MOUNT"; then

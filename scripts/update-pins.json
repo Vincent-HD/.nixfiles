@@ -402,9 +402,9 @@
     },
     {
       "name": "code-cursor-nix",
-      "type": "manual",
-      "description": "Commit-pinned Cursor 3.18.25; edit the reviewed revision before refreshing the lock",
-      "enabled": false,
+      "type": "flake-input",
+      "description": "Cursor editor package; follows upstream releases",
+      "enabled": true,
       "command": [
         "nix",
         "flake",

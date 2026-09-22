@@ -13,7 +13,7 @@ let
     "x86_64-linux" = {
       arch = "x86_64";
       ext = "AppImage";
-      hash = "sha256-tvsnPWGJk0+Az48DajKWTsfOS60+uTX5jUwKKCA3Cf4=";
+      hash = "sha256-PPwR+l3W4aHSs1hWXppiybhNscnnuCoa9t15dD5kC7c=";
     };
     "aarch64-darwin" = {
       arch = "arm64";

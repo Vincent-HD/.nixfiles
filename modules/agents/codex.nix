@@ -26,6 +26,8 @@ let
           "xhigh"
           "max"
         ];
+        # Keep the ChatGPT/Codex desktop pet tucked away at startup.
+        "avatar-overlay-pet-visible" = false;
       };
 
       # Enable parallel subagent execution with the requested default model and effort.
