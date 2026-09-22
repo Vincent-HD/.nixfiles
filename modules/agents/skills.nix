@@ -31,6 +31,7 @@
         # One-shot French re-pitching with technical vocabulary kept in English.
         frr = ./assets/skills/frr;
         narrow-react-prop-types = "${inputs.humanlayer-skills}/plugins/narrow-react-prop-types/skills/narrow-react-prop-types";
+        show-me = "${inputs.humanlayer-skills}/plugins/show-me/skills/show-me";
         # Day-to-day: describe @ at start; commit only when a new prompt switches concern.
         jj-auto-revise = ./assets/skills/jj-auto-revise;
         # Later: capture op id → squash blob → resplit for stacked PRs; never push from the skill.
