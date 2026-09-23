@@ -181,6 +181,11 @@ in
         cliPath = "${opencodexPackage}/lib/opencodex/src/cli/index.ts";
         backend = "scheduler";
       };
+      # Kept out of home.file: 2.63+ realpaths this file and mkdir's a lock next
+      # to that path, which fails when the path is a Nix store symlink.
+      opencodexServiceStateFile = pkgs.writeText "opencodex-service-state.json" (
+        builtins.toJSON opencodexServiceState + "\n"
+      );
       # Export the enabled OpenCodex catalog in VS Code's custom endpoint format.
       opencodexModelsVscode = pkgs.writeShellApplication {
         name = "opencodex-models-vscode";
@@ -226,7 +231,15 @@ in
           home.file.".opencodex/.keep".text = "";
           # Nix owns the service, so keep OpenCodex's ownership manifest in sync
           # rather than asking its imperative installer to rewrite the unit.
-          home.file.".opencodex/service-state.json".text = builtins.toJSON opencodexServiceState;
+          home.activation.opencodexServiceState = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+            state_directory="${opencodexHome}"
+            state_path="$state_directory/service-state.json"
+            ${pkgs.coreutils}/bin/mkdir -p "$state_directory"
+            if [ -L "$state_path" ] || [ ! -f "$state_path" ] || ! ${lib.getExe' pkgs.diffutils "cmp"} -s ${opencodexServiceStateFile} "$state_path"; then
+              ${pkgs.coreutils}/bin/rm -f "$state_path"
+              ${pkgs.coreutils}/bin/install -m 600 ${opencodexServiceStateFile} "$state_path"
+            fi
+          '';
 
           # Opt into Cursor's native tools only after OpenCodex owns the provider setup.
           home.activation.opencodexCursorNativeExec = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
