@@ -11,11 +11,6 @@ type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string
 
 type JsonObject = { [key: string]: JsonValue };
 
-type SpecEntry = {
-  def: JsonValue;
-  persist?: boolean;
-};
-
 type Options = {
   repo: string | undefined;
   output: string | undefined;
@@ -40,6 +35,8 @@ const runtimeOnlyKeys = new Set([
   "desktopClockCustomColor",
   "systemMonitorCustomColor",
 ]);
+
+const moduleManagedKeys = new Set(["calendarBackend"]);
 
 const homePathKeys = new Set([
   "customThemeFile",
@@ -205,14 +202,43 @@ const runChecked = async (command: string[], cwd?: string): Promise<string> => {
 };
 
 const findRepositoryRoot = async (requested: string | undefined): Promise<string> => {
-  if (requested)
-    return resolve(requested);
-  return (await runChecked(["git", "rev-parse", "--show-toplevel"], process.cwd())).trim();
+  const start = await realpath(resolve(requested ?? process.cwd()));
+  const discovered = (await runChecked(["git", "rev-parse", "--show-toplevel"], start)).trim();
+  const repo = await realpath(discovered);
+  if (requested && start !== repo)
+    fail(`--repo must point to the Git repository root: ${repo}`);
+  return repo;
 };
 
 const isInside = (parent: string, child: string): boolean => {
   const path = relative(parent, child);
   return path === "" || (!path.startsWith(`..${sep}`) && path !== "..");
+};
+
+const findExistingAncestor = async (path: string): Promise<string> => {
+  try {
+    return await realpath(path);
+  } catch (error) {
+    if (!isRecord(error) || (error.code !== "ENOENT" && error.code !== "ENOTDIR"))
+      throw error;
+    const parent = dirname(path);
+    if (parent === path)
+      throw error;
+    return findExistingAncestor(parent);
+  }
+};
+
+const validateOutputPath = async (repo: string, output: string): Promise<void> => {
+  if (!isInside(repo, output))
+    fail(`Generated output must stay inside the repository: ${output}`);
+
+  const relativeOutput = relative(repo, output);
+  if (relativeOutput === "" || relativeOutput === ".git" || relativeOutput.startsWith(`.git${sep}`))
+    fail(`Generated output must be a worktree file outside .git: ${output}`);
+
+  const existingParent = await findExistingAncestor(dirname(output));
+  if (!isInside(repo, existingParent))
+    fail(`Generated output resolves outside the repository through a symlink: ${output}`);
 };
 
 const findDmsSpec = async (override: string | undefined): Promise<string> => {
@@ -285,7 +311,7 @@ export const nonDefaultSettings = (
   const settings: JsonObject = {};
   const unknown: string[] = [];
   for (const [key, value] of Object.entries(runtime)) {
-    if (runtimeOnlyKeys.has(key) || nonPersistent.has(key))
+    if (runtimeOnlyKeys.has(key) || moduleManagedKeys.has(key) || nonPersistent.has(key))
       continue;
     if (!(key in defaults)) {
       unknown.push(key);
@@ -333,14 +359,18 @@ const printDiff = (before: JsonObject, after: JsonObject): void => {
     console.log(`  ${count} generated setting${count === 1 ? "" : "s"} changed`);
 };
 
-const readExisting = async (path: string): Promise<JsonObject> => {
+type ExistingSettings = {
+  exists: boolean;
+  content: string;
+  settings: JsonObject;
+};
+
+const readExisting = async (path: string): Promise<ExistingSettings> => {
   if (!(await Bun.file(path).exists()))
-    return {};
+    return { exists: false, content: "", settings: {} };
   try {
-    const value: unknown = await Bun.file(path).json();
-    if (!isRecord(value))
-      fail(`${path} must contain a JSON object`);
-    return value as JsonObject;
+    const content = await Bun.file(path).text();
+    return { exists: true, content, settings: parseObject(content, path) };
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
     fail(`Unable to read ${path}: ${detail}`);
@@ -369,9 +399,21 @@ const localDate = (): string => {
 
 const commitGeneratedFile = async (repo: string, output: string): Promise<void> => {
   const relativeOutput = relative(repo, output);
-  await runChecked(["git", "add", "--", relativeOutput], repo);
-  const message = `chore: update dms setting ${localDate()}`;
-  await runChecked(["git", "commit", "--only", "-m", message, "--", relativeOutput], repo);
+  const tracked = (await runProcess(["git", "ls-files", "--error-unmatch", "--", relativeOutput], repo)).exitCode === 0;
+  let addedToIndex = false;
+  if (!tracked) {
+    await runChecked(["git", "add", "--", relativeOutput], repo);
+    addedToIndex = true;
+  }
+
+  const message = `chore: update dms settings ${localDate()}`;
+  try {
+    await runChecked(["git", "commit", "--only", "-m", message, "--", relativeOutput], repo);
+  } catch (error) {
+    if (addedToIndex)
+      await runProcess(["git", "rm", "--cached", "--force", "--", relativeOutput], repo);
+    throw error;
+  }
 
   const committedFiles = (await runChecked(["git", "show", "--format=", "--name-only", "--no-renames", "HEAD"], repo))
     .split("\n")
@@ -393,7 +435,8 @@ type Context = {
 
 const persistSnapshot = async (context: Context, runtime: JsonObject): Promise<boolean> => {
   const filtered = nonDefaultSettings(runtime, context.defaults, context.nonPersistent);
-  const before = await readExisting(context.output);
+  const existing = await readExisting(context.output);
+  const before = existing.settings;
   const after = filtered.settings;
 
   console.log(`DMS settings: ${Object.keys(after).length} non-default top-level value(s)`);
@@ -402,7 +445,12 @@ const persistSnapshot = async (context: Context, runtime: JsonObject): Promise<b
     console.warn(`  ignored unknown/runtime keys: ${filtered.unknown.sort().join(", ")}`);
 
   const content = prettyJson(after);
-  if (compactJson(before) === compactJson(after)) {
+  if (!existing.exists)
+    console.log("  generated file is missing");
+  else if (compactJson(before) === compactJson(after) && existing.content !== content)
+    console.log("  generated file formatting is not canonical");
+
+  if (existing.exists && existing.content === content) {
     console.log(`  unchanged: ${relative(context.repo, context.output)}`);
     return false;
   }
@@ -433,8 +481,7 @@ const buildContext = async (options: Options): Promise<Context> => {
   const repo = await findRepositoryRoot(options.repo);
   const requestedOutput = options.output ?? defaultOutputPath;
   const output = resolve(repo, requestedOutput);
-  if (!isInside(repo, output))
-    fail(`Generated output must stay inside the repository: ${output}`);
+  await validateOutputPath(repo, output);
 
   const dmsPath = Bun.which("dms");
   if (!dmsPath)

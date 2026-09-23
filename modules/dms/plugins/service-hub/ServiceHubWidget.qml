@@ -10,6 +10,7 @@ PluginComponent {
 
     layerNamespacePlugin: "service-hub"
 
+    readonly property bool showBarLabel: pluginData?.showBarLabel ?? false
     readonly property string catalogPath: Paths.strip(Qt.resolvedUrl("services.json").toString())
     readonly property string wallpaperSource: {
         const wallpaper = Theme.wallpaperPath;
@@ -90,6 +91,7 @@ PluginComponent {
 
             StyledText {
                 text: "Services"
+                visible: root.showBarLabel
                 color: Theme.widgetTextColor
                 font.pixelSize: Theme.barTextSize(root.barThickness, root.barConfig?.fontScale, root.barConfig?.maximizeWidgetText)
                 font.weight: Font.Medium

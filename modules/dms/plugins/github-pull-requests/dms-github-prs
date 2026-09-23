@@ -1,0 +1,129 @@
+usage() {
+  printf '%s\n' \
+    'usage: dms-github-prs list --author AUTHOR --status STATUS --limit LIMIT' \
+    '       dms-github-prs approve URL [--custom-token]'
+}
+
+die() {
+  printf 'dms-github-prs: %s\n' "$1" >&2
+  exit 2
+}
+
+list_pull_requests() {
+  local author='@me'
+  local status='all'
+  local limit='50'
+
+  while (( $# > 0 )); do
+    case "$1" in
+      --author)
+        (( $# >= 2 )) || die 'missing value for --author'
+        author="$2"
+        shift 2
+        ;;
+      --status)
+        (( $# >= 2 )) || die 'missing value for --status'
+        status="$2"
+        shift 2
+        ;;
+      --limit)
+        (( $# >= 2 )) || die 'missing value for --limit'
+        limit="$2"
+        shift 2
+        ;;
+      *) die "unknown list option: $1" ;;
+    esac
+  done
+
+  [[ "$author" == '@me' || "$author" =~ ^[A-Za-z0-9][A-Za-z0-9-]{0,38}$ ]] ||
+    die 'author must be @me or a GitHub username'
+  [[ "$status" =~ ^(all|open|draft|merged|closed)$ ]] || die 'invalid status'
+  [[ "$limit" =~ ^[1-9][0-9]*$ ]] || die 'limit must be a positive integer'
+
+  local active_query="is:pr is:open author:${author} sort:updated-desc"
+  local finished_query="is:pr is:closed author:${author} sort:updated-desc"
+
+  gh api graphql \
+    -f query='query($activeQuery: String!, $finishedQuery: String!, $limit: Int!) {
+      active: search(query: $activeQuery, type: ISSUE, first: $limit) {
+        nodes { ...PullRequestFields }
+      }
+      finished: search(query: $finishedQuery, type: ISSUE, first: $limit) {
+        nodes { ...PullRequestFields }
+      }
+    }
+    fragment PullRequestFields on PullRequest {
+      number
+      title
+      url
+      updatedAt
+      isDraft
+      state
+      merged
+      repository { nameWithOwner }
+      commits(last: 1) {
+        nodes {
+          commit {
+            statusCheckRollup { state }
+          }
+        }
+      }
+    }' \
+    -f activeQuery="$active_query" \
+    -f finishedQuery="$finished_query" \
+    -F limit="$limit" |
+    jq \
+      --arg requestedStatus "$status" \
+      --argjson limit "$limit" '
+        (.data.active.nodes + .data.finished.nodes) |
+        map(select(.number != null) | {
+          number,
+          title,
+          url,
+          updatedAt,
+          repository: .repository.nameWithOwner,
+          status: (if .isDraft then "draft"
+            elif .merged then "merged"
+            elif .state == "CLOSED" then "closed"
+            else "open"
+            end),
+          ciStatus: (.commits.nodes[0].commit.statusCheckRollup.state // "NONE")
+        }) |
+        map(select($requestedStatus == "all" or .status == $requestedStatus)) |
+        .[:$limit]
+      '
+}
+
+approve_pull_request() {
+  (( $# >= 1 )) || die 'missing pull request URL'
+  local url="$1"
+  shift
+  [[ "$url" =~ ^https://github\.com/[^/]+/[^/]+/pull/[0-9]+$ ]] ||
+    die 'expected a github.com pull request URL'
+
+  if [[ "${1:-}" == '--custom-token' ]]; then
+    [[ -n "${DMS_GITHUB_APPROVAL_TOKEN:-}" ]] ||
+      die 'configure the approval token in the plugin settings first'
+    GH_TOKEN="$DMS_GITHUB_APPROVAL_TOKEN" gh pr review "$url" --approve
+    return
+  fi
+
+  unset GH_TOKEN GITHUB_TOKEN
+  gh pr review "$url" --approve
+}
+
+(( $# > 0 )) || {
+  usage >&2
+  exit 2
+}
+
+command_name="$1"
+shift
+case "$command_name" in
+  list) list_pull_requests "$@" ;;
+  approve) approve_pull_request "$@" ;;
+  *)
+    usage >&2
+    exit 2
+    ;;
+esac

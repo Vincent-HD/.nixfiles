@@ -584,6 +584,19 @@ Purpose: inspect the effective bar widget settings as Nix renders them, especial
 
 ## DankMaterialShell Settings Defaults
 
+### Parse local DMS plugin assets before a host evaluation
+
+```bash
+PLUGIN="$REPO/modules/dms/plugins/<plugin-directory>"
+jq empty "$PLUGIN/plugin.json"
+bash -n "$PLUGIN/<helper-script>"
+nix shell nixpkgs#qt6.qtdeclarative -c qmlformat "$PLUGIN"/*.qml >/dev/null
+```
+
+Purpose: catch malformed plugin manifests, helper-shell syntax, and QML parser errors before the
+slower full NixOS evaluation. `qmlformat` writes formatted QML to stdout unless `-i` is passed, so
+redirecting stdout makes this a non-mutating parse check.
+
 ### Compare a DMS JSON export with the upstream settings spec
 
 ```bash
@@ -1033,14 +1046,16 @@ Purpose: verify that important binds or AZERTY aliases made it into the generate
 
 ## Formatting / Static Checks
 
-### Run the repo Statix flake check
+### Run one focused flake check
 
 ```bash
+CHECK=statix
 cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" \
-nix build --no-link '.#checks.'"$(nix eval --impure --expr 'builtins.currentSystem' --raw)"'.statix'
+nix build --no-link '.#checks.'"$(nix eval --impure --expr 'builtins.currentSystem' --raw)"'.'"$CHECK"
 ```
 
-Purpose: run the repository's Statix check with the repo-specific lint configuration.
+Purpose: run one repository check without evaluating and building the entire `nix flake check`
+set. Useful check names include `statix`, `deadnix`, and `persist-dms-tests` on Linux.
 
 ### Run Statix directly with the repo config
 

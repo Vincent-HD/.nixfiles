@@ -7,6 +7,8 @@
   "type": "widget",
   "capabilities": ["dankbar-widget"],
   "component": "./ServiceHubWidget.qml",
+  "settings": "./ServiceHubSettings.qml",
   "icon": "hub",
+  "permissions": ["settings_read", "settings_write"],
   "requires_dms": ">=1.5.0"
 }

@@ -1,0 +1,14 @@
+{
+  "id": "githubPullRequests",
+  "name": "GitHub Pull Requests",
+  "description": "Browse and approve pull requests from DankBar",
+  "version": "0.1.0",
+  "author": "Vincent",
+  "icon": "merge",
+  "type": "widget",
+  "capabilities": ["dankbar-widget"],
+  "component": "./GitHubPullRequestsWidget.qml",
+  "settings": "./GitHubPullRequestsSettings.qml",
+  "permissions": ["settings_read", "settings_write"],
+  "requires_dms": ">=1.6.0"
+}

@@ -56,6 +56,20 @@ in
         ffmpeg = pkgs.ffmpeg_8;
       };
       dmsPackage = dmsShellPackage pkgs;
+      # Keep GitHub querying and alternate-token handling outside QML so the
+      # token never appears in process arguments.
+      githubPullRequestsCommand = pkgs.writeShellApplication {
+        name = "dms-github-prs";
+        runtimeInputs = [
+          pkgs.gh
+          pkgs.jq
+        ];
+        # Avoid pulling ShellCheck's large Haskell closure into a system rebuild.
+        checkPhase = ''
+          ${pkgs.bash}/bin/bash -n "$target"
+        '';
+        text = builtins.readFile ./plugins/github-pull-requests/dms-github-prs;
+      };
     in
     {
       imports = [
@@ -67,6 +81,7 @@ in
 
       home.packages = [
         inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.persist-dms
+        githubPullRequestsCommand
         pkgs.coreutils
         pkgs.curl
         pkgs.file
@@ -196,6 +211,21 @@ in
             src = ./plugins/service-hub;
             settings = {
               enabled = true;
+              showBarLabel = false;
+            };
+          };
+
+          # GitHub PRs uses the normal gh login for browsing and other authors,
+          # plus an alternate token entered in the plugin settings for My PRs.
+          githubPullRequests = {
+            src = ./plugins/github-pull-requests;
+            settings = {
+              additionalAuthors = "";
+              approvalToken = "";
+              defaultRepository = "all";
+              executablePath = "dms-github-prs";
+              refreshIntervalMinutes = "5";
+              resultLimit = "50";
             };
           };
         };

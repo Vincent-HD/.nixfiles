@@ -260,8 +260,9 @@ persist-dms --watch    # keep watching and commit each debounced change
 ```
 
 The command reads DMS's in-memory settings through IPC and compares them with the
-`SettingsSpec.js` shipped by the installed DMS package. Use `nix run .#persist-dms -- ...`
-before the command has been installed into the user profile.
+`SettingsSpec.js` shipped by the installed DMS package. Runtime serialization artifacts and
+settings managed directly in `dms.nix` are excluded. Use `nix run .#persist-dms -- ...` before
+the command has been installed into the user profile.
 
 ## Editing Tips
 

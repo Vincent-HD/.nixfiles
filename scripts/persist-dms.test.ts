@@ -1,4 +1,4 @@
-import { chmod, mkdir, mkdtemp, rm } from "node:fs/promises";
+import { chmod, mkdir, mkdtemp, rm, symlink } from "node:fs/promises";
 import { join } from "node:path";
 import { afterEach, describe, expect, test } from "bun:test";
 
@@ -68,6 +68,7 @@ describe("persist-dms transformation", () => {
     const home = Bun.env.HOME;
     expect(home).toBeTruthy();
     const runtime = {
+      calendarBackend: "dankcal",
       clockFormat: "HH:mm",
       unchanged: true,
       skipped: "runtime-only",
@@ -76,6 +77,7 @@ describe("persist-dms transformation", () => {
       futureSetting: "unknown",
     };
     const defaults = {
+      calendarBackend: "auto",
       clockFormat: "auto",
       unchanged: true,
       skipped: "default",
@@ -153,8 +155,26 @@ var SPEC = {
       cornerRadius: 8,
     });
 
-    expect((await runChecked(["git", "log", "-1", "--format=%s"], root)).trim()).toMatch(/^chore: update dms setting \d{4}-\d{2}-\d{2}$/);
+    expect((await runChecked(["git", "log", "-1", "--format=%s"], root)).trim()).toMatch(/^chore: update dms settings \d{4}-\d{2}-\d{2}$/);
     expect((await runChecked(["git", "show", "--format=", "--name-only", "--no-renames", "HEAD"], root)).trim()).toBe("modules/dms/assets/generated-settings.json");
+    expect((await runChecked(["git", "status", "--short"], root)).split("\n")).toContain("M  unrelated.txt");
+
+    await Bun.write(
+      dmsPath,
+      `#!/bin/sh
+printf '%s\\n' '{"clockFormat":"HH:mm","cornerRadius":9,"configVersion":13}'
+`,
+    );
+    const trackedUpdate = await runProcess(
+      [process.execPath, scriptPath, "--repo", root, "--spec", specPath],
+      root,
+      { PATH: `${bin}${Bun.env.PATH ? `:${Bun.env.PATH}` : ""}` },
+    );
+    expect(trackedUpdate.exitCode).toBe(0);
+    expect(JSON.parse(await Bun.file(join(root, "modules/dms/assets/generated-settings.json")).text())).toEqual({
+      clockFormat: "HH:mm",
+      cornerRadius: 9,
+    });
     expect((await runChecked(["git", "status", "--short"], root)).split("\n")).toContain("M  unrelated.txt");
 
     const repeat = await runProcess(
@@ -164,6 +184,131 @@ var SPEC = {
     );
     expect(repeat.exitCode).toBe(0);
     expect(repeat.stdout).toContain("unchanged: modules/dms/assets/generated-settings.json");
-    expect((await runChecked(["git", "log", "-1", "--format=%s"], root)).trim()).toMatch(/^chore: update dms setting \d{4}-\d{2}-\d{2}$/);
+    expect((await runChecked(["git", "log", "-1", "--format=%s"], root)).trim()).toMatch(/^chore: update dms settings \d{4}-\d{2}-\d{2}$/);
+  });
+
+  test("creates a missing empty settings file and normalizes its formatting", async () => {
+    const root = await mkdtemp(join(Bun.env.TMPDIR ?? "/tmp", "persist-dms-empty-test-"));
+    temporaryRoots.push(root);
+    const bin = join(root, "bin");
+    await mkdir(bin, { recursive: true });
+
+    const dmsPath = join(bin, "dms");
+    await Bun.write(dmsPath, `#!/bin/sh\nprintf '%s\\n' '{"clockFormat":"auto"}'\n`);
+    await chmod(dmsPath, 0o755);
+
+    const specPath = join(root, "SettingsSpec.js");
+    await Bun.write(specPath, `var SPEC = { clockFormat: { def: "auto" } };\n`);
+    await runChecked(["git", "init", "-q"], root);
+
+    const scriptPath = join(import.meta.dir, "persist-dms.ts");
+    const environment = { PATH: `${bin}${Bun.env.PATH ? `:${Bun.env.PATH}` : ""}` };
+    const first = await runProcess(
+      [process.execPath, scriptPath, "--repo", root, "--spec", specPath, "--no-commit"],
+      root,
+      environment,
+    );
+
+    expect(first.exitCode).toBe(0);
+    expect(first.stdout).toContain("generated file is missing");
+    const output = join(root, "modules/dms/assets/generated-settings.json");
+    expect(await Bun.file(output).text()).toBe("{}\n");
+
+    await Bun.write(output, "{}");
+    const second = await runProcess(
+      [process.execPath, scriptPath, "--repo", root, "--spec", specPath, "--no-commit"],
+      root,
+      environment,
+    );
+
+    expect(second.exitCode).toBe(0);
+    expect(second.stdout).toContain("generated file formatting is not canonical");
+    expect(await Bun.file(output).text()).toBe("{}\n");
+  });
+
+  test("rejects repository metadata and output paths that escape through symlinks", async () => {
+    const root = await mkdtemp(join(Bun.env.TMPDIR ?? "/tmp", "persist-dms-path-test-"));
+    const outside = await mkdtemp(join(Bun.env.TMPDIR ?? "/tmp", "persist-dms-outside-test-"));
+    temporaryRoots.push(root, outside);
+    const bin = join(root, "bin");
+    await mkdir(bin, { recursive: true });
+
+    const dmsPath = join(bin, "dms");
+    await Bun.write(dmsPath, `#!/bin/sh\nprintf '%s\\n' '{}'\n`);
+    await chmod(dmsPath, 0o755);
+    const specPath = join(root, "SettingsSpec.js");
+    await Bun.write(specPath, "var SPEC = {};\n");
+    await runChecked(["git", "init", "-q"], root);
+    await symlink(outside, join(root, "escape"));
+
+    const scriptPath = join(import.meta.dir, "persist-dms.ts");
+    const environment = { PATH: `${bin}${Bun.env.PATH ? `:${Bun.env.PATH}` : ""}` };
+    const metadata = await runProcess(
+      [process.execPath, scriptPath, "--repo", root, "--spec", specPath, "--output", ".git/generated.json", "--no-commit"],
+      root,
+      environment,
+    );
+    const escaped = await runProcess(
+      [process.execPath, scriptPath, "--repo", root, "--spec", specPath, "--output", "escape/generated.json", "--no-commit"],
+      root,
+      environment,
+    );
+
+    expect(metadata.exitCode).toBe(1);
+    expect(metadata.stderr).toContain("outside .git");
+    expect(escaped.exitCode).toBe(1);
+    expect(escaped.stderr).toContain("resolves outside the repository through a symlink");
+    expect(await Bun.file(join(outside, "generated.json")).exists()).toBe(false);
+  });
+
+  test("rejects --repo paths that are not the repository root", async () => {
+    const root = await mkdtemp(join(Bun.env.TMPDIR ?? "/tmp", "persist-dms-repo-test-"));
+    temporaryRoots.push(root);
+    const child = join(root, "child");
+    await mkdir(child, { recursive: true });
+    await runChecked(["git", "init", "-q"], root);
+
+    const scriptPath = join(import.meta.dir, "persist-dms.ts");
+    const result = await runProcess([process.execPath, scriptPath, "--repo", child], root);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("--repo must point to the Git repository root");
+  });
+
+  test("does not leave a new generated file staged when the commit fails", async () => {
+    const root = await mkdtemp(join(Bun.env.TMPDIR ?? "/tmp", "persist-dms-commit-test-"));
+    temporaryRoots.push(root);
+    const bin = join(root, "bin");
+    await mkdir(bin, { recursive: true });
+
+    const dmsPath = join(bin, "dms");
+    await Bun.write(dmsPath, `#!/bin/sh\nprintf '%s\\n' '{"clockFormat":"HH:mm"}'\n`);
+    await chmod(dmsPath, 0o755);
+    const specPath = join(root, "SettingsSpec.js");
+    await Bun.write(specPath, `var SPEC = { clockFormat: { def: "auto" } };\n`);
+
+    await runChecked(["git", "init", "-q"], root);
+    await runChecked(["git", "config", "user.name", "persist-dms test"], root);
+    await runChecked(["git", "config", "user.email", "persist-dms-test@example.invalid"], root);
+    const hook = join(root, ".git/hooks/pre-commit");
+    await Bun.write(hook, "#!/bin/sh\nexit 1\n");
+    await chmod(hook, 0o755);
+
+    const scriptPath = join(import.meta.dir, "persist-dms.ts");
+    const result = await runProcess(
+      [process.execPath, scriptPath, "--repo", root, "--spec", specPath],
+      root,
+      { PATH: `${bin}${Bun.env.PATH ? `:${Bun.env.PATH}` : ""}` },
+    );
+
+    expect(result.exitCode).toBe(1);
+    expect(
+      (
+        await runChecked(
+          ["git", "status", "--short", "--untracked-files=all", "--", "modules/dms/assets/generated-settings.json"],
+          root,
+        )
+      ).trim(),
+    ).toBe("?? modules/dms/assets/generated-settings.json");
   });
 });

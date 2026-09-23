@@ -55,7 +55,8 @@
         {
           "enabled": true,
           "id": "tokitoki"
-        }
+        },
+        "githubPullRequests"
       ],
       "name": "Main Bar",
       "position": 0,
@@ -107,7 +108,6 @@
       "trigger": "?"
     }
   },
-  "calendarBackend": "dankcal",
   "clockFormat": "HH:mm",
   "controlCenterWidgets": [
     {
