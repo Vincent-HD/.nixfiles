@@ -56,8 +56,7 @@
           "enabled": true,
           "id": "tokitoki"
         },
-        "githubPullRequests",
-        "dankmailUnread"
+        "githubPullRequests"
       ],
       "name": "Main Bar",
       "position": 0,
