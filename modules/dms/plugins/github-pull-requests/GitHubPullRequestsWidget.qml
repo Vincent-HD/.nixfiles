@@ -175,14 +175,6 @@ PluginComponent {
         }
     }
 
-    function canApprove(pr) {
-        if (!pr || pr.status !== "open")
-            return false
-        if (selectedAuthor === "@me")
-            return approvalToken.trim().length > 0
-        return true
-    }
-
     function refresh() {
         if (listProcess.running) {
             pendingRefresh = true
@@ -193,7 +185,7 @@ PluginComponent {
     }
 
     function approve(pr) {
-        if (!canApprove(pr) || approveProcess.running)
+        if (!pr || approveProcess.running)
             return
         pendingApprovalUrl = pr.url
         approvalUsesCustomToken = selectedAuthor === "@me"
@@ -480,6 +472,7 @@ PluginComponent {
                                             MouseArea {
                                                 id: rowMouse
                                                 anchors.fill: parent
+                                                z: 0
                                                 hoverEnabled: true
                                                 cursorShape: Qt.PointingHandCursor
                                                 onClicked: Qt.openUrlExternally(parent.pullRequest.url)
@@ -487,6 +480,7 @@ PluginComponent {
 
                                             Row {
                                                 anchors.fill: parent
+                                                z: 1
                                                 anchors.leftMargin: Theme.spacingS
                                                 anchors.rightMargin: Theme.spacingS
                                                 anchors.topMargin: Theme.spacingXS
@@ -546,13 +540,12 @@ PluginComponent {
                                                     iconName: root.pendingApprovalUrl === prCard.pullRequest.url &&
                                                         approveProcess.running ? "sync" : "check"
                                                     iconSize: 16
-                                                    iconColor: enabled
-                                                        ? Theme.primary
-                                                        : Theme.surfaceVariantText
+                                                    iconColor: Theme.primaryText
+                                                    backgroundColor: Theme.primary
                                                     tooltipText: "Approve pull request"
                                                     anchors.verticalCenter: parent.verticalCenter
-                                                    visible: prCard.pullRequest.status === "open"
-                                                    enabled: root.canApprove(prCard.pullRequest) && !approveProcess.running
+                                                    z: 2
+                                                    enabled: !approveProcess.running
                                                     onClicked: root.approve(prCard.pullRequest)
                                                 }
                                             }
