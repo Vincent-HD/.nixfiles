@@ -134,6 +134,17 @@ nix run nixpkgs#nix-prefetch-git -- --url <git-url> --rev <commit> --fetch-submo
 
 Purpose: obtain the fixed-output hash for a reproducible derivation whose upstream source is pinned to a commit and includes Git submodules. Review the commit and its build changes before updating the package.
 
+### Prefetch a tagged GitHub source archive
+
+```bash
+SOURCE_HASH=$(nix-prefetch-url --unpack "https://github.com/<owner>/<repo>/archive/refs/tags/<tag>.tar.gz")
+nix hash convert --hash-algo sha256 --from nix32 --to sri "$SOURCE_HASH"
+```
+
+Purpose: calculate the SRI hash for a `fetchFromGitHub` source pinned to a release tag.
+
+Use when: adding a custom package backed by a tagged GitHub source archive.
+
 ### Check a package output on a target platform
 
 ```bash

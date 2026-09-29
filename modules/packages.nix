@@ -64,6 +64,8 @@
         cpuid-fault-emulation = pkgs.callPackage ../packages/cpuid-fault-emulation { };
         curseforge = unfreePkgs.callPackage ../packages/curseforge { };
         crosspipe = pkgs.callPackage ../packages/crosspipe { };
+        # Bundle the daemon, Quickshell interface, launcher, and optional DMS widget.
+        dankmail = pkgs.callPackage ../packages/dankmail { };
         gamescope-lanczos = pkgs.callPackage ../packages/gamescope-lanczos { };
         lsfg-vk = unfreePkgs.callPackage ../packages/lsfg-vk { };
         persist-dms = mkBunRunner "persist-dms" ../scripts/persist-dms.ts;

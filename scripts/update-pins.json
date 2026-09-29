@@ -105,6 +105,23 @@
       ]
     },
     {
+      "name": "dankmail",
+      "type": "nix-update",
+      "description": "Dankmail desktop app and DankMaterialShell widget",
+      "systems": [
+        "x86_64-linux"
+      ],
+      "command": [
+        "nix",
+        "run",
+        "github:Mic92/nix-update",
+        "--",
+        "--flake",
+        "dankmail",
+        "--use-github-releases"
+      ]
+    },
+    {
       "name": "opencodex",
       "type": "nix-update",
       "description": "OpenCodex npm release tarball, lockfile, and Bun dependency closure",

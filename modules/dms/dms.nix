@@ -56,6 +56,7 @@ in
         ffmpeg = pkgs.ffmpeg_8;
       };
       dmsPackage = dmsShellPackage pkgs;
+      dankmailPackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.dankmail;
       # Keep GitHub querying and alternate-token handling outside QML so the
       # token never appears in process arguments.
       githubPullRequestsCommand = pkgs.writeShellApplication {
@@ -165,6 +166,12 @@ in
               saveToDisk = true;
               videoFormat = "mp4";
             };
+          };
+
+          # Install Dankmail's companion unread widget beside the DMS shell.
+          dankmailUnread = {
+            src = "${dankmailPackage}/share/DankMaterialShell/plugins/dankmailUnread";
+            settings = { };
           };
 
           # Dank Actions supports declarative variants. Two mutually exclusive

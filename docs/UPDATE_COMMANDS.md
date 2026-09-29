@@ -184,6 +184,17 @@ To run the package-specific updater directly:
 nix run .#update-curseforge -- --check
 ```
 
+### dankmail
+
+- **File**: `packages/dankmail/default.nix`
+- **Pattern**: tagged GitHub source built with `buildGoModule`, including the Quickshell UI and DankMaterialShell widget
+- **Flake output**: `.#dankmail`
+- **Platforms**: `x86_64-linux`
+
+```bash
+nix run github:Mic92/nix-update -- --flake dankmail --use-github-releases
+```
+
 ### lsfg-vk
 
 - **File**: `packages/lsfg-vk/default.nix`
