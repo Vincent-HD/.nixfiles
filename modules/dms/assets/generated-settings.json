@@ -82,6 +82,10 @@
           "trayUseInlineExpansion": false
         },
         "clipboard",
+        {
+          "enabled": true,
+          "id": "dankmailUnread"
+        },
         "notificationButton",
         "quickCapture"
       ],
