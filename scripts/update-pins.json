@@ -250,11 +250,12 @@
       ]
     },
     {
-      "name": "audiorelay",
+      "name": "wifi-audio-streaming",
       "type": "nix-update",
-      "description": "AudioRelay Linux jpackage archive",
+      "description": "WiFi Audio Streaming desktop application for the current platform",
       "systems": [
-        "x86_64-linux"
+        "x86_64-linux",
+        "aarch64-darwin"
       ],
       "command": [
         "nix",
@@ -262,7 +263,7 @@
         "github:Mic92/nix-update",
         "--",
         "--flake",
-        "audiorelay",
+        "wifi-audio-streaming",
         "--use-update-script"
       ]
     },

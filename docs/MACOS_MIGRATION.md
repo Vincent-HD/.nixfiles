@@ -132,12 +132,11 @@ commands before trusting it.
 | Deskflow | Homebrew cask | keep | homebrew | Declared in `darwin.deskflow` through `deskflow/tap`. | yes |
 | RustDesk | Homebrew cask | keep | homebrew | Declared in `darwin.rustdesk`. | yes |
 | AltTab, CleanShot, JetBrains Toolbox, Moonlight, OrbStack, Raycast, Rectangle | Homebrew cask | keep | homebrew | Declared in `darwin.homebrew`. Native GUI, self-updating, or privileged-helper applications. | no |
-| AudioRelay | Homebrew cask | keep | homebrew | Declared in `darwin.audioRelay` together with the BlackHole drivers it needs. Relays audio over UDP 59100; the already-enabled application firewall permits it, so `networking.applicationFirewall` stays unset (this Mac is MDM-managed and refuses `--setglobalstate`/`--add`). The app asks for Microphone consent, plus Local Network on macOS 26. | no |
+| WiFi Audio Streaming | Home Manager package | migrate | home-manager | Declared in `hm.wifiAudioStreaming` from the pinned Apple Silicon release archive. Receives phone audio over the local network without a virtual audio driver. | no |
 | Bruno, DBeaver, GitButler, Insomnia, Msty, Proton Mail, Tabby | Homebrew cask | remove | none | Casks removed 2026-09-13. | yes |
 | OBS, TeamViewer | Homebrew cask | remove | none | Cask removal needs `sudo` (OBS ships a camera system extension). | no |
 | Ghostty | Homebrew cask | keep | home-manager + homebrew | `hm.ghostty` now writes the shared config on both hosts and installs the package on Linux; the cask owns the macOS app because nixpkgs marks ghostty unsupported on Darwin. | no |
 | kitty | Homebrew cask | remove | none | Cask removed 2026-09-13 in favour of Ghostty. | yes |
-| BlackHole 2ch, BlackHole 16ch | Homebrew cask | keep | homebrew | Declared in `darwin.audioRelay`. macOS lets no application capture system output, so AudioRelay needs one virtual device per direction: 2ch for playback, 16ch for the phone microphone. Installing the HAL drivers needs `sudo`. | no |
 | Font Caskaydia Mono Nerd Font | Homebrew cask | move | nix-darwin + nixos | Cask removed 2026-09-13. `modules/fonts.nix` installs `nerd-fonts.caskaydia-mono` system-wide on both hosts (Nix 3.5.0 vs cask 3.4.0). | no |
 | Slack | unmanaged | external | none | MDM-installed by Fleet orbit. Reappears after `sudo rm -rf` at 4.42.117, older than the nixpkgs 4.51.180 build, so it cannot be Nix-managed. Removed from `hm.guiApps`. | no |
 | ChatGPT | unmanaged | migrate | home-manager | Bundle id `com.openai.codex`. Installed 26.908.40834, nixpkgs 26.803.81509 from the same `codex-app-prod` source. Declared in `hm.guiApps`. | no |
@@ -197,12 +196,11 @@ through `hm.commandLine`, `hm.coding`, `hm.agentCommon`, `hm.agentSkills`, `hm.e
 Homebrew font cask. `darwin.macosDefaults` owns appearance, Dock, and Finder, plus the
 `CustomUserPreferences` seeds for Rectangle, AltTab, and Scroll Reverser.
 
-### Tier 3 - declarative Homebrew (13 casks, 1 tap)
+### Tier 3 - declarative Homebrew (11 casks, 1 tap)
 
 | Casks | Declared in |
 | --- | --- |
 | alt-tab, cleanshot, jetbrains-toolbox, moonlight, orbstack, raycast, rectangle | `darwin.homebrew` |
-| audiorelay, blackhole-2ch, blackhole-16ch | `darwin.audioRelay` |
 | codex | `darwin.agentCodex` |
 | deskflow (with tap `deskflow/tap`) | `darwin.deskflow` |
 | ghostty | `darwin.ghostty` |

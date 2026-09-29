@@ -55,11 +55,11 @@
         opencodex = pkgs.callPackage ../packages/opencodex { };
         papercuts = pkgs.callPackage ../packages/papercuts { };
         t3code = pkgs.callPackage ../packages/t3code { };
+        wifi-audio-streaming = pkgs.callPackage ../packages/wifi-audio-streaming { };
         portless = pkgs.callPackage ../packages/portless { };
         plannotator = pkgs.callPackage ../packages/plannotator { };
       }
       // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
-        audiorelay = unfreePkgs.callPackage ../packages/audiorelay { };
         codex = pkgs.callPackage ../packages/codex { };
         cpuid-fault-emulation = pkgs.callPackage ../packages/cpuid-fault-emulation { };
         curseforge = unfreePkgs.callPackage ../packages/curseforge { };

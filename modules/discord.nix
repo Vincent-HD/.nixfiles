@@ -10,6 +10,8 @@
         enable = true;
 
         discord = {
+          # Keep Nixcord's override arguments compatible with its pinned Discord base package.
+          package = inputs.nixcord.packages.${pkgs.stdenv.hostPlatform.system}.discord;
           vencord.enable = false;
           equicord = {
             enable = true;
