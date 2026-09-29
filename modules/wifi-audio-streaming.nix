@@ -13,6 +13,25 @@
     let
       isLinux = pkgs.stdenv.hostPlatform.isLinux;
       package = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.wifi-audio-streaming;
+      # Keep receiver auto-connect and startup preferences in the app's native JSON format.
+      clientConfig = (pkgs.formats.json { }).generate "wifi-audio-streaming-config.json" {
+        app = {
+          autoConnectClientEnabled = true;
+          autoConnectIps = [
+            "192.168.1.20"
+            "192.168.1.21"
+          ];
+          autoConnectIntervalSec = 5;
+          autoConnectRetryDelaySec = 10;
+          autoConnectPromptForKey = false;
+          launchAtStartup = true;
+          startMinimizedToTray = true;
+          # Preserve the existing user's preference to disable update checks.
+          autoUpdateCheckEnabled = false;
+        };
+        # Preserve the existing user's preference to hide the audio visualizer.
+        ui.visualizer = false;
+      };
     in
     {
       home.packages = [ package ];
@@ -28,6 +47,26 @@
           "AudioVideo"
           "Network"
         ];
+      };
+
+      xdg.configFile = lib.mkIf isLinux {
+        "wfas/config.json" = {
+          source = clientConfig;
+          force = true;
+        };
+
+        "autostart/wifiaudiostreaming.desktop" = {
+          text = ''
+            [Desktop Entry]
+            Type=Application
+            Name=WiFi Audio Streaming
+            Comment=Connect to the saved WFAS servers at login
+            Exec=${lib.getExe package}
+            Terminal=false
+            X-GNOME-Autostart-enabled=true
+          '';
+          force = true;
+        };
       };
     };
 }

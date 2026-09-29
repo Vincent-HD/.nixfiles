@@ -19,12 +19,16 @@ connects to the phone's advertised unicast stream port, so it does not need a fi
 Both devices need to be on the same local network; manual IP entry is available if multicast
 discovery is filtered by the router.
 
-1. Open **WiFi Audio Streaming** from the application launcher.
-2. On Android, choose **Send (Server)**, enable **Internal Audio**, select **WFAS**, and choose
+Home Manager writes `~/.config/wfas/config.json` with auto-connect enabled for `192.168.1.20`
+and `192.168.1.21`. It also adds a KDE/XDG autostart entry. At login the app starts in client mode,
+tries each target every five seconds, retries ten seconds after a disconnect, and starts minimized
+to the tray. The existing preferences to disable update checks and hide the visualizer are retained.
+
+1. On Android, choose **Send (Server)**, enable **Internal Audio**, select **WFAS**, and choose
    **Unicast**.
-3. Approve Android's capture prompt, then start the server.
-4. On Linux, choose **Receive (Client)** and connect to the phone. The audio plays through the
-   selected PipeWire output.
+2. Approve Android's capture prompt, then start the server.
+3. On Linux, open **WiFi Audio Streaming** once from the application launcher and choose the
+   desired output device. The app then retries the saved addresses automatically at login.
 
 Unicast supports optional key-based authorization and ChaCha20-Poly1305 encryption. Configure the
 same key on both ends if you want to enable them.
