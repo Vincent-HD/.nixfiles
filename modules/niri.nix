@@ -177,6 +177,20 @@
             text = ''
               include "recent-windows.kdl"
               include optional=true "dms/binds.kdl"
+              include optional=true "dms/windowrules.kdl"
+
+              // Persistent destinations for DMS startup window rules.
+              workspace "browser" {
+                  open-on-output "DP-2"
+              }
+
+              workspace "collaboration" {
+                  open-on-output "DP-2"
+              }
+
+              workspace "personal" {
+                  open-on-output "DP-1"
+              }
 
               ${config.programs.niri.finalConfig}
             '';
