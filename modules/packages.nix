@@ -42,6 +42,17 @@
           program = "${mkBunRunner name script}/bin/${name}";
           meta.description = description;
         };
+
+      # Synchronize declared Bitwarden secrets to local files and load them for managed children.
+      bwSecretTools = pkgs.writeShellApplication {
+        name = "bw-secret";
+        runtimeInputs = [
+          pkgs.bitwarden-cli
+          pkgs.coreutils
+          pkgs.jq
+        ] ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [ pkgs.systemd ];
+        text = builtins.readFile ../modules/bitwarden/assets/bw-secret.sh;
+      };
     in
     {
       packages = {
@@ -58,6 +69,7 @@
         wifi-audio-streaming = pkgs.callPackage ../packages/wifi-audio-streaming { };
         portless = pkgs.callPackage ../packages/portless { };
         plannotator = pkgs.callPackage ../packages/plannotator { };
+        bitwarden-secret-tools = bwSecretTools;
       }
       // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
         codex = pkgs.callPackage ../packages/codex { };

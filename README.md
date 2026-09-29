@@ -139,7 +139,6 @@ The main framework and host inputs are:
 - `home-manager`
 - `home-manager-darwin`
 - `nix-darwin`
-- `sops-nix`
 - `code-cursor-nix`
 - `nixcord`
 - `niri`
@@ -151,53 +150,78 @@ Pinned DMS plugin sources, Agent Skill sources, and selected application flakes 
 `flake.lock`. Most compatible inputs follow the host package set to avoid duplicate evaluations;
 `nix-cachyos-kernel` intentionally keeps its own nixpkgs revision for binary-cache compatibility.
 
-## Secrets Management
+## Bitwarden Secrets
 
-This repository uses [sops-nix](https://github.com/Mic92/sops-nix) for secret management.
-Secrets are stored encrypted in `secrets/` and decrypted at activation time.
+Nix declares which Bitwarden Login items are needed and where each value goes. Home Manager writes
+the non-secret manifest to `~/.config/bw-secret/secrets.json`; secret values stay out of the Nix
+store. `bw-secret sync` refreshes persistent, mode-0400 local files from Bitwarden. Programs can
+start from those local files after reboot without unlocking Bitwarden.
 
-### Age Key Derivation from SSH
+### Convention
 
-The age private key used by sops-nix is **derived from the SSH private key** (Ed25519)
-rather than being a standalone age key. This allows recreating the same age key on any
-machine where the SSH private key can be exported.
+- Name each Bitwarden **Login** item `secret--<resource>--<purpose>` using lowercase kebab-case.
+  The `secret--` prefix distinguishes program credentials from personal logins; the remaining name
+  works for any resource or consumer. Examples: `secret--github--personal-access-token`,
+  `secret--context7--api-key`, `secret--nas--ssh-key`. Put the secret value in **Password**;
+  username can stay empty. Keep the item in a vault available to the machines that need it.
+- Declare each source item in the `runtimeSecrets` list in `modules/bitwarden.nix`. Omitting
+  `destinations` writes a file at `~/.local/state/bitwarden-secrets/<item>` by default. Add
+  `destinations.environmentVariable` to inject the value into the managed program's environment,
+  `destinations.file` to configure a file output, or both to enable both outputs.
 
-The Bitwarden SSH Agent can sign with the key but does not make its private material
-available to `ssh-to-age`. When needed, explicitly export the private key from Bitwarden,
-write it to a protected temporary file, and run:
+The destination choice is part of each declaration:
 
-```bash
-# Derive age key from SSH private key
-nix-shell -p ssh-to-age --run "ssh-to-age -private-key -i ~/.ssh/id_ed25519 > ~/.config/sops/age/keys.txt"
+```nix
+runtimeSecrets = [
+  {
+    item = "secret--service--file-only";
+  }
+  {
+    item = "secret--service--env-only";
+    destinations.environmentVariable = "SERVICE_API_KEY";
+  }
+  {
+    item = "secret--service--both";
+    destinations.environmentVariable = "SERVICE_CREDENTIALS";
+    destinations.file = {
+      path = "${config.home.homeDirectory}/.config/service/credentials";
+      argument = "--credentials-file";
+    };
+  }
+];
 ```
 
-### Recreating the Age Key on a New Machine
+The first two items use the default local path at
+`~/.local/state/bitwarden-secrets/<item>`; `bw-secret exec` also exports the second item's value to
+its program. The third writes to the configured file and also sets the variable when its program
+starts; if `argument` is set, `bw-secret exec` adds that file option and path to the command.
 
-1. Export your SSH private key from Bitwarden (an SSH agent alone is insufficient)
-2. Derive the age key (command above)
-3. Verify the public key matches `.sops.yaml`:
-   ```bash
-   age-keygen -y ~/.config/sops/age/keys.txt
-   ```
-4. The secret files (e.g., `secrets/github-token.yaml`) can now be decrypted
+### Sync and startup
 
-### Updating Secrets After Key Changes
+On each machine:
 
-If the age key changes (e.g., new SSH key), update the encrypted files:
+1. Create the needed Bitwarden Login items yourself, using the names declared in Nix.
+2. Apply the Nix configuration so it installs the manifest.
+3. Sign in to the Bitwarden CLI once with `bw login` (separate from the Desktop app).
+4. Run `bw-secret sync`. If the CLI has no session in the current environment, it prompts for the
+   master password, refreshes all declared items, and writes them locally with mode `0400`.
 
-```bash
-# Update .sops.yaml with the new public key first
-sops updatekeys secrets/github-token.yaml
-```
+If you previously used the session-bridge version of this helper, run `bw-secret lock` once to
+remove its saved `BW_SESSION` from the user service manager.
 
-### Current Secrets
+The command to start a secret-backed program is `bw-secret exec --item ITEM -- PROGRAM ...`.
+Executor uses this for GitHub and Context7. The helper reads the local cache and sets any declared
+environment variable only for that child process. File destinations remain available at their
+configured paths.
 
-- `github_token` — GitHub personal access token for the local GitHub MCP server
-- `context7_token` — Context7 API key
+No unlock is needed at computer startup. When you add or rotate an item in Bitwarden, run
+`bw-secret sync` on each machine that uses it. The local copy survives reboot, and an already-running
+program needs a restart to receive a refreshed environment value.
 
-Both values are encrypted in `secrets/github-token.yaml`; sops-nix materializes them with
-mode `0400` below `~/.config/agent-mcp`. On a new Linux or macOS host, create the age key at
-`~/.config/sops/age/keys.txt` before the first system activation.
+The local files are decrypted plaintext, owned by the user, and mode `0400`; the state directory is
+mode `0700`. They are intentionally persistent so startup does not depend on an interactive vault
+unlock. Protect them with the machine's normal disk security. Secret values are never put in Nix
+expressions, the generated manifest, or the Nix store.
 
 ## Common Commands
 
@@ -297,7 +321,8 @@ If you want to remove a feature, change the relevant host composition under `hos
   `/etc/codex/config.toml` lives in `modules/agents/codex.nix`, and VS Code's user-profile
   `mcp.json` lives in `modules/agents/vscode.nix`.
 - T3 Code nightly is a pinned desktop package (`packages/t3code`) wired by `modules/agents/t3code.nix`; it drives provider CLIs rather than a client MCP schema.
-- File-backed MCP credentials stay outside the Nix store and are decrypted by sops-nix.
+- MCP credentials are loaded from the local Bitwarden sync files at process startup and passed only
+  to the child process environment.
 - Executable MCPs use pinned Nix packages.
 - A home-level `AGENTS.md` gives every AGENTS-aware client the same Nix environment guidance. If a
   command is missing, run it ephemerally with `, <command>` (comma) or

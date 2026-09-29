@@ -9,48 +9,13 @@
     }:
     let
       executorPackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.executor;
+      bitwardenSecretTools =
+        inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.bitwarden-secret-tools;
       agentBrowserPackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.agent-browser;
       archOpsPackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.arch-ops-server;
       codeburnPackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.codeburn;
       executorDataDirectory = "${config.home.homeDirectory}/.executor";
       agentBrowserProxyPort = 4790;
-      context7TokenPath = "${config.home.homeDirectory}/.config/agent-mcp/context7-token";
-      githubTokenPath = "${config.home.homeDirectory}/.config/agent-mcp/github-token";
-
-      # Executor starts these wrappers, so token values stay in sops-managed
-      # files rather than its database or generated client configuration.
-      context7Mcp = pkgs.writeShellScript "executor-context7-mcp" ''
-        set -eu
-        token_file=${lib.escapeShellArg context7TokenPath}
-        if [ ! -r "$token_file" ]; then
-          printf 'Context7 MCP token is not readable: %s\n' "$token_file" >&2
-          exit 1
-        fi
-        CONTEXT7_API_KEY="$("${pkgs.coreutils}/bin/cat" "$token_file")"
-        if [ -z "$CONTEXT7_API_KEY" ]; then
-          printf 'Context7 MCP token is empty: %s\n' "$token_file" >&2
-          exit 1
-        fi
-        export CONTEXT7_API_KEY
-        exec ${lib.getExe pkgs.context7-mcp}
-      '';
-
-      githubMcp = pkgs.writeShellScript "executor-github-mcp" ''
-        set -eu
-        token_file=${lib.escapeShellArg githubTokenPath}
-        if [ ! -r "$token_file" ]; then
-          printf 'GitHub MCP token is not readable: %s\n' "$token_file" >&2
-          exit 1
-        fi
-        GITHUB_PERSONAL_ACCESS_TOKEN="$("${pkgs.coreutils}/bin/cat" "$token_file")"
-        if [ -z "$GITHUB_PERSONAL_ACCESS_TOKEN" ]; then
-          printf 'GitHub MCP token is empty: %s\n' "$token_file" >&2
-          exit 1
-        fi
-        export GITHUB_PERSONAL_ACCESS_TOKEN
-        exec ${lib.getExe pkgs.github-mcp-server} stdio
-      '';
-
       # Executor stdio MCP is still per-call (spawn, initialize, close). Each
       # new agent-browser process re-attaches over CDP and Brave asks again to
       # allow remote debugging. Remote MCP is pooled, so keep one stdio child
@@ -74,6 +39,10 @@
             mcp
       '';
 
+      # Load API tokens at MCP startup so they never enter Executor's saved config.
+      # Runtime Bitwarden items share a generic prefix; the remaining name
+      # identifies the service and credential purpose for any consumer.
+      # The generated Bitwarden manifest declares each item's output mode.
       mcpServers = [
         {
           slug = "arch-ops";
@@ -104,16 +73,29 @@
           name = "Context7";
           description = "Up-to-date library documentation and code examples.";
           transport = "stdio";
-          command = "${context7Mcp}";
-          args = [ ];
+          command = "${bitwardenSecretTools}/bin/bw-secret";
+          args = [
+            "exec"
+            "--item"
+            "secret--context7--api-key"
+            "--"
+            (lib.getExe pkgs.context7-mcp)
+          ];
         }
         {
           slug = "github";
           name = "GitHub";
           description = "GitHub repositories, pull requests, issues, and workflows.";
           transport = "stdio";
-          command = "${githubMcp}";
-          args = [ ];
+          command = "${bitwardenSecretTools}/bin/bw-secret";
+          args = [
+            "exec"
+            "--item"
+            "secret--github--personal-access-token"
+            "--"
+            (lib.getExe pkgs.github-mcp-server)
+            "stdio"
+          ];
         }
         {
           slug = "postgres_sql_mcp";
@@ -221,6 +203,7 @@
       };
 
       serviceEnvironment = {
+        BW_SECRET_CONFIG = "${config.xdg.configHome}/bw-secret/secrets.json";
         EXECUTOR_SUPERVISED = "1";
         EXECUTOR_DATA_DIR = executorDataDirectory;
         EXECUTOR_SCOPE_DIR = executorDataDirectory;

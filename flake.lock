@@ -911,7 +911,6 @@
         "noctalia": "noctalia",
         "quick-capture": "quick-capture",
         "screen-capture-toolbar": "screen-capture-toolbar",
-        "sops-nix": "sops-nix",
         "spicetify-nix": "spicetify-nix",
         "tokitoki": "tokitoki"
       }
@@ -930,26 +929,6 @@
         "owner": "JDKamalakar",
         "repo": "DMS-ScreenCapture_Toolbar",
         "rev": "2b923cc95faa36876d790df6fc1ed575388e966d",
-        "type": "github"
-      }
-    },
-    "sops-nix": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1790498116,
-        "narHash": "sha256-rs9meAYxW3zzrh43yaW7htrqCD+X9+pupDPHN86fumI=",
-        "owner": "Mic92",
-        "repo": "sops-nix",
-        "rev": "5efb5a6f4f5ab192817d28557dd4d650fa14d866",
-        "type": "github"
-      },
-      "original": {
-        "owner": "Mic92",
-        "repo": "sops-nix",
         "type": "github"
       }
     },

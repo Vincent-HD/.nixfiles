@@ -212,7 +212,17 @@ description; do not create `WIP`, `update`, `changes`, or other vague subjects.
   `modules/agents/cursor.nix`, Codex in `modules/agents/codex.nix`, and VS Code in
   `modules/agents/vscode.nix`. Repeating the small
   server list is preferred over a normalizing abstraction. Use pinned executable paths and
-  file-backed sops secrets.
+  retrieve secret values at process startup through the Bitwarden runtime helper.
+- **Use the generic Bitwarden runtime-secret convention.** Name Login items
+  `secret--<resource>--<purpose>` in lowercase kebab-case and put the value in Password. Use the
+  `secret--` prefix to distinguish program credentials from personal logins, regardless of
+  consumer type. Declare each item and its destinations in the `runtimeSecrets` list in
+  `modules/bitwarden.nix`. Omitting `destinations` writes a persistent file under
+  `~/.local/state/bitwarden-secrets/` by default. `destinations.environmentVariable` injects the
+  value into a managed child process; `destinations.file` configures a file path and optional
+  argument. Both can be set for the same item. Run `bw-secret sync` to refresh the local copies.
+  They are plaintext, mode `0400`, and intentionally persist across reboots; never put their values
+  in Nix expressions or the Nix store.
 - **Keep copied third-party skills as local snapshots** when they are not a versioned upstream
   repository. Do not add flake inputs or update automation for Grill Me, Reference Repository,
   or Bro (wait-what snapshot from mattpocock/skills, without CONTEXT.md).
