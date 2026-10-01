@@ -10,13 +10,14 @@ PluginComponent {
     id: root
 
     property var pullRequests: []
+    property var knownRepositories: []
     property string selectedAuthor: "@me"
     property string selectedStatus: "all"
     property string selectedRepository: "all"
     property string errorText: ""
     property string pendingApprovalUrl: ""
-    property bool approvalUsesCustomToken: false
     property bool pendingRefresh: false
+    property var activeRequest: null
     property bool stateReady: false
     property bool configOpen: false
 
@@ -36,15 +37,12 @@ PluginComponent {
     ]
     readonly property var authorOptions: buildAuthorOptions()
     readonly property var repositoryOptions: buildRepositoryOptions()
-    readonly property var filteredPullRequests: pullRequests.filter(function(pr) {
-        return selectedRepository === "all" || pr.repository === selectedRepository
-    })
     readonly property var displayRows: buildDisplayRows()
     readonly property bool isBusy: listProcess.running
-    readonly property int activeCount: filteredPullRequests.filter(function(pr) {
+    readonly property int activeCount: pullRequests.filter(function(pr) {
         return pr.status === "open" || pr.status === "draft"
     }).length
-    readonly property int barCount: selectedStatus === "all" ? activeCount : filteredPullRequests.length
+    readonly property int barCount: selectedStatus === "all" ? activeCount : pullRequests.length
 
     layerNamespacePlugin: "github-pull-requests"
 
@@ -60,14 +58,15 @@ PluginComponent {
 
     function normalizeRepository(value) {
         var repository = String(value || "").trim()
-        return repository.length > 0 ? repository : "all"
+        return repository.length > 0 && repository.toLowerCase() !== "all" ? repository : "all"
     }
 
     function buildAuthorOptions() {
         var options = [{ label: "My PRs", value: "@me" }]
-        var seen = { "@me": true }
+        var seen = Object.create(null)
+        seen["@me"] = true
         String(pluginSetting("additionalAuthors", "")).split(",").forEach(function(raw) {
-            var username = raw.trim().replace(/^@/, "")
+            var username = raw.trim().replace(/^@/, "").toLowerCase()
             if (!username || seen[username])
                 return
             seen[username] = true
@@ -78,17 +77,18 @@ PluginComponent {
 
     function buildRepositoryOptions() {
         var repositories = []
-        var seen = {}
+        var seen = Object.create(null)
 
         function addRepository(repository) {
             var value = String(repository || "").trim()
-            if (!value || value === "all" || seen[value])
+            var key = value.toLowerCase()
+            if (!value || value === "all" || seen[key])
                 return
-            seen[value] = true
+            seen[key] = true
             repositories.push(value)
         }
 
-        pullRequests.forEach(function(pr) { addRepository(pr.repository) })
+        knownRepositories.forEach(addRepository)
         addRepository(defaultRepository)
         addRepository(selectedRepository)
         repositories.sort()
@@ -117,10 +117,10 @@ PluginComponent {
 
     function buildDisplayRows() {
         var rows = []
-        var active = filteredPullRequests.filter(function(pr) {
+        var active = pullRequests.filter(function(pr) {
             return pr.status === "open" || pr.status === "draft"
         })
-        var finished = filteredPullRequests.filter(function(pr) {
+        var finished = pullRequests.filter(function(pr) {
             return pr.status === "merged" || pr.status === "closed"
         })
 
@@ -180,15 +180,42 @@ PluginComponent {
             pendingRefresh = true
             return
         }
+        pendingRefresh = false
         errorText = ""
+        activeRequest = {
+            helper: helperCommand,
+            author: selectedAuthor,
+            status: selectedStatus,
+            repository: selectedRepository,
+            limit: resultLimit
+        }
+        listProcess.command = [activeRequest.helper, "list", "--author", activeRequest.author,
+            "--status", activeRequest.status, "--repository", activeRequest.repository,
+            "--limit", String(activeRequest.limit)]
         listProcess.running = true
+    }
+
+    function isCurrentListRequest() {
+        return activeRequest !== null && activeRequest.helper === helperCommand &&
+            activeRequest.author === selectedAuthor && activeRequest.status === selectedStatus &&
+            activeRequest.repository === selectedRepository && activeRequest.limit === resultLimit
     }
 
     function approve(pr) {
         if (!pr || approveProcess.running)
             return
+        var usesCustomToken = selectedAuthor === "@me"
+        if (usesCustomToken && approvalToken.trim().length === 0) {
+            ToastService.showError("Approval token required", "Add the alternate reviewer token in Settings.")
+            return
+        }
         pendingApprovalUrl = pr.url
-        approvalUsesCustomToken = selectedAuthor === "@me"
+        approveProcess.command = usesCustomToken
+            ? [helperCommand, "approve", pr.url, "--custom-token"]
+            : [helperCommand, "approve", pr.url]
+        approveProcess.environment = usesCustomToken
+            ? ({ "DMS_GITHUB_APPROVAL_TOKEN": approvalToken.trim() })
+            : ({})
         approveProcess.running = true
     }
 
@@ -211,6 +238,8 @@ PluginComponent {
     onSelectedAuthorChanged: {
         if (!stateReady)
             return
+        pullRequests = []
+        knownRepositories = []
         pluginService?.savePluginState(pluginId, "selectedAuthor", selectedAuthor)
         refresh()
     }
@@ -218,6 +247,7 @@ PluginComponent {
     onSelectedStatusChanged: {
         if (!stateReady)
             return
+        pullRequests = []
         pluginService?.savePluginState(pluginId, "selectedStatus", selectedStatus)
         refresh()
     }
@@ -225,6 +255,23 @@ PluginComponent {
     onDefaultRepositoryChanged: {
         if (stateReady)
             selectedRepository = defaultRepository
+    }
+
+    onSelectedRepositoryChanged: {
+        if (!stateReady)
+            return
+        pullRequests = []
+        refresh()
+    }
+
+    onResultLimitChanged: {
+        if (stateReady)
+            refresh()
+    }
+
+    onHelperCommandChanged: {
+        if (stateReady)
+            refresh()
     }
 
     horizontalBarPill: Component {
@@ -407,14 +454,15 @@ PluginComponent {
                                     spacing: Theme.spacingXS
 
                                     DankIcon {
-                                        name: root.isBusy ? "sync" : "check_circle"
+                                        name: root.isBusy ? "sync" : root.errorText.length > 0 ? "warning" : "check_circle"
                                         size: Theme.iconSizeLarge
                                         color: Theme.surfaceVariantText
                                         anchors.horizontalCenter: parent.horizontalCenter
                                     }
 
                                     StyledText {
-                                        text: root.isBusy ? "Loading pull requests…" : "No pull requests match this filter"
+                                        text: root.isBusy ? "Loading pull requests…" : root.errorText.length > 0
+                                            ? "Could not load pull requests" : "No pull requests match this filter"
                                         color: Theme.surfaceVariantText
                                         font.pixelSize: Theme.fontSizeMedium
                                     }
@@ -566,7 +614,7 @@ PluginComponent {
                             anchors.verticalCenter: parent.verticalCenter
                             text: root.selectedAuthor === "@me" && root.approvalToken.trim().length === 0
                                 ? "Add the approval token in Settings to approve your PRs"
-                                : root.filteredPullRequests.length + " pull requests"
+                                : root.pullRequests.length + " pull requests"
                             color: Theme.surfaceVariantText
                             font.pixelSize: Theme.fontSizeSmall
                             elide: Text.ElideRight
@@ -617,19 +665,9 @@ PluginComponent {
 
     Process {
         id: listProcess
-        command: [root.helperCommand, "list", "--author", root.selectedAuthor,
-            "--status", root.selectedStatus, "--limit", String(root.resultLimit)]
 
         stdout: StdioCollector {
-            onStreamFinished: {
-                try {
-                    var parsed = JSON.parse(text)
-                    root.pullRequests = Array.isArray(parsed) ? parsed : []
-                    root.errorText = ""
-                } catch (error) {
-                    root.errorText = "Could not read GitHub CLI output: " + String(error)
-                }
-            }
+            id: listOutput
         }
 
         stderr: StdioCollector {
@@ -637,23 +675,36 @@ PluginComponent {
         }
 
         onExited: function(exitCode, exitStatus) {
-            if (exitCode !== 0)
-                root.errorText = listError.text.trim() || "GitHub CLI failed (exit " + exitCode + ")"
-            if (root.pendingRefresh) {
+            if (root.isCurrentListRequest()) {
+                if (exitCode !== 0) {
+                    root.errorText = listError.text.trim() || "GitHub CLI failed (exit " + exitCode + ")"
+                } else {
+                    try {
+                        var parsed = JSON.parse(listOutput.text)
+                        if (!Array.isArray(parsed))
+                            throw new Error("Expected a pull request list")
+                        root.pullRequests = parsed
+                        var repositories = root.knownRepositories.slice()
+                        parsed.forEach(function(pr) {
+                            if (repositories.indexOf(pr.repository) < 0)
+                                repositories.push(pr.repository)
+                        })
+                        root.knownRepositories = repositories
+                        root.errorText = ""
+                    } catch (error) {
+                        root.errorText = "Could not read GitHub CLI output: " + String(error)
+                    }
+                }
+            }
+            if (root.pendingRefresh || !root.isCurrentListRequest()) {
                 root.pendingRefresh = false
-                root.refresh()
+                Qt.callLater(root.refresh)
             }
         }
     }
 
     Process {
         id: approveProcess
-        command: root.approvalUsesCustomToken
-            ? [root.helperCommand, "approve", root.pendingApprovalUrl, "--custom-token"]
-            : [root.helperCommand, "approve", root.pendingApprovalUrl]
-        environment: root.approvalUsesCustomToken
-            ? ({ "DMS_GITHUB_APPROVAL_TOKEN": root.approvalToken })
-            : ({})
 
         stderr: StdioCollector {
             id: approveError
@@ -668,6 +719,7 @@ PluginComponent {
                 ToastService.showError("Could not approve pull request", message)
             }
             root.pendingApprovalUrl = ""
+            approveProcess.environment = ({})
         }
     }
 

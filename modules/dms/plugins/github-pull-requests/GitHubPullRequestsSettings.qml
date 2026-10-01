@@ -30,9 +30,11 @@ PluginSettings {
     }
 
     function saveToken() {
-        if (!tokenLoaded)
+        if (!tokenLoaded || !root.pluginService)
             return
-        root.saveValue("approvalToken", approvalTokenField.text.trim())
+        var token = approvalTokenField.text.trim()
+        if (token !== String(root.loadValue("approvalToken", "")))
+            root.saveValue("approvalToken", token)
     }
 
     Component.onCompleted: Qt.callLater(root.initializeSettings)

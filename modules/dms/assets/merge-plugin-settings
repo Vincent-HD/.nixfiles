@@ -1,0 +1,27 @@
+set -euo pipefail
+
+defaults_file="$1"
+settings_file="$2"
+existing_file="$settings_file"
+if [[ ! -e "$existing_file" ]]; then
+  existing_file=/dev/null
+fi
+
+temporary_file="$(mktemp "${settings_file}.XXXXXX")"
+trap 'rm -f -- "$temporary_file"' EXIT
+
+jq -s '
+  .[0] as $defaults |
+  (.[1] // {}) as $current |
+  if ($defaults | type) != "object" or ($current | type) != "object" then
+    error("Plugin settings must be a JSON object")
+  else
+    ($current * $defaults) |
+    .githubPullRequests = ($defaults.githubPullRequests * ($current.githubPullRequests // {})) |
+    .githubPullRequests.enabled = $defaults.githubPullRequests.enabled |
+    .githubPullRequests.executablePath = $defaults.githubPullRequests.executablePath
+  end
+' "$defaults_file" "$existing_file" > "$temporary_file"
+
+chmod 600 "$temporary_file"
+mv -T -- "$temporary_file" "$settings_file"

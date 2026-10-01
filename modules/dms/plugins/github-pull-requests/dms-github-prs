@@ -1,6 +1,8 @@
+set -euo pipefail
+
 usage() {
   printf '%s\n' \
-    'usage: dms-github-prs list --author AUTHOR --status STATUS --limit LIMIT' \
+    'usage: dms-github-prs list --author AUTHOR --status STATUS --limit LIMIT [--repository OWNER/REPO]' \
     '       dms-github-prs approve URL [--custom-token]'
 }
 
@@ -13,6 +15,7 @@ list_pull_requests() {
   local author='@me'
   local status='all'
   local limit='50'
+  local repository='all'
 
   while (( $# > 0 )); do
     case "$1" in
@@ -31,6 +34,11 @@ list_pull_requests() {
         limit="$2"
         shift 2
         ;;
+      --repository)
+        (( $# >= 2 )) || die 'missing value for --repository'
+        repository="$2"
+        shift 2
+        ;;
       *) die "unknown list option: $1" ;;
     esac
   done
@@ -38,17 +46,35 @@ list_pull_requests() {
   [[ "$author" == '@me' || "$author" =~ ^[A-Za-z0-9][A-Za-z0-9-]{0,38}$ ]] ||
     die 'author must be @me or a GitHub username'
   [[ "$status" =~ ^(all|open|draft|merged|closed)$ ]] || die 'invalid status'
-  [[ "$limit" =~ ^[1-9][0-9]*$ ]] || die 'limit must be a positive integer'
+  [[ "$limit" =~ ^([1-9][0-9]?|100)$ ]] || die 'limit must be between 1 and 100'
+  [[ "$repository" == 'all' || "$repository" =~ ^[A-Za-z0-9][A-Za-z0-9-]{0,38}/[A-Za-z0-9_.-]+$ ]] ||
+    die 'repository must be all or owner/repository'
 
   local active_query="is:pr is:open author:${author} sort:updated-desc"
   local finished_query="is:pr is:closed author:${author} sort:updated-desc"
+  local show_active=true
+  local show_finished=true
+
+  case "$status" in
+    open) active_query+=' draft:false'; show_finished=false ;;
+    draft) active_query+=' draft:true'; show_finished=false ;;
+    merged) finished_query+=' is:merged'; show_active=false ;;
+    closed) finished_query+=' -is:merged'; show_active=false ;;
+  esac
+  if [[ "$repository" != 'all' ]]; then
+    active_query+=" repo:${repository}"
+    finished_query+=" repo:${repository}"
+  fi
+
+  unset GH_TOKEN GITHUB_TOKEN
 
   gh api graphql \
-    -f query='query($activeQuery: String!, $finishedQuery: String!, $limit: Int!) {
-      active: search(query: $activeQuery, type: ISSUE, first: $limit) {
+    -f query='query($activeQuery: String!, $finishedQuery: String!, $limit: Int!,
+      $showActive: Boolean!, $showFinished: Boolean!) {
+      active: search(query: $activeQuery, type: ISSUE, first: $limit) @include(if: $showActive) {
         nodes { ...PullRequestFields }
       }
-      finished: search(query: $finishedQuery, type: ISSUE, first: $limit) {
+      finished: search(query: $finishedQuery, type: ISSUE, first: $limit) @include(if: $showFinished) {
         nodes { ...PullRequestFields }
       }
     }
@@ -71,25 +97,28 @@ list_pull_requests() {
     }' \
     -f activeQuery="$active_query" \
     -f finishedQuery="$finished_query" \
-    -F limit="$limit" |
-    jq \
-      --arg requestedStatus "$status" \
+    -F limit="$limit" \
+    -F showActive="$show_active" \
+    -F showFinished="$show_finished" |
+    jq -e \
       --argjson limit "$limit" '
-        (.data.active.nodes + .data.finished.nodes) |
+        if (.errors // [] | length) > 0 or (.data | type) != "object" then
+          error("GitHub returned an incomplete response")
+        else . end |
+        ((.data.active.nodes // []) + (.data.finished.nodes // [])) |
         map(select(.number != null) | {
           number,
           title,
           url,
           updatedAt,
           repository: .repository.nameWithOwner,
-          status: (if .isDraft then "draft"
-            elif .merged then "merged"
+          status: (if .merged then "merged"
             elif .state == "CLOSED" then "closed"
+            elif .isDraft then "draft"
             else "open"
             end),
           ciStatus: (.commits.nodes[0].commit.statusCheckRollup.state // "NONE")
         }) |
-        map(select($requestedStatus == "all" or .status == $requestedStatus)) |
         .[:$limit]
       '
 }
@@ -100,6 +129,8 @@ approve_pull_request() {
   shift
   [[ "$url" =~ ^https://github\.com/[^/]+/[^/]+/pull/[0-9]+$ ]] ||
     die 'expected a github.com pull request URL'
+  (( $# == 0 )) || { (( $# == 1 )) && [[ "$1" == '--custom-token' ]]; } ||
+    die 'unknown approve option'
 
   if [[ "${1:-}" == '--custom-token' ]]; then
     [[ -n "${DMS_GITHUB_APPROVAL_TOKEN:-}" ]] ||

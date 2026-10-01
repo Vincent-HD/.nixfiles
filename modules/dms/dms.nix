@@ -48,7 +48,12 @@ in
   # Home Manager: DMS shell, native clipboard history, annotated captures,
   # video capture, and the first-party action widget used for EasyEffects.
   config.flake.modules.homeManager.dms =
-    { config, pkgs, ... }:
+    {
+      config,
+      lib,
+      pkgs,
+      ...
+    }:
     let
       # Keep the user-visible executable on the same FFmpeg/NVENC-compatible
       # build as the NixOS KMS wrapper above.
@@ -223,13 +228,28 @@ in
               additionalAuthors = "";
               approvalToken = "";
               defaultRepository = "all";
-              executablePath = "dms-github-prs";
+              executablePath = "${githubPullRequestsCommand}/bin/dms-github-prs";
               refreshIntervalMinutes = "5";
               resultLimit = "50";
             };
           };
         };
       };
+
+      # Merge defaults into the writable settings file without resetting values
+      # entered in the GitHub widget, including its alternate approval token.
+      xdg.configFile."DankMaterialShell/plugin_settings.json".enable = lib.mkForce false;
+      home.activation.dmsPluginSettings = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+        PATH=${
+          lib.makeBinPath [
+            pkgs.coreutils
+            pkgs.jq
+          ]
+        } \
+          ${pkgs.bash}/bin/bash ${./assets/merge-plugin-settings} \
+          ${config.xdg.configFile."DankMaterialShell/plugin_settings.json".source} \
+          "${config.xdg.configHome}/DankMaterialShell/plugin_settings.json"
+      '';
 
       # Install dcal and keep its background daemon available to the DMS calendar backend.
       programs.dank-calendar = {
