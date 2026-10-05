@@ -230,6 +230,16 @@
               ];
               open-floating = true;
             }
+            {
+              # WFAS requests a 600x800 window; keep it floating so Niri does not stretch its narrow UI across a tile.
+              matches = [
+                {
+                  app-id = "^MainKt$";
+                  title = "^WiFi Audio Streaming$";
+                }
+              ];
+              open-floating = true;
+            }
           ];
 
           # Must stay in sync with home.pointerCursor in modules/cursor-pointer.nix (see ~/.references/neolectron_nixfiles).

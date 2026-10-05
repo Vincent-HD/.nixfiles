@@ -22,7 +22,10 @@ discovery is filtered by the router.
 Home Manager writes `~/.config/wfas/config.json` with auto-connect enabled for `192.168.1.20`
 and `192.168.1.21`. It also adds a KDE/XDG autostart entry. At login the app starts in client mode,
 tries each target every five seconds, retries ten seconds after a disconnect, and starts minimized
-to the tray. The existing preferences to disable update checks and hide the visualizer are retained.
+to the tray. On Niri, a window rule keeps the normal 600x800 WFAS window floating instead of
+stretching its narrow layout across a tiled column; it is not an always-on-top window and only
+appears on its current workspace. The Linux package includes the AppIndicator runtime needed by
+the DMS tray host. The existing preferences to disable update checks and hide the visualizer are retained.
 
 1. On Android, choose **Send (Server)**, enable **Internal Audio**, select **WFAS**, and choose
    **Unicast**.

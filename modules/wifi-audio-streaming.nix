@@ -13,6 +13,31 @@
     let
       isLinux = pkgs.stdenv.hostPlatform.isLinux;
       package = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.wifi-audio-streaming;
+      # Wait for the DMS StatusNotifier host before WFAS probes for a tray.
+      autostart = pkgs.writeShellApplication {
+        name = "wifi-audio-streaming-autostart";
+        runtimeInputs = [
+          pkgs.coreutils
+          pkgs.glib
+          pkgs.gnugrep
+        ];
+        text = ''
+          attempt=0
+          while [ "$attempt" -lt 30 ]; do
+            if gdbus call --session \
+              --dest org.freedesktop.DBus \
+              --object-path /org/freedesktop/DBus \
+              --method org.freedesktop.DBus.NameHasOwner \
+              org.kde.StatusNotifierWatcher 2>/dev/null | grep -q 'true'; then
+              break
+            fi
+            attempt=$((attempt + 1))
+            sleep 1
+          done
+
+          exec ${lib.getExe package}
+        '';
+      };
       # Keep receiver auto-connect and startup preferences in the app's native JSON format.
       clientConfig = (pkgs.formats.json { }).generate "wifi-audio-streaming-config.json" {
         app = {
@@ -61,7 +86,7 @@
             Type=Application
             Name=WiFi Audio Streaming
             Comment=Connect to the saved WFAS servers at login
-            Exec=${lib.getExe package}
+            Exec=${lib.getExe autostart}
             Terminal=false
             X-GNOME-Autostart-enabled=true
           '';

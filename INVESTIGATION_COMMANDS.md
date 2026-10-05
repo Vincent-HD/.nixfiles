@@ -564,6 +564,30 @@ Purpose: quickly verify that an action exists and works in the current session.
 
 Use only when it is safe for the action to have an immediate visible effect.
 
+### Inspect live Niri window identity and geometry
+
+```bash
+niri msg -j windows | jq '.[] | {id, title, app_id, workspace_id, is_floating, window_size: .layout.window_size, tile_size: .layout.tile_size}'
+```
+
+Purpose: identify the stable app ID and title for a window rule, and check whether Niri is stretching
+the window beyond the size requested by the application.
+
+### Check the StatusNotifier host and generated XDG autostart unit
+
+```bash
+gdbus call --session \
+  --dest org.freedesktop.DBus \
+  --object-path /org/freedesktop/DBus \
+  --method org.freedesktop.DBus.NameHasOwner \
+  org.kde.StatusNotifierWatcher
+
+systemctl --user cat 'app-<desktop-entry>@autostart.service'
+```
+
+Purpose: distinguish a missing tray host from an application or launch-order problem when a tray
+application starts visibly instead of minimizing.
+
 ## Noctalia IPC Discovery
 
 ### Show Noctalia IPC help

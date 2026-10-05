@@ -53,6 +53,7 @@ if stdenvNoCC.hostPlatform.isLinux then
       extraPkgs = pkgs: [
         pkgs.libsecret
         pkgs.libpulseaudio
+        pkgs.libappindicator-gtk3
       ];
     }
   )
