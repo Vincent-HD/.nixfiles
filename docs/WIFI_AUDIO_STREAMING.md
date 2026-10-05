@@ -23,8 +23,10 @@ Home Manager writes `~/.config/wfas/config.json` with auto-connect enabled for `
 and `192.168.1.21`. It also adds a KDE/XDG autostart entry. At login the app starts in client mode,
 tries each target every five seconds, retries ten seconds after a disconnect, and starts minimized
 to the tray. On Niri, a window rule keeps the normal 600x800 WFAS window floating instead of
-stretching its narrow layout across a tiled column; it is not an always-on-top window and only
-appears on its current workspace. The Linux package includes the AppIndicator runtime needed by
+stretching its narrow layout across a tiled column. It opens at the top-right of the working area,
+with a 16-pixel margin below the bar and from the right edge. Floating windows cover tiled windows
+on their current workspace; close WFAS to return it to the tray while audio continues. Moving the
+window makes Niri remember the new position for that window. The Linux package includes the AppIndicator runtime needed by
 the DMS tray host. The existing preferences to disable update checks and hide the visualizer are retained.
 
 1. On Android, choose **Send (Server)**, enable **Internal Audio**, select **WFAS**, and choose
