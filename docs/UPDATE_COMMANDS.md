@@ -88,6 +88,18 @@ nix run github:Mic92/nix-update -- --flake lightjj
 nix run github:Mic92/nix-update -- --flake opencodex --use-update-script
 ```
 
+### opencodev2
+
+- **File**: `packages/opencodev2/default.nix`
+- **Pattern**: current-platform npm release binary from the official OpenCode V2 channel
+- **Flake output**: `.#opencodev2`
+- **Platforms**: `aarch64-darwin`, `x86_64-linux`
+- **Note**: The updater reads the official V2 channel metadata and refreshes only the artifact for the platform where it runs. Run it on each configured host when updating the package.
+
+```bash
+nix run github:Mic92/nix-update -- --flake opencodev2 --use-update-script
+```
+
 ### codeburn
 
 - **File**: `packages/codeburn/default.nix`
@@ -190,6 +202,7 @@ nix run .#update-curseforge -- --check
 - **Pattern**: tagged GitHub source built with `buildGoModule`, including the Quickshell UI and DankMaterialShell widget
 - **Flake output**: `.#dankmail`
 - **Platforms**: `x86_64-linux`
+- **Build note**: v0.3.11's `TestRemoteSearchContinuesAfterAccountDeferral` uses a one-second context while creating a fresh SQLite database. It expired during schema inspection in a concurrent Nix build, so `postPatch` raises the test-only deadline to ten seconds. Remove the patch once upstream fixes that deadline; it does not affect the installed application.
 
 ```bash
 nix run github:Mic92/nix-update -- --flake dankmail --use-github-releases
@@ -225,6 +238,7 @@ nix run github:Mic92/nix-update -- --flake cursor-agent --use-update-script
 - **Pattern**: Linux AppImage via `appimageTools.wrapType2`; macOS DMG via `undmg`
 - **Flake output**: `.#t3code`
 - **Note**: This tracks GitHub nightly prereleases, not stable tags. The update script refreshes only the artifact for the platform where it runs.
+- **Configuration**: `modules/agents/t3code.nix` uses Home Manager mutable settings and the existing Codex home. The desktop wrapper disables upstream auto-updates; this command and the subsequent rebuild own nightly upgrades. Close T3 and back up `~/.t3` before upgrading persistent state; restore that backup along with the old package when rolling back.
 
 ```bash
 nix run github:Mic92/nix-update -- --flake t3code --use-update-script

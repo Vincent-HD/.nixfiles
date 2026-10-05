@@ -13,7 +13,13 @@
       isLinux = pkgs.stdenv.hostPlatform.isLinux;
       codexPackage =
         if isLinux then inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.codex else null;
-      providerPackages = [ cursorAgentPackage ] ++ lib.optional (codexPackage != null) codexPackage;
+      providerPackages = [
+        cursorAgentPackage
+        pkgs.git
+        pkgs.gh
+        pkgs.jujutsu
+      ]
+      ++ lib.optional (codexPackage != null) codexPackage;
       extraWrap =
         if isLinux then
           ''--set-default CODEX_CLI_PATH ${lib.getExe codexPackage} --add-flags "--no-sandbox" --add-flags "--ozone-platform-hint=auto"''
@@ -27,12 +33,27 @@
         paths = [ t3codePackage ];
         nativeBuildInputs = [ pkgs.makeWrapper ];
         postBuild = ''
-          wrapProgram "$out/bin/t3code" --prefix PATH : "${lib.makeBinPath providerPackages}:${config.home.profileDirectory}/bin" ${extraWrap}
+          wrapProgram "$out/bin/t3code" --set T3CODE_DISABLE_AUTO_UPDATE true --prefix PATH : "${lib.makeBinPath providerPackages}:${config.home.profileDirectory}/bin" ${extraWrap}
         '';
       };
     in
     {
-      home.packages = [ t3code ];
+      # Merge declared preferences into writable files so UI edits remain possible.
+      programs.t3code = {
+        enable = true;
+        package = t3code;
+        mutableUserSettings = true;
+        mutableKeybindings = true;
+        mutableClientSettings = true;
+        userSettings.providerInstances.codex = {
+          driver = "codex";
+          enabled = true;
+          config = {
+            binaryPath = if isLinux then lib.getExe codexPackage else "codex";
+            homePath = "${config.home.homeDirectory}/.codex";
+          };
+        };
+      };
 
       xdg.desktopEntries.t3code = lib.mkIf isLinux {
         name = "T3 Code (Nightly)";

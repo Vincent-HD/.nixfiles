@@ -96,6 +96,10 @@ nix eval '.#darwinConfigurations.<darwin-host>.system' --raw
 Purpose: evaluate the system graph for each configured platform after changing a shared module or
 Home Manager feature, without building or applying either host.
 
+Keep this as an evaluation on a host that cannot build the other platform. Building a generated
+Home Manager file from that graph may try to realize platform-specific dependencies for the foreign
+host and fail with a platform mismatch.
+
 ### Compare default and specialized NixOS kernel paths
 
 ```bash
@@ -193,6 +197,15 @@ nix derivation show <derivation.drv> \
 
 Purpose: compare the declared fixed-output hash and the source/toolchain used by a failing derivation. This helps distinguish a stale source hash from a change in the fetcher or build toolchain.
 
+### Read a failed derivation log and locate its source failure
+
+```bash
+nix log <failed-derivation.drv>
+rg -n -C 8 '<error-or-test-name>' <source-path>
+```
+
+Purpose: retrieve the retained build log, then search the immutable source path printed in that log to identify the exact upstream test or code path behind the failure.
+
 ### Syntax-check generated shell configuration
 
 ```bash
@@ -273,6 +286,20 @@ nix eval --raw '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$USE
 ```
 
 Purpose: verify the exact text generated for a Home Manager-managed application configuration after module merging.
+
+For a file emitted through `source` instead of `text`, realize the generated file on the current
+platform and inspect it:
+
+```bash
+CONFIG_PATH=$(nix build --impure --no-link --print-out-paths --expr '
+let
+  flake = builtins.getFlake "path:/home/vincent/.nixfiles";
+in flake.nixosConfigurations.<linux-host>.config.home-manager.users.<user>.xdg.configFile."<path>".source
+')
+nix run nixpkgs#jq -- -e . "$CONFIG_PATH"
+```
+
+Purpose: validate JSON or other generated source files while avoiding a full host build.
 
 ### Compare and persist a running DMS configuration
 

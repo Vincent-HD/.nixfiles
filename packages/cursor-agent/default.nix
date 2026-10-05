@@ -10,7 +10,7 @@ let
     "x86_64-linux" = {
       platform = "linux";
       architecture = "x64";
-      hash = "sha256-bkzZNqSGa4p3xQ/1GlZEYNcVdy+rxHegGqDwRV2VWfA=";
+      hash = "sha256-p5cmxuZEUg6ZOXC+TEV3WmiJgCtnq+RhpnelMhmuKOg=";
     };
     "aarch64-linux" = {
       platform = "linux";
@@ -32,7 +32,7 @@ let
 in
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "cursor-agent";
-  version = "2026.09.28-64d2043";
+  version = "2026.10.01-e373342";
 
   # Cursor publishes one self-contained Agent CLI archive per OS/architecture.
   src = fetchurl {

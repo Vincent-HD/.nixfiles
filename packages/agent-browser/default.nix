@@ -20,7 +20,7 @@ let
     };
     "x86_64-linux" = {
       suffix = "linux-x64";
-      hash = "sha256-UQAUmhkDIRyIneTlRb822QgDdAzqT5mqImUWSfkgXqE=";
+      hash = "sha256-pUt2UZLbd0Zm8FE/qLVFoph1O28p5zvN9KHnjxjnwOE=";
     };
   };
   source = sources.${stdenvNoCC.hostPlatform.system};
@@ -32,7 +32,7 @@ let
 in
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "agent-browser";
-  version = "0.38.1";
+  version = "0.38.2";
 
   src = fetchurl {
     url = "https://github.com/vercel-labs/agent-browser/releases/download/v${finalAttrs.version}/agent-browser-${source.suffix}";

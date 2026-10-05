@@ -29,6 +29,7 @@ in
             hm.coding
             hm.agentCommon
             hm.agentSkills
+            hm.agentOpencode
             hm.agentCursor
             hm.agentCodex
             hm.agentT3Code

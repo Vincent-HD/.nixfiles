@@ -209,7 +209,7 @@ Terminal helpers|plannotator|Review and annotate agent plans|plannotator --help
 Terminal helpers|,|Run a command from Nixpkgs without installing it permanently|, jq --version
 Terminal helpers|code|Open a project in Visual Studio Code|code .
 Terminal helpers|cursor-agent|Start the Cursor coding agent|cursor-agent
-Terminal helpers|opencode|Start the configured OpenCode coding agent|opencode
+Terminal helpers|opencode|Start the configured OpenCode V2 coding agent|opencode
 Terminal helpers|codex|Start the Codex coding agent|codex
 Terminal helpers|codeburn|Analyze local AI coding-agent spend and usage|codeburn --help
 CATALOG

@@ -64,6 +64,7 @@
         jj-ryu = pkgs.callPackage ../packages/jj-ryu { };
         lightjj = pkgs.callPackage ../packages/lightjj { };
         opencodex = pkgs.callPackage ../packages/opencodex { };
+        opencodev2 = pkgs.callPackage ../packages/opencodev2 { };
         papercuts = pkgs.callPackage ../packages/papercuts { };
         t3code = pkgs.callPackage ../packages/t3code { };
         wifi-audio-streaming = pkgs.callPackage ../packages/wifi-audio-streaming { };

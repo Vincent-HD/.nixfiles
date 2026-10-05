@@ -39,8 +39,8 @@
         default = { };
         description = ''
           Agent Skills installed once under the cross-client ~/.agents/skills standard.
-          Codex and Cursor discover this location natively; VS Code is
-          configured to use it by agentVscode.
+          Codex, Cursor, and OpenCode discover this location natively; VS Code
+          is configured to use it by agentVscode.
         '';
       };
 

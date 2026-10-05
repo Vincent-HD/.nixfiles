@@ -8,14 +8,22 @@
 }:
 buildGoModule (finalAttrs: {
   pname = "dankmail";
-  version = "0.3.6";
+  version = "0.3.11";
 
   src = fetchFromGitHub {
     owner = "arqueon";
     repo = "dankmail";
     rev = "v${finalAttrs.version}";
-    hash = "sha256-u4yU8lqpn/ibwabehI3K6uq24JbQTUSGj1P6Iy0BuVk=";
+    hash = "sha256-PGGDxhC1Ykhg/YsSHHZ/40dq338epraIlPv6pzJaX10=";
   };
+
+  # The upstream handler test's 1s deadline can expire during SQLite migration
+  # under concurrent Nix builds; remove this patch once upstream fixes the test.
+  postPatch = ''
+    substituteInPlace core/cmd/dmail/handlers_quota_test.go \
+      --replace-fail 'context.WithTimeout(context.Background(), time.Second)' \
+        'context.WithTimeout(context.Background(), 10*time.Second)'
+  '';
 
   modRoot = "core";
   subPackages = [ "cmd/dmail" ];

@@ -136,6 +136,24 @@
       ]
     },
     {
+      "name": "opencodev2",
+      "type": "nix-update",
+      "description": "OpenCode V2 current-platform npm binary",
+      "systems": [
+        "aarch64-darwin",
+        "x86_64-linux"
+      ],
+      "command": [
+        "nix",
+        "run",
+        "github:Mic92/nix-update",
+        "--",
+        "--flake",
+        "opencodev2",
+        "--use-update-script"
+      ]
+    },
+    {
       "name": "codeburn",
       "type": "nix-update",
       "description": "Codeburn npm release, tagged lockfile, and Node dependency closure",
