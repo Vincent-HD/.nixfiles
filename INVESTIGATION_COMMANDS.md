@@ -47,6 +47,16 @@ JSON-compatible evaluation.
 Use only for JSON-compatible data; functions, derivations, paths and string
 contexts need a target-specific expression or a focused Nix inspection.
 
+### Avoid shared evaluation-cache locks during concurrent checks
+
+```bash
+nix eval --option eval-cache false .#<output> --raw
+```
+
+Purpose: keep parallel host evaluations from contending on the same SQLite
+cache. Use when concurrent checks emit ignored database-busy errors; this
+disables only the evaluation cache for that command.
+
 ## Core Flake / Input Discovery
 
 ### Get an input source path from the current flake

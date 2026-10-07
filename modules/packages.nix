@@ -50,7 +50,8 @@
           pkgs.bitwarden-cli
           pkgs.coreutils
           pkgs.jq
-        ] ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [ pkgs.systemd ];
+        ]
+        ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [ pkgs.systemd ];
         text = builtins.readFile ../modules/bitwarden/assets/bw-secret.sh;
       };
     in
@@ -67,6 +68,8 @@
         opencodev2 = pkgs.callPackage ../packages/opencodev2 { };
         papercuts = pkgs.callPackage ../packages/papercuts { };
         t3code = pkgs.callPackage ../packages/t3code { };
+        vtask = pkgs.callPackage ../packages/vtask { };
+        vtask-source = pkgs.callPackage ../packages/vtask { preferPrebuilt = false; };
         wifi-audio-streaming = pkgs.callPackage ../packages/wifi-audio-streaming { };
         portless = pkgs.callPackage ../packages/portless { };
         plannotator = pkgs.callPackage ../packages/plannotator { };
@@ -83,6 +86,17 @@
         lsfg-vk = unfreePkgs.callPackage ../packages/lsfg-vk { };
         persist-dms = mkBunRunner "persist-dms" ../scripts/persist-dms.ts;
         gpu-burn = cudaPkgs.gpu-burn;
+      };
+
+      # Keep local CLI builds on the same Bun and package-manager versions as Nix rebuilds.
+      devShells.vtask = pkgs.mkShell {
+        packages = [
+          pkgs.bun
+          pkgs.nodejs_24
+          pkgs.pnpm
+          pkgs.git-lfs
+        ];
+        pnpm_config_pm_on_fail = "ignore";
       };
 
       apps = {

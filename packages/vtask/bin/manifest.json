@@ -1,0 +1,15 @@
+{
+  "version": "0.1.1",
+  "sourceHash": "ccebeb6349af07254938d6870444411ff7759cc08fded305e9d24b3b1bf90e52",
+  "compilerVersion": "1.4.2",
+  "binaries": {
+    "x86_64-linux": {
+      "sha256": "f0eeebefbc94a0772d755c553c3c63802faad058257021b3a9aadd73bb45f1c7",
+      "size": 81774048
+    },
+    "aarch64-darwin": {
+      "sha256": "7cc06f592036a1cde1696039c3c46340e906d13c77f33641eeab539c50f36d16",
+      "size": 62689266
+    }
+  }
+}

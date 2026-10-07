@@ -15,6 +15,8 @@
       programs.git = {
         enable = true;
         package = pkgs.git;
+        # Hydrate checked-in CLI release binaries when cloning the configuration.
+        lfs.enable = true;
         ignores = [
           ".DS_Store"
           ".DS_Store?"

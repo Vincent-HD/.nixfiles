@@ -508,3 +508,38 @@ Then apply the system configuration:
 ```bash
 sudo nixos-rebuild switch --flake .#pc-fixe
 ```
+
+## vtask local releases
+
+`vtask` is authored in this repository, rather than pinned to an upstream
+release. Its disabled manual entry in `scripts/update-pins.json` rebuilds the
+Git LFS binaries; routine upstream pin updates do not bump its SemVer version.
+
+```bash
+nix develop .#vtask
+pnpm --dir packages/vtask install --frozen-lockfile
+pnpm --dir packages/vtask version patch --no-git-tag-version
+pnpm --dir packages/vtask release
+VTASK_BINARY="$PWD/packages/vtask/bin/x86_64-linux/vtask" pnpm --dir packages/vtask test
+nix build .#vtask
+nix build .#vtask-source
+git add packages/vtask/package.json packages/vtask/pnpm-lock.yaml packages/vtask/bin
+```
+
+Use `minor` for features and `major` for breaking changes once the interface
+is stable. `pnpm release` cross-compiles both configured platforms with the
+Nix-pinned Bun compiler and records source fingerprints, checksums and sizes.
+Run native checks on macOS before publishing a Darwin release. Normal clones
+with Git LFS installed hydrate the binaries; a skipped LFS download or changed
+source automatically makes Nix compile from the locked dependencies instead.
+
+When changing dependencies, regenerate `pnpm-lock.yaml` and the
+`fetchPnpmDeps` hash in `packages/vtask/default.nix`. To refresh the hash, set
+it temporarily to `lib.fakeHash`, run `nix build .#vtask-source`, and copy the
+reported `got: sha256-...` value. Then run the source build again. Neither
+ordinary switches nor `nix run .#vtask` mutate the repository's release files.
+
+The executable is installed by the shared Home Manager command-line module,
+and `programs.git.lfs.enable` provides clone-time hydration on both hosts.
+Publishing a revision containing LFS pointers must also upload its LFS objects;
+that happens on a normal Git push with the installed LFS hook.

@@ -507,6 +507,22 @@
         "-d",
         "packages/cpuid-fault-emulation/source"
       ]
+    },
+    {
+      "name": "vtask",
+      "type": "manual",
+      "description": "Local SemVer release: rebuild and validate Git LFS binaries after changing source or dependency locks",
+      "enabled": false,
+      "command": [
+        "nix",
+        "develop",
+        ".#vtask",
+        "--command",
+        "pnpm",
+        "--dir",
+        "packages/vtask",
+        "release"
+      ]
     }
   ],
   "validations": {

@@ -58,6 +58,8 @@
         pkgs.statix
         pkgs.tealdeer
         pkgs.tokei
+        # Run VS Code tasks from the terminal with the compiled task picker.
+        inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.vtask
         pkgs.vivid
         pkgs.xh
         pkgs.yq
