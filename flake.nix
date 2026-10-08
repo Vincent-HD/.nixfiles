@@ -31,6 +31,12 @@
       flake = false;
     };
 
+    # The Effect v4 skill is renamed to effect-program-design in skills.nix.
+    kitlangton-skills = {
+      url = "github:kitlangton/skills";
+      flake = false;
+    };
+
     codex-desktop-linux = {
       url = "github:ilysenko/codex-desktop-linux/main";
       inputs.nixpkgs.follows = "nixpkgs";

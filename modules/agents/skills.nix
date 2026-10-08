@@ -2,8 +2,18 @@
 {
   config.flake.modules.homeManager.agentSkills =
     {
+      pkgs,
       ...
     }:
+    let
+      effectProgramDesignSkill = pkgs.runCommand "effect-program-design-skill" { } ''
+        mkdir -p "$out"
+        cp -R "${inputs.kitlangton-skills}/skills/effect/." "$out/"
+        chmod -R u+w "$out"
+        substituteInPlace "$out/SKILL.md" \
+          --replace-fail 'name: effect' 'name: effect-program-design'
+      '';
+    in
     {
       # Portable Agent Skills: one registration → ~/.agents/skills via agentCommon.
       # Codex and Cursor discover that path natively; VS Code is pointed
@@ -11,6 +21,8 @@
       custom.agentSetup.skills = {
         # Select only these directories from their pinned upstream source trees.
         context7-mcp = "${inputs.context7-skills}/plugins/claude/context7/skills/context7-mcp";
+        # Keep the Effect v4 references with the skill and match its slash-invocation name.
+        effect-program-design = effectProgramDesignSkill;
         # User-invoked grilling entry points and their delegated disciplines.
         grill-me = "${inputs.mattpocock-skills}/skills/productivity/grill-me";
         grill-with-docs = "${inputs.mattpocock-skills}/skills/engineering/grill-with-docs";

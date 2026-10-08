@@ -43,6 +43,18 @@ Darwin.
 
 These packages use pinned sources and are wired so `nix-update` can bump versions and hashes automatically.
 
+### droidcam-client
+
+- **File**: `packages/droidcam-client/default.nix`
+- **Pattern**: current Linux client `.deb` pinned with `fetchurl`, patched and wrapped for Nix
+- **Flake output**: `.#droidcam-client`
+- **Platforms**: `x86_64-linux`
+- **Release tag**: `droidcam-<version>`
+
+```bash
+nix run github:Mic92/nix-update -- --flake droidcam-client --use-github-releases --version-regex 'droidcam-(.*)'
+```
+
 ### wifi-audio-streaming
 
 - **File**: `packages/wifi-audio-streaming/default.nix`
@@ -481,6 +493,17 @@ nix flake update mattpocock-skills
 
 ```bash
 nix flake update humanlayer-skills
+```
+
+### kitlangton-skills
+
+- **File**: `flake.nix`
+- **Why**: Provides the upstream Effect v4 Agent Skill and its reference guides. Home Manager
+  renames its skill metadata to `effect-program-design` for slash invocation.
+- **How**: Refresh the locked source, review upstream changes, and evaluate both configured hosts.
+
+```bash
+nix flake update kitlangton-skills
 ```
 
 ## One-Shot: Update All Straightforward Compatible Packages

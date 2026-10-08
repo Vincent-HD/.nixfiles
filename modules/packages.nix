@@ -82,6 +82,7 @@
         crosspipe = pkgs.callPackage ../packages/crosspipe { };
         # Bundle the daemon, Quickshell interface, launcher, and optional DMS widget.
         dankmail = pkgs.callPackage ../packages/dankmail { };
+        droidcam-client = pkgs.callPackage ../packages/droidcam-client { };
         gamescope-lanczos = pkgs.callPackage ../packages/gamescope-lanczos { };
         lsfg-vk = unfreePkgs.callPackage ../packages/lsfg-vk { };
         persist-dms = mkBunRunner "persist-dms" ../scripts/persist-dms.ts;

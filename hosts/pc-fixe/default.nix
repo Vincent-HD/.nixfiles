@@ -28,6 +28,7 @@ in
       nixos.gamingOptimization
       nixos.deskflow
       nixos.localSend
+      nixos.androidPhone
       nixos.tailscale
 
       # ── Home Manager integration ─────────────────────────
@@ -73,6 +74,7 @@ in
             hm.kdeConnect
             hm.deskflow
             hm.localSend
+            hm.androidPhone
             hm.wifiAudioStreaming
             hm.ghostty
           ];

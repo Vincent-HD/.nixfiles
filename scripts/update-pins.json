@@ -4,6 +4,25 @@
   ],
   "updates": [
     {
+      "name": "droidcam-client",
+      "type": "nix-update",
+      "description": "Current DroidCam Linux desktop client",
+      "systems": [
+        "x86_64-linux"
+      ],
+      "command": [
+        "nix",
+        "run",
+        "github:Mic92/nix-update",
+        "--",
+        "--flake",
+        "droidcam-client",
+        "--use-github-releases",
+        "--version-regex",
+        "droidcam-(.*)"
+      ]
+    },
+    {
       "name": "agent-browser",
       "type": "nix-update",
       "description": "Agent Browser current-platform native release binary",
@@ -48,6 +67,17 @@
         "flake",
         "update",
         "humanlayer-skills"
+      ]
+    },
+    {
+      "name": "kitlangton-skills",
+      "type": "flake-input",
+      "description": "Kit Langton's selected Effect Agent Skill source",
+      "command": [
+        "nix",
+        "flake",
+        "update",
+        "kitlangton-skills"
       ]
     },
     {

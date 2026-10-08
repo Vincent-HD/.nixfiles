@@ -1201,6 +1201,29 @@ Purpose: check whether a user service is running and filter the current boot log
 
 Use when a Home Manager or NixOS-managed user service starts but fails at runtime.
 
+### Try a temporary command override for a Nix-managed user service
+
+```bash
+systemctl --user edit --runtime --stdin <service>.service <<'EOF'
+[Service]
+ExecStart=
+ExecStart=/absolute/path/to/program <arguments>
+EOF
+systemctl --user restart <service>.service
+```
+
+Purpose: test a replacement command without editing a Home Manager symlink or rebuilding
+unrelated configuration. This restarts the service and changes its command until reboot.
+Save a verified fix in the owning Nix module for the next rebuild.
+
+To remove only this temporary override before reboot:
+
+```bash
+rm "$XDG_RUNTIME_DIR/systemd/user/<service>.service.d/override.conf"
+systemctl --user daemon-reload
+systemctl --user restart <service>.service
+```
+
 ### Inspect a NixOS system service
 
 ```bash
