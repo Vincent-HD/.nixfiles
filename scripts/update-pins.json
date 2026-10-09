@@ -561,7 +561,9 @@
         "--flake",
         "crosspipe",
         "--version",
-        "branch=main"
+        "branch=main",
+        "--system",
+        "x86_64-linux"
       ]
     },
     {

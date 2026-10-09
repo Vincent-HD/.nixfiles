@@ -104,7 +104,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
 
   passthru.updateScript = [
     (lib.getExe bun)
-    ./update.ts
+    "${../..}/packages/opencodex/update.ts"
     "${updateScriptZod}/index.js"
   ];
   passthru.bunDepsBySystem = bunDepsBySystem;

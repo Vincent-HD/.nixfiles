@@ -11,18 +11,18 @@ let
   sources = {
     "aarch64-darwin" = {
       package = "cli-darwin-arm64";
-      hash = "sha512-NNg1VCCTWSfLlNKpRb4RA6IE7H67ZBLBYmfIWjP3CxR9NPtdROQFCL8lpPf+Tz2Qje4Bb27sQOLWanYyNT/9dQ==";
+      hash = "sha512-XklldeO6eWgG8vkPNLcdlBPEm1Y+/tyhEXGZvXbk8uytpPP7SEVV2R9oZ98NMSSPH9kBAO/+Xo4sKfvD6CHAsw==";
     };
     "x86_64-linux" = {
       package = "cli-linux-x64";
-      hash = "sha512-DlV1qgEDDnVqpTWMPqv7tCHCcXodzZBFaMcxjsiYdY6E5gHH2Q68JfasVksyQ1nu6m1887WQKGhOsepE+oKyYw==";
+      hash = "sha512-UIA2/1Ik8HaN54C4xp7H+OHgRfq995XUixrX+kLmFs8EPn1fAcmn3OoiN+3c3Vc3jEV/LHmj0Cy1SL6nW4wdGw==";
     };
   };
   source = sources.${stdenvNoCC.hostPlatform.system};
 in
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "opencodev2";
-  version = "2.0.22";
+  version = "2.0.26";
 
   src = fetchurl {
     url = "https://registry.npmjs.org/@opencode/${source.package}/-/${source.package}-${finalAttrs.version}.tgz";
@@ -43,7 +43,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
 
   passthru.updateScript = [
     (lib.getExe bun)
-    ./update.ts
+    "${../..}/packages/opencodev2/update.ts"
     "${updateScriptZod}/index.js"
   ];
 

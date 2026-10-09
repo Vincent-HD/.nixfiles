@@ -14,23 +14,23 @@ let
     "x86_64-linux" = {
       arch = "x86_64";
       ext = "AppImage";
-      hash = "sha256-oKyFBAHvm8uxCW0BBAQ4xwpudeyzo06PDHIAljK/sg8=";
+      hash = "sha256-X7BfzDPO5S6infFGJWnaSitWlkUBXoVXaFarJGUfeX4=";
     };
     "aarch64-darwin" = {
       arch = "arm64";
       ext = "dmg";
-      hash = "sha256-Mwb8IXNGWiPkOdrSRyr4RSWWtYu7TkXtBxWBUbqtcWI=";
+      hash = "sha256-kMeQ/rISY5x1xkOBXRKTT4/71LCSTn7aKF+fev/gxws=";
     };
     "x86_64-darwin" = {
       arch = "x64";
       ext = "dmg";
-      hash = "sha256-29fzL4ChLU3gYHWM+1S6g4O8ye/LBinuebMwEzxVhmY=";
+      hash = "sha256-x6SNPSbTcwG794cR0rOOUIBGGTOwUnY56P42OERYA94=";
     };
   };
   source = sources.${stdenvNoCC.hostPlatform.system};
 
   pname = "t3code";
-  version = "0.0.46-nightly.20261008.2813";
+  version = "0.0.46-nightly.20261009.2873";
 
   src = fetchurl {
     url = "https://github.com/pingdotgg/t3code/releases/download/v${version}/T3-Code-${version}-${source.arch}.${source.ext}";
@@ -49,7 +49,7 @@ let
   passthru = {
     updateScript = [
       (lib.getExe bun)
-      ./update.ts
+      "${../..}/packages/t3code/update.ts"
       "${updateScriptZod}/index.js"
     ];
   };

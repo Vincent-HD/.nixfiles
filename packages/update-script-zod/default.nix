@@ -6,11 +6,11 @@
 
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "update-script-zod";
-  version = "4.1.12";
+  version = "4.6.5";
 
   src = fetchurl {
     url = "https://registry.npmjs.org/zod/-/zod-${finalAttrs.version}.tgz";
-    hash = "sha256-LvnXp9gisFnJvSH4fKpP3EgiDUNzU2eJhN+UL7Z7Q/o=";
+    hash = "sha256-p4wMUz3jDcHEr8JZrEOsBuOQyw2o0uMurjVTAbULNvw=";
   };
 
   sourceRoot = "package";

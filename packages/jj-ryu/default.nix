@@ -38,7 +38,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
 
   passthru.updateScript = [
     (lib.getExe bun)
-    ./update.ts
+    "${../..}/packages/jj-ryu/update.ts"
     "${updateScriptZod}/index.js"
   ];
 

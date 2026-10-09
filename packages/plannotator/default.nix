@@ -14,26 +14,26 @@ let
   sources = {
     "x86_64-linux" = {
       artifact = "plannotator-linux-x64";
-      hash = "sha256-ABr3dS+FQgJFifr8RK7DvifHMTOiw33zjwtZHCwUXdg=";
+      hash = "sha256-7uLtpL84VEbjP5VOetY0G7yZ58ZxdnsQE4L1iza6vbE=";
     };
     "aarch64-linux" = {
       artifact = "plannotator-linux-arm64";
-      hash = "sha256-79ppKHm2gL+kzgSQcRme7F2t349pIcJiX6iKxWDLSJk=";
+      hash = "sha256-Emgr2IeZqBQ2FR3umHsrek6PN/2C9HWaHfOd6UGuHeU=";
     };
     "x86_64-darwin" = {
       artifact = "plannotator-darwin-x64";
-      hash = "sha256-+kB7qjduNHj5/tjr4Tn4GZQtJiA/hUQubniAxxWJ+Hc=";
+      hash = "sha256-Ycgt+Adgt6Tbjndb5sYIFzuvjSfrixSolJRBSairYhc=";
     };
     "aarch64-darwin" = {
       artifact = "plannotator-darwin-arm64";
-      hash = "sha256-JN5g+/jjvatRl88635zjgeioGPLVSyoFX2EpHHsiYOo=";
+      hash = "sha256-YS4jHMrBx1+in5/Zbg89aB3PDbOAQukpWAjtcrHTMog=";
     };
   };
   source = sources.${stdenvNoCC.hostPlatform.system};
 in
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "plannotator";
-  version = "0.27.25";
+  version = "0.28.8";
 
   src = fetchurl {
     url = "https://github.com/backnotprop/plannotator/releases/download/v${finalAttrs.version}/${source.artifact}";
@@ -45,7 +45,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     owner = "backnotprop";
     repo = "plannotator";
     rev = "v${finalAttrs.version}";
-    hash = "sha256-jv0oztR8KedSu+VTEC6jSHj4NUVYH5LEPuAGSh3mQD8=";
+    hash = "sha256-/S7lPfKzY4c4lYyiEVuHuigqejoVVtbDzjon2VLvfo0=";
   };
 
   nativeBuildInputs = [ makeWrapper ];
@@ -70,7 +70,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
 
   passthru.updateScript = [
     (lib.getExe bun)
-    ./update.ts
+    "${../..}/packages/plannotator/update.ts"
     "${updateScriptZod}/index.js"
   ];
 

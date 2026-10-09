@@ -56,7 +56,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
 
   passthru.updateScript = [
     (lib.getExe bun)
-    ./update.ts
+    "${../..}/packages/cursor-agent/update.ts"
     "${updateScriptZod}/index.js"
   ];
 

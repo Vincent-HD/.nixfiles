@@ -33,7 +33,7 @@ let
     passthru = {
       updateScript = [
         (lib.getExe bun)
-        ./update.ts
+        "${../..}/packages/wifi-audio-streaming/update.ts"
         "${updateScriptZod}/index.js"
       ];
     };

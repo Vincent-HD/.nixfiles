@@ -289,7 +289,7 @@ nix run github:Mic92/nix-update -- --flake plannotator --use-update-script
 - **Note**: The package keeps an exact commit and fixed-output hash for reproducibility; the updater resolves the current `main` branch head and refreshes both the snapshot version and source hash.
 
 ```bash
-nix run github:Mic92/nix-update -- --flake crosspipe --version branch=main
+nix run github:Mic92/nix-update -- --flake crosspipe --version branch=main --system x86_64-linux
 ```
 
 ## Branch-Pinned Packages
