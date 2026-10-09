@@ -3,6 +3,7 @@
   fetchurl,
   lib,
   stdenvNoCC,
+  updateScriptZod,
 }:
 
 let
@@ -43,6 +44,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
   passthru.updateScript = [
     (lib.getExe bun)
     ./update.ts
+    "${updateScriptZod}/index.js"
   ];
 
   meta = {

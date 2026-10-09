@@ -3,6 +3,7 @@
   bun,
   fetchurl,
   stdenvNoCC,
+  updateScriptZod,
 }:
 
 let
@@ -15,17 +16,17 @@ let
     "aarch64-linux" = {
       platform = "linux";
       architecture = "arm64";
-      hash = "sha256-KYYVKyg8cKZmsBUDWy6ZqW0Tr9JmClh7hjlBfP3RR/s=";
+      hash = "sha256-eFxfa/KmDrESHiftjBT17gftG1tmkjJPLZqZcjgkXrU=";
     };
     "x86_64-darwin" = {
       platform = "darwin";
       architecture = "x64";
-      hash = "sha256-5F7XyF4gCAMQd4/1onBQyWF5iNxeda0/rwCvgeT34BE=";
+      hash = "sha256-qA224VYm4Kp69g+rOpXJiiQ+LBUTwMlIU0SlU9e3sA4=";
     };
     "aarch64-darwin" = {
       platform = "darwin";
       architecture = "arm64";
-      hash = "sha256-RgRNbXvL17SaDPHNAapMp5qqLqXyx6MpZfwOvimEF5A=";
+      hash = "sha256-Yp5R3kOgt/s7hvXrx+V59999+UGznynoKUXN51AUWvw=";
     };
   };
   source = sources.${stdenvNoCC.hostPlatform.system};
@@ -56,6 +57,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
   passthru.updateScript = [
     (lib.getExe bun)
     ./update.ts
+    "${updateScriptZod}/index.js"
   ];
 
   meta = {

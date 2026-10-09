@@ -1,3 +1,5 @@
+import { PrefetchResultSchema, UrlSchema, VersionSchema } from "../update-schema.ts";
+
 type Source = {
   platform: string;
   architecture: string;
@@ -18,17 +20,10 @@ function commandOutput(command: string[], cwd?: string): string {
   return new TextDecoder().decode(result.stdout).trim();
 }
 
-function currentSystem(): string {
-  return commandOutput(["nix", "eval", "--raw", "--impure", "--expr", "builtins.currentSystem"]);
-}
-
 async function prefetchHash(url: string, root: string): Promise<string> {
-  const output = commandOutput(["nix", "store", "prefetch-file", "--json", url], root);
-  const parsed = JSON.parse(output) as { hash?: string };
-  if (parsed.hash === undefined || parsed.hash === "") {
-    throw new Error("Could not determine the hash for " + url);
-  }
-  return parsed.hash;
+  const validUrl = UrlSchema.parse(url);
+  const output = commandOutput(["nix", "store", "prefetch-file", "--json", validUrl], root);
+  return PrefetchResultSchema.parse(JSON.parse(output)).hash;
 }
 
 const installerUrl = "https://cursor.com/install";
@@ -38,10 +33,11 @@ if (!installerResponse.ok) {
 }
 
 const installer = await installerResponse.text();
-const version = installer.match(/downloads\.cursor\.com\/lab\/([^/]+)\//)?.[1];
-if (version === undefined) {
+const versionText = installer.match(/downloads\.cursor\.com\/lab\/([^/]+)\//)?.[1];
+if (versionText === undefined) {
   throw new Error("Could not read the current Cursor Agent version from " + installerUrl);
 }
+const version = VersionSchema.parse(versionText);
 
 const root = commandOutput(["git", "rev-parse", "--show-toplevel"]);
 const packageFile = root + "/packages/cursor-agent/default.nix";
@@ -50,31 +46,29 @@ const currentVersion = packageText.match(/^  version = "([^"]+)";$/m)?.[1];
 if (currentVersion === undefined) {
   throw new Error("Could not read the current version from " + packageFile);
 }
-
-const system = currentSystem();
-const source = sources[system];
-if (source === undefined) {
-  throw new Error("Cursor Agent does not publish a release archive for " + system);
-}
+VersionSchema.parse(currentVersion);
 
 console.log("cursor-agent current: " + currentVersion);
 console.log("cursor-agent latest:  " + version);
-console.log("cursor-agent system:  " + system);
 
-const url =
-  "https://downloads.cursor.com/lab/" +
-  version +
-  "/" +
-  source.platform +
-  "/" +
-  source.architecture +
-  "/agent-cli-package.tar.gz";
-const hash = await prefetchHash(url, root);
-const block = new RegExp('("' + system + '" = \\{[\\s\\S]*?hash = ")[^"]+(";)');
-if (!block.test(packageText)) {
-  throw new Error("Could not find the " + system + " source block in " + packageFile);
+for (const [system, source] of Object.entries(sources)) {
+  const url = UrlSchema.parse(
+    "https://downloads.cursor.com/lab/" +
+    version +
+    "/" +
+    source.platform +
+    "/" +
+    source.architecture +
+    "/agent-cli-package.tar.gz",
+  );
+  const hash = await prefetchHash(url, root);
+  const block = new RegExp('("' + system + '" = \\{[\\s\\S]*?hash = ")[^"]+(";)');
+  if (!block.test(packageText)) {
+    throw new Error("Could not find the " + system + " source block in " + packageFile);
+  }
+  packageText = packageText.replace(block, "$1" + hash + "$2");
+  console.log("cursor-agent " + system + ": " + hash);
 }
-packageText = packageText.replace(block, "$1" + hash + "$2");
 
 packageText = packageText.replace(
   /^(  version = ")[^"]+(";)$/m,

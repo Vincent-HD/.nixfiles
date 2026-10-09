@@ -25,7 +25,12 @@
     {
       "name": "agent-browser",
       "type": "nix-update",
-      "description": "Agent Browser current-platform native release binary",
+      "description": "Agent Browser native release binaries for all supported platforms",
+      "systems": [
+        "aarch64-darwin",
+        "x86_64-darwin",
+        "x86_64-linux"
+      ],
       "command": [
         "nix",
         "run",
@@ -34,6 +39,23 @@
         "--flake",
         "agent-browser",
         "--use-update-script"
+      ]
+    },
+    {
+      "name": "update-script-zod",
+      "type": "nix-update",
+      "description": "Pinned Zod runtime used by package update-script metadata validation",
+      "systems": [
+        "aarch64-darwin",
+        "x86_64-linux"
+      ],
+      "command": [
+        "nix",
+        "run",
+        "github:Mic92/nix-update",
+        "--",
+        "--flake",
+        "update-script-zod"
       ]
     },
     {
@@ -154,7 +176,11 @@
     {
       "name": "opencodex",
       "type": "nix-update",
-      "description": "OpenCodex npm release tarball, lockfile, and Bun dependency closure",
+      "description": "OpenCodex npm release, lockfile, and per-platform Bun dependency closures",
+      "systems": [
+        "aarch64-darwin",
+        "x86_64-linux"
+      ],
       "command": [
         "nix",
         "run",
@@ -168,7 +194,7 @@
     {
       "name": "opencodev2",
       "type": "nix-update",
-      "description": "OpenCode V2 current-platform npm binary",
+      "description": "OpenCode V2 npm binaries for Linux and macOS",
       "systems": [
         "aarch64-darwin",
         "x86_64-linux"
@@ -200,7 +226,13 @@
     {
       "name": "executor",
       "type": "nix-update",
-      "description": "Executor's current-platform npm binary",
+      "description": "Executor npm binary archives for all supported platforms",
+      "systems": [
+        "x86_64-linux",
+        "aarch64-linux",
+        "x86_64-darwin",
+        "aarch64-darwin"
+      ],
       "command": [
         "nix",
         "run",
@@ -214,14 +246,19 @@
     {
       "name": "lightjj",
       "type": "nix-update",
-      "description": "lightjj release tarball",
+      "description": "lightjj release binaries for Linux and macOS",
+      "systems": [
+        "aarch64-darwin",
+        "x86_64-linux"
+      ],
       "command": [
         "nix",
         "run",
         "github:Mic92/nix-update",
         "--",
         "--flake",
-        "lightjj"
+        "lightjj",
+        "--use-update-script"
       ]
     },
     {
@@ -269,7 +306,11 @@
     {
       "name": "jj-ryu",
       "type": "nix-update",
-      "description": "jj-ryu alpha release tarballs",
+      "description": "jj-ryu alpha release binaries for Linux and macOS",
+      "systems": [
+        "aarch64-darwin",
+        "x86_64-linux"
+      ],
       "command": [
         "nix",
         "run",
@@ -277,7 +318,8 @@
         "--",
         "--flake",
         "jj-ryu",
-        "--version=unstable"
+        "--version=unstable",
+        "--use-update-script"
       ]
     },
     {
@@ -317,7 +359,7 @@
     {
       "name": "wifi-audio-streaming",
       "type": "nix-update",
-      "description": "WiFi Audio Streaming desktop application for the current platform",
+      "description": "WiFi Audio Streaming desktop artifacts for Linux and macOS",
       "systems": [
         "x86_64-linux",
         "aarch64-darwin"
@@ -335,7 +377,13 @@
     {
       "name": "cursor-agent",
       "type": "nix-update",
-      "description": "Cursor Agent CLI current-platform release archive",
+      "description": "Cursor Agent CLI release archives for all supported platforms",
+      "systems": [
+        "x86_64-linux",
+        "aarch64-linux",
+        "x86_64-darwin",
+        "aarch64-darwin"
+      ],
       "command": [
         "nix",
         "run",
@@ -349,7 +397,12 @@
     {
       "name": "t3code",
       "type": "nix-update",
-      "description": "T3 Code nightly desktop GitHub prerelease (current-platform AppImage or DMG)",
+      "description": "T3 Code nightly desktop artifacts for Linux and both macOS architectures",
+      "systems": [
+        "x86_64-linux",
+        "aarch64-darwin",
+        "x86_64-darwin"
+      ],
       "command": [
         "nix",
         "run",
@@ -363,7 +416,13 @@
     {
       "name": "plannotator",
       "type": "nix-update",
-      "description": "Plannotator current-platform release binary and shared Agent Skills",
+      "description": "Plannotator release binaries for all supported platforms and shared Agent Skills",
+      "systems": [
+        "x86_64-linux",
+        "aarch64-linux",
+        "x86_64-darwin",
+        "aarch64-darwin"
+      ],
       "command": [
         "nix",
         "run",

@@ -1,22 +1,20 @@
 {
-  curl,
+  bun,
   fetchurl,
-  jq,
   lib,
-  nix-update,
   stdenvNoCC,
-  writeShellScript,
+  updateScriptZod,
 }:
 
 let
   sources = {
     "aarch64-darwin" = {
       suffix = "darwin-arm64";
-      hash = "sha256-1oCnqWq4bpq50rVxsSkZt2HpNoKtHecUu9WshJyNfJw=";
+      hash = "sha256-gWi4arXZS+j2cJkt/k/hRFAWUYqGS0i9oQXmQULny/k=";
     };
     "x86_64-darwin" = {
       suffix = "darwin-x64";
-      hash = "sha256-2tPJ+eZ3kaRKdoqYhHUQxhp7VooEmcYCYyuK7kERAec=";
+      hash = "sha256-eHy0DghqGI0LsT/ympmgsjgK/zql6GALj4ExoLmMppw=";
     };
     "x86_64-linux" = {
       suffix = "linux-x64";
@@ -24,11 +22,6 @@ let
     };
   };
   source = sources.${stdenvNoCC.hostPlatform.system};
-  updateScript = writeShellScript "update-agent-browser" ''
-    set -euo pipefail
-    version="$(${lib.getExe curl} --fail --silent --show-error https://api.github.com/repos/vercel-labs/agent-browser/releases/latest | ${lib.getExe jq} -er '.tag_name | ltrimstr("v")')"
-    exec ${lib.getExe nix-update} --flake agent-browser --version "$version" --use-github-releases
-  '';
 in
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "agent-browser";
@@ -48,7 +41,11 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     runHook postInstall
   '';
 
-  passthru.updateScript = [ updateScript ];
+  passthru.updateScript = [
+    (lib.getExe bun)
+    ./update.ts
+    "${updateScriptZod}/index.js"
+  ];
 
   meta = {
     description = "Fast native browser automation CLI for AI agents";

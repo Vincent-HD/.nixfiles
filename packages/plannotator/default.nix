@@ -7,6 +7,7 @@
   bun,
   git,
   xdg-utils,
+  updateScriptZod,
 }:
 
 let
@@ -17,15 +18,15 @@ let
     };
     "aarch64-linux" = {
       artifact = "plannotator-linux-arm64";
-      hash = "sha256-jJkVjFxWj6lqBojruLBiRpBfvZNnaJ/LZmpqRx+u1KU=";
+      hash = "sha256-79ppKHm2gL+kzgSQcRme7F2t349pIcJiX6iKxWDLSJk=";
     };
     "x86_64-darwin" = {
       artifact = "plannotator-darwin-x64";
-      hash = "sha256-kw9Slut12IX0S/8hMj4X+HYnapO58KDCQ/7GXS+0OKo=";
+      hash = "sha256-+kB7qjduNHj5/tjr4Tn4GZQtJiA/hUQubniAxxWJ+Hc=";
     };
     "aarch64-darwin" = {
       artifact = "plannotator-darwin-arm64";
-      hash = "sha256-1xvt/TWHyXU+DQuR0i3NthnYBIjqWum0WaxvNGIdfPE=";
+      hash = "sha256-JN5g+/jjvatRl88635zjgeioGPLVSyoFX2EpHHsiYOo=";
     };
   };
   source = sources.${stdenvNoCC.hostPlatform.system};
@@ -70,6 +71,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
   passthru.updateScript = [
     (lib.getExe bun)
     ./update.ts
+    "${updateScriptZod}/index.js"
   ];
 
   meta = {

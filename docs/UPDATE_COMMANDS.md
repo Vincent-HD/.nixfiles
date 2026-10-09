@@ -2,6 +2,10 @@
 
 Quick-reference commands for updating packages that are pinned to fixed upstream versions and backed by `fetchurl` / `fetchFromGitHub` sources.
 
+For packages with platform-specific hashes, the registered updater refreshes every supported
+artifact in one run, regardless of the machine running it. These commands update pins only; each
+host can build its own configuration when convenient.
+
 ## Data-Driven Update Runner
 
 Routine updates are configured in `scripts/update-pins.json` and run through the Bun-based app:
@@ -61,7 +65,7 @@ nix run github:Mic92/nix-update -- --flake droidcam-client --use-github-releases
 - **Pattern**: Linux AppImage and macOS app archive pinned with `fetchurl`
 - **Flake output**: `.#wifi-audio-streaming`
 - **Platforms**: `x86_64-linux`, `aarch64-darwin`
-- **Updater**: Reads the latest GitHub release, then refreshes only the current platform's artifact.
+- **Updater**: Reads the latest GitHub release, then refreshes the Linux and macOS artifacts.
 
 ```bash
 nix run github:Mic92/nix-update -- --flake wifi-audio-streaming --use-update-script
@@ -84,9 +88,11 @@ nix run github:Mic92/nix-update -- --flake codex --use-github-releases --github-
 - **File**: `packages/lightjj/default.nix`
 - **Pattern**: `stdenvNoCC.mkDerivation` + `fetchurl` from GitHub releases
 - **Flake output**: `.#lightjj`
+- **Platforms**: `x86_64-linux`, `aarch64-darwin`
+- **Note**: Its updater refreshes both supported release binaries in one run.
 
 ```bash
-nix run github:Mic92/nix-update -- --flake lightjj
+nix run github:Mic92/nix-update -- --flake lightjj --use-update-script
 ```
 
 ### opencodex
@@ -94,7 +100,7 @@ nix run github:Mic92/nix-update -- --flake lightjj
 - **File**: `packages/opencodex/default.nix`
 - **Pattern**: npm release tarball + tagged Bun lockfile + fixed-output Bun dependency closure
 - **Flake output**: `.#opencodex`
-- **Note**: The package runs with Nix's Bun runtime and discards OpenCodex's unused bundled npm Bun binary. Its update script refreshes the tarball, lockfile, and dependency-closure hashes together, including when only the Bun dependency closure changed.
+- **Note**: The package runs with Nix's Bun runtime and discards OpenCodex's unused bundled npm Bun binary. Its updater refreshes the tarball and lockfile plus separate Linux/macOS dependency hashes, using Bun's target OS/CPU options. It calculates hashes from a temporary package expression, validates the exact Nix derivation mismatch, and atomically updates the real file only after both targets succeed. It realizes only the dependency closures, not the final package or host.
 
 ```bash
 nix run github:Mic92/nix-update -- --flake opencodex --use-update-script
@@ -103,10 +109,10 @@ nix run github:Mic92/nix-update -- --flake opencodex --use-update-script
 ### opencodev2
 
 - **File**: `packages/opencodev2/default.nix`
-- **Pattern**: current-platform npm release binary from the official OpenCode V2 channel
+- **Pattern**: npm release binaries from the official OpenCode V2 channel for Linux and macOS
 - **Flake output**: `.#opencodev2`
 - **Platforms**: `aarch64-darwin`, `x86_64-linux`
-- **Note**: The updater reads the official V2 channel metadata and refreshes only the artifact for the platform where it runs. Run it on each configured host when updating the package.
+- **Note**: The updater reads the official V2 channel metadata and refreshes both supported artifacts in one run.
 
 ```bash
 nix run github:Mic92/nix-update -- --flake opencodev2 --use-update-script
@@ -126,19 +132,31 @@ nix run github:Mic92/nix-update -- --flake codeburn --use-update-script
 ### agent-browser
 
 - **File**: `packages/agent-browser/default.nix`
-- **Pattern**: platform-selected native GitHub release binaries
+- **Pattern**: native GitHub release binaries for Linux and both macOS architectures
 - **Flake output**: `.#agent-browser`
+- **Note**: The updater refreshes all three supported platform binaries in one run.
 
 ```bash
 nix run github:Mic92/nix-update -- --flake agent-browser --use-update-script
 ```
 
+### update-script-zod
+
+- **File**: `packages/update-script-zod/default.nix`
+- **Pattern**: pinned npm distribution of Zod, shared by Nix-store-executed package update scripts
+- **Flake output**: `.#update-script-zod`
+- **Note**: Update scripts receive this package's module path as an argument, so validation works without a user-global Node/Bun installation.
+
+```bash
+nix run github:Mic92/nix-update -- --flake update-script-zod
+```
+
 ### executor
 
 - **File**: `packages/executor/default.nix`
-- **Pattern**: platform-selected npm binary archives
+- **Pattern**: npm binary archives for every supported OS/architecture
 - **Flake output**: `.#executor`
-- **Note**: The updater reads npm's published integrity metadata only for the platform where it runs.
+- **Note**: The updater reads npm's published integrity metadata for every supported OS/architecture.
 
 ```bash
 nix run github:Mic92/nix-update -- --flake executor --use-update-script
@@ -178,17 +196,13 @@ nix run github:Mic92/nix-update -- --flake portless --use-update-script
 ### jj-ryu
 
 - **File**: `packages/jj-ryu/default.nix`
-- **Pattern**: `stdenvNoCC.mkDerivation` + platform-selected `fetchurl` from GitHub releases
+- **Pattern**: `stdenvNoCC.mkDerivation` + Linux/macOS `fetchurl` artifacts from GitHub releases
 - **Flake output**: `.#jj-ryu`
+- **Platforms**: `x86_64-linux`, `aarch64-darwin`
+- **Note**: Its updater refreshes both supported release binaries in one run.
 
 ```bash
-nix run github:Mic92/nix-update -- --flake jj-ryu
-```
-
-If nix-update refuses the latest alpha release as unstable, use:
-
-```bash
-nix run github:Mic92/nix-update -- --flake jj-ryu --version=unstable
+nix run github:Mic92/nix-update -- --flake jj-ryu --version=unstable --use-update-script
 ```
 
 ### curseforge
@@ -238,7 +252,7 @@ nix run github:Mic92/nix-update -- --flake lsfg-vk --use-update-script
 - **File**: `packages/cursor-agent/default.nix`
 - **Pattern**: `stdenvNoCC.mkDerivation` + Cursor's versioned multi-architecture archives
 - **Flake output**: `.#cursor-agent`
-- **Note**: Cursor publishes the current version through its installer. The package update script refreshes only the archive for the platform where it runs.
+- **Note**: Cursor publishes one shared version through its installer. The updater refreshes all four supported OS/architecture archives in one run.
 
 ```bash
 nix run github:Mic92/nix-update -- --flake cursor-agent --use-update-script
@@ -249,7 +263,7 @@ nix run github:Mic92/nix-update -- --flake cursor-agent --use-update-script
 - **File**: `packages/t3code/default.nix`
 - **Pattern**: Linux AppImage via `appimageTools.wrapType2`; macOS DMG via `undmg`
 - **Flake output**: `.#t3code`
-- **Note**: This tracks GitHub nightly prereleases, not stable tags. The update script refreshes only the artifact for the platform where it runs.
+- **Note**: This tracks GitHub nightly prereleases, not stable tags. The update script refreshes Linux and both macOS artifacts in one run.
 - **Configuration**: `modules/agents/t3code.nix` uses Home Manager mutable settings and the existing Codex home. The desktop wrapper disables upstream auto-updates; this command and the subsequent rebuild own nightly upgrades. Close T3 and back up `~/.t3` before upgrading persistent state; restore that backup along with the old package when rolling back.
 
 ```bash
@@ -261,7 +275,7 @@ nix run github:Mic92/nix-update -- --flake t3code --use-update-script
 - **File**: `packages/plannotator/default.nix`
 - **Pattern**: `stdenvNoCC.mkDerivation` + platform-selected release binary and tagged shared Agent Skills
 - **Flake output**: `.#plannotator`
-- **Note**: The update script refreshes the current platform's release checksum and the tagged source hash that supplies the Codex/Cursor-compatible skills.
+- **Note**: The updater refreshes every supported platform release checksum and the tagged source hash that supplies the Codex/Cursor-compatible skills.
 
 ```bash
 nix run github:Mic92/nix-update -- --flake plannotator --use-update-script

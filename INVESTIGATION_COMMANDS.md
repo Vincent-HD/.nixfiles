@@ -136,9 +136,9 @@ Use when:
 nix eval --raw --impure --expr builtins.currentSystem
 ```
 
-Purpose: identify the platform whose package source or release artifact an update command should refresh.
+Purpose: identify the local platform for evaluations and derivations that execute host-native tools.
 
-Use when updating a package with platform-selected source hashes. Run the update on the target platform; do not synchronize hashes for other systems.
+Use when an evaluation or dependency derivation depends on the executing host platform. Package update scripts should still refresh every declared release artifact, rather than selecting only `builtins.currentSystem`.
 
 ### Prefetch a commit-pinned GitHub source with submodules
 
@@ -168,6 +168,16 @@ nix eval --raw ".#packages.${SYSTEM}.<pkg>.version"
 ```
 
 Purpose: confirm that a flake package exists for the platform an updater is targeting before running `nix-update`. This is especially useful when the current host does not provide a Linux-only output.
+
+### Verify an updater script is present in the flake snapshot
+
+```bash
+SYSTEM=$(nix eval --impure --raw --expr builtins.currentSystem)
+UPDATE_SCRIPT=$(nix eval --json ".#packages.${SYSTEM}.<pkg>.passthru.updateScript" | jq -r '.[1]')
+test -f "$UPDATE_SCRIPT"
+```
+
+Purpose: confirm that the update script path evaluated from the Git-backed flake actually exists in the Nix store. New files under the flake must be tracked before Nix includes them in its source snapshot.
 
 ### Build a package for the current platform
 
@@ -431,11 +441,19 @@ Use when:
 ```bash
 nix store prefetch-file --json https://example.com/artifact.ext
 
+# Match the hash algorithm already used by an existing pin, such as npm SHA-512 integrity.
+nix store prefetch-file --hash-type sha512 --json https://registry.npmjs.org/<package>/-/<artifact>.tgz
+
 # Use the unpacked NAR hash expected by fetchzip/fetchFromGitHub-style sources.
 nix store prefetch-file --unpack --json https://example.com/source.tar.gz
 ```
 
-Purpose: get the SRI hash for release tarballs, debs, zip files, or AppImages before wiring them into an override. Add `--unpack` when the Nix fetcher hashes the extracted source tree instead of the downloaded archive bytes.
+Purpose: get or independently verify the SRI hash for an exact pinned release tarball, deb, zip, AppImage, or npm artifact. Compare the result with the package's current version and URL; do not use a moving `latest` URL when auditing an existing pin. Add `--unpack` when the Nix fetcher hashes the extracted source tree instead of the downloaded archive bytes.
+
+Use when:
+- checking all architecture-specific artifacts from any host without building the final package
+- npm's published `sha512-...` integrity must be compared with the exact archive bytes
+- a repeated system rebuild reports a fixed-output mismatch for an already-pinned version
 
 ### Convert an SRI hash to nix32
 

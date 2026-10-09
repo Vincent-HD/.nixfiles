@@ -1,3 +1,5 @@
+import { PrefetchResultSchema, Sha256HashSchema, UrlSchema, VersionSchema, z } from "../update-schema.ts";
+
 type Source = {
   artifact: string;
 };
@@ -18,10 +20,6 @@ function commandOutput(command: string[], cwd?: string): string {
   return new TextDecoder().decode(result.stdout).trim();
 }
 
-function currentSystem(): string {
-  return commandOutput(["nix", "eval", "--raw", "--impure", "--expr", "builtins.currentSystem"]);
-}
-
 async function fetchText(url: string): Promise<string> {
   const response = await fetch(url);
   if (!response.ok) {
@@ -32,19 +30,20 @@ async function fetchText(url: string): Promise<string> {
 
 function checksumToSri(checksum: string, url: string): string {
   const hex = checksum.trim().split(/\s+/)[0];
-  if (!/^[0-9a-f]{64}$/i.test(hex)) {
-    throw new Error(`Could not read a SHA-256 checksum from ${url}`);
-  }
-  return `sha256-${Buffer.from(hex, "hex").toString("base64")}`;
+  const validHex = z.string().regex(/^[0-9a-f]{64}$/i).parse(hex);
+  return Sha256HashSchema.parse(`sha256-${Buffer.from(validHex, "hex").toString("base64")}`);
 }
 
 const releaseApi = "https://api.github.com/repos/backnotprop/plannotator/releases/latest";
-const release = JSON.parse(await fetchText(releaseApi)) as { tag_name?: string };
+const releaseSchema = z
+  .object({ tag_name: z.string().regex(/^v\d+\.\d+\.\d+(?:-[\w.-]+)?$/).optional() })
+  .passthrough();
+const release = releaseSchema.parse(JSON.parse(await fetchText(releaseApi)));
 const tag = release.tag_name;
-if (tag === undefined || !/^v\d/.test(tag)) {
+if (tag === undefined) {
   throw new Error(`Could not read the latest release tag from ${releaseApi}`);
 }
-const version = tag.slice(1);
+const version = VersionSchema.parse(tag.slice(1));
 
 const root = commandOutput(["git", "rev-parse", "--show-toplevel"]);
 const packageFile = `${root}/packages/plannotator/default.nix`;
@@ -53,33 +52,27 @@ const currentVersion = packageText.match(/^  version = "([^"]+)";$/m)?.[1];
 if (currentVersion === undefined) {
   throw new Error(`Could not read the current version from ${packageFile}`);
 }
+VersionSchema.parse(currentVersion);
 
 console.log(`plannotator current: ${currentVersion}`);
 console.log(`plannotator latest:  ${version}`);
 
 const releaseBase = `https://github.com/backnotprop/plannotator/releases/download/${tag}`;
-const system = currentSystem();
-const source = sources[system];
-if (source === undefined) {
-  throw new Error(`Plannotator does not publish a release binary for ${system}`);
+for (const [system, source] of Object.entries(sources)) {
+  const checksumUrl = UrlSchema.parse(`${releaseBase}/${source.artifact}.sha256`);
+  const hash = checksumToSri(await fetchText(checksumUrl), checksumUrl);
+  const block = new RegExp('("' + system + '" = \\{[\\s\\S]*?hash = ")[^"]+(")');
+  if (!block.test(packageText)) {
+    throw new Error(`Could not find the ${system} source block in ${packageFile}`);
+  }
+  packageText = packageText.replace(block, `$1${hash}$2`);
+  console.log(`plannotator ${system}: ${hash}`);
 }
-console.log(`plannotator system:  ${system}`);
 
-const checksumUrl = `${releaseBase}/${source.artifact}.sha256`;
-const hash = checksumToSri(await fetchText(checksumUrl), checksumUrl);
-const block = new RegExp(`("${system}" = \\{[\\s\\S]*?hash = ")[^"]+(")`);
-if (!block.test(packageText)) {
-  throw new Error(`Could not find the ${system} source block in ${packageFile}`);
-}
-packageText = packageText.replace(block, `$1${hash}$2`);
-
-const sourceUrl = `https://github.com/backnotprop/plannotator/archive/refs/tags/${tag}.tar.gz`;
-const sourcePrefetch = JSON.parse(
-  commandOutput(["nix", "store", "prefetch-file", "--unpack", "--json", sourceUrl], root),
-) as { hash?: string };
-if (sourcePrefetch.hash === undefined || sourcePrefetch.hash === "") {
-  throw new Error(`Could not determine the source hash for ${sourceUrl}`);
-}
+const sourceUrl = UrlSchema.parse(`https://github.com/backnotprop/plannotator/archive/refs/tags/${tag}.tar.gz`);
+const sourcePrefetch = PrefetchResultSchema.parse(
+  JSON.parse(commandOutput(["nix", "store", "prefetch-file", "--unpack", "--json", sourceUrl], root)),
+);
 
 packageText = packageText
   .replace(/^(  version = ")[^"]+(";)$/m, `$1${version}$2`)

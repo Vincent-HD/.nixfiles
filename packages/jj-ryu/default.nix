@@ -1,14 +1,16 @@
 {
   lib,
   stdenvNoCC,
+  bun,
   fetchurl,
+  updateScriptZod,
 }:
 
 let
   sources = {
     "aarch64-darwin" = {
       artifact = "ryu-darwin-arm64.tar.gz";
-      hash = "sha256-3tJ7HjXB2xDNRN52+WpcxzY6gbMFBx4rNOSnqCOJo7Y=";
+      hash = "sha256-hl45qwUp3F258b+fvCryaW2L3LrFC8NC1a4tZMzSpVc=";
     };
     "x86_64-linux" = {
       artifact = "ryu-linux-x64.tar.gz";
@@ -33,6 +35,12 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     install -Dm755 ryu "$out/bin/ryu"
     runHook postInstall
   '';
+
+  passthru.updateScript = [
+    (lib.getExe bun)
+    ./update.ts
+    "${updateScriptZod}/index.js"
+  ];
 
   meta = {
     description = "Stacked PRs for Jujutsu with GitHub/GitLab support";

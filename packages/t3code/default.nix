@@ -5,6 +5,7 @@
   appimageTools,
   undmg,
   bun,
+  updateScriptZod,
 }:
 
 let
@@ -23,7 +24,7 @@ let
     "x86_64-darwin" = {
       arch = "x64";
       ext = "dmg";
-      hash = "sha256-SSUsRV50kp2FXIRyqtIgBjv4CMnkdCfcoE9c+dkKwUM=";
+      hash = "sha256-29fzL4ChLU3gYHWM+1S6g4O8ye/LBinuebMwEzxVhmY=";
     };
   };
   source = sources.${stdenvNoCC.hostPlatform.system};
@@ -49,6 +50,7 @@ let
     updateScript = [
       (lib.getExe bun)
       ./update.ts
+      "${updateScriptZod}/index.js"
     ];
   };
 in

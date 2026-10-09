@@ -4,6 +4,7 @@
   fetchurl,
   lib,
   stdenvNoCC,
+  updateScriptZod,
 }:
 
 let
@@ -33,6 +34,7 @@ let
       updateScript = [
         (lib.getExe bun)
         ./update.ts
+        "${updateScriptZod}/index.js"
       ];
     };
 

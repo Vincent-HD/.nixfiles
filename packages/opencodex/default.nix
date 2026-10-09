@@ -4,60 +4,80 @@
   fetchurl,
   bun,
   makeWrapper,
+  updateScriptZod,
 }:
 
 let
   pname = "opencodex";
   version = "2.81.0";
-
+  targetPlatforms = {
+    "aarch64-darwin" = {
+      os = "darwin";
+      cpu = "arm64";
+    };
+    "x86_64-linux" = {
+      os = "linux";
+      cpu = "x64";
+    };
+  };
+  bunDepsHashes = {
+    "aarch64-darwin" = "sha256-BJ7oaKKQ+QP2v7f2LiL7sP8JJksb5+MTfwAphxl2XkQ=";
+    "x86_64-linux" = "sha256-NwnxZQ3UgSPpv7wtWIUsm66Qna0F/79lgKgH94CYjyw=";
+  };
   src = fetchurl {
     url = "https://registry.npmjs.org/@bitkyc08/opencodex/-/opencodex-${version}.tgz";
     hash = "sha256-hhckJB28+QZJQt1qa7g/NN0zgBQAB6bnh5FgabQzir0=";
   };
 
+  # The npm package omits its lockfile, so fetch the release-matching one.
   bunLock = fetchurl {
     url = "https://raw.githubusercontent.com/lidge-jun/opencodex/v${version}/bun.lock";
     hash = "sha256-6B58rZq7oSUVhS0zWOb0fvPxWkxMpTOceEIIhUPSPdk=";
   };
 
-  # The npm package omits its lockfile, so fetch the release-matching one.
-  bunDeps = stdenvNoCC.mkDerivation {
-    name = "${pname}-${version}-bun-deps";
-    inherit src;
-    sourceRoot = "package";
+  mkBunDeps =
+    targetSystem: targetPlatform:
+    stdenvNoCC.mkDerivation {
+      name = "${pname}-${version}-bun-deps-${targetSystem}";
+      inherit src;
+      sourceRoot = "package";
 
-    nativeBuildInputs = [ bun ];
+      nativeBuildInputs = [ bun ];
 
-    postPatch = ''
-      cp "${bunLock}" bun.lock
-    '';
+      postPatch = ''
+        cp "${bunLock}" bun.lock
+      '';
 
-    buildPhase = ''
-      runHook preBuild
+      buildPhase = ''
+        runHook preBuild
 
-      # Nix supplies Bun at runtime; do not run the npm `bun` package's
-      # postinstall, which tries to download another platform binary.
-      bun install --frozen-lockfile --production --backend=copyfile --ignore-scripts
+        # Nix supplies Bun at runtime; do not run the npm `bun` package's
+        # postinstall, which tries to download another platform binary.
+        bun install --frozen-lockfile --production --backend=copyfile --ignore-scripts \
+          --os=${targetPlatform.os} --cpu=${targetPlatform.cpu}
 
-      runHook postBuild
-    '';
+        runHook postBuild
+      '';
 
-    installPhase = ''
-      runHook preInstall
+      installPhase = ''
+        runHook preInstall
 
-      # The Nix wrapper supplies Bun, so do not retain upstream's unused npm
-      # copy of the Bun runtime or Bun's install cache.
-      rm -rf node_modules/.cache node_modules/bun node_modules/@oven
-      rm -f node_modules/.bin/bun node_modules/.bin/bunx
-      mkdir -p "$out"
-      cp -r node_modules "$out/node_modules"
+        # The Nix wrapper supplies Bun, so do not retain upstream's unused npm
+        # copy of the Bun runtime or Bun's install cache.
+        rm -rf node_modules/.cache node_modules/bun node_modules/@oven
+        rm -f node_modules/.bin/bun node_modules/.bin/bunx
+        mkdir -p "$out"
+        cp -r node_modules "$out/node_modules"
 
-      runHook postInstall
-    '';
+        runHook postInstall
+      '';
 
-    outputHashMode = "recursive";
-    outputHash = "sha256-BJ7oaKKQ+QP2v7f2LiL7sP8JJksb5+MTfwAphxl2XkQ=";
-  };
+      outputHashMode = "recursive";
+      outputHash = bunDepsHashes.${targetSystem};
+    };
+  bunDepsBySystem = builtins.mapAttrs mkBunDeps targetPlatforms;
+  bunDeps = bunDepsBySystem.${stdenvNoCC.hostPlatform.system};
+
 in
 stdenvNoCC.mkDerivation (finalAttrs: {
   inherit pname version src;
@@ -85,7 +105,9 @@ stdenvNoCC.mkDerivation (finalAttrs: {
   passthru.updateScript = [
     (lib.getExe bun)
     ./update.ts
+    "${updateScriptZod}/index.js"
   ];
+  passthru.bunDepsBySystem = bunDepsBySystem;
 
   meta = {
     description = "Universal provider proxy for OpenAI Codex and Claude Code";

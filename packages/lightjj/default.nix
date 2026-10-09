@@ -1,6 +1,7 @@
 {
   lib,
   stdenvNoCC,
+  bun,
   fetchurl,
   makeWrapper,
   jujutsu,
@@ -8,13 +9,14 @@
   gh,
   xdg-utils,
   openssh,
+  updateScriptZod,
 }:
 
 let
   sources = {
     "aarch64-darwin" = {
       artifact = "lightjj-macos-arm64";
-      hash = "sha256-/Qt5E8VRCxO8/DpTfyr6CWD2YdfQGdErkBjrZ+TJfws=";
+      hash = "sha256-NeQFDeI9gC2YCNt3pRtdeFJZHabae4VQ5ATweogAAb4=";
     };
     "x86_64-linux" = {
       artifact = "lightjj-linux-x86_64";
@@ -50,6 +52,12 @@ stdenvNoCC.mkDerivation (finalAttrs: {
         ]
       }
   '';
+
+  passthru.updateScript = [
+    (lib.getExe bun)
+    ./update.ts
+    "${updateScriptZod}/index.js"
+  ];
 
   meta = {
     description = "Fast browser UI for Jujutsu version control";

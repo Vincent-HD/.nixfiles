@@ -17,6 +17,7 @@
           cudaSupport = true;
         };
       };
+      updateScriptZod = pkgs.callPackage ../packages/update-script-zod { };
 
       mkBunRunner =
         name: script:
@@ -57,22 +58,43 @@
     in
     {
       packages = {
-        agent-browser = pkgs.callPackage ../packages/agent-browser { };
+        agent-browser = pkgs.callPackage ../packages/agent-browser {
+          updateScriptZod = updateScriptZod;
+        };
         arch-ops-server = pkgs.callPackage ../packages/arch-ops-server { };
         codeburn = pkgs.callPackage ../packages/codeburn { };
-        cursor-agent = unfreePkgs.callPackage ../packages/cursor-agent { };
-        executor = pkgs.callPackage ../packages/executor { };
-        jj-ryu = pkgs.callPackage ../packages/jj-ryu { };
-        lightjj = pkgs.callPackage ../packages/lightjj { };
-        opencodex = pkgs.callPackage ../packages/opencodex { };
-        opencodev2 = pkgs.callPackage ../packages/opencodev2 { };
+        cursor-agent = unfreePkgs.callPackage ../packages/cursor-agent {
+          updateScriptZod = updateScriptZod;
+        };
+        executor = pkgs.callPackage ../packages/executor {
+          updateScriptZod = updateScriptZod;
+        };
+        jj-ryu = pkgs.callPackage ../packages/jj-ryu {
+          updateScriptZod = updateScriptZod;
+        };
+        lightjj = pkgs.callPackage ../packages/lightjj {
+          updateScriptZod = updateScriptZod;
+        };
+        opencodex = pkgs.callPackage ../packages/opencodex {
+          updateScriptZod = updateScriptZod;
+        };
+        opencodev2 = pkgs.callPackage ../packages/opencodev2 {
+          updateScriptZod = updateScriptZod;
+        };
         papercuts = pkgs.callPackage ../packages/papercuts { };
-        t3code = pkgs.callPackage ../packages/t3code { };
+        t3code = pkgs.callPackage ../packages/t3code {
+          updateScriptZod = updateScriptZod;
+        };
         vtask = pkgs.callPackage ../packages/vtask { };
         vtask-source = pkgs.callPackage ../packages/vtask { preferPrebuilt = false; };
-        wifi-audio-streaming = pkgs.callPackage ../packages/wifi-audio-streaming { };
+        wifi-audio-streaming = pkgs.callPackage ../packages/wifi-audio-streaming {
+          updateScriptZod = updateScriptZod;
+        };
         portless = pkgs.callPackage ../packages/portless { };
-        plannotator = pkgs.callPackage ../packages/plannotator { };
+        plannotator = pkgs.callPackage ../packages/plannotator {
+          updateScriptZod = updateScriptZod;
+        };
+        update-script-zod = updateScriptZod;
         bitwarden-secret-tools = bwSecretTools;
       }
       // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
