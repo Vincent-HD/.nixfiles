@@ -81,7 +81,6 @@
         opencodev2 = pkgs.callPackage ../packages/opencodev2 {
           updateScriptZod = updateScriptZod;
         };
-        papercuts = pkgs.callPackage ../packages/papercuts { };
         t3code = pkgs.callPackage ../packages/t3code {
           updateScriptZod = updateScriptZod;
         };

@@ -50,7 +50,6 @@
         jj-resplit-stack = ./assets/skills/jj-resplit-stack;
         # Conflicted rebase/merge: capture op id, oldest-first jj new + squash, running count.
         jj-solve-conflict = ./assets/skills/jj-solve-conflict;
-        papercuts = ./assets/skills/papercuts;
         reference-repository = ./assets/skills/reference-repository;
       };
     };

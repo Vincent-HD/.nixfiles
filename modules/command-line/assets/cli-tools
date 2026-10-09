@@ -203,7 +203,6 @@ Terminal helpers|catimg|Display images in a terminal|catimg screenshot.png
 Terminal helpers|ghostty|Launch the configured Ghostty terminal emulator|ghostty
 Terminal helpers|ripdrag|Drag files from the terminal into GUI applications|ripdrag file.txt
 Terminal helpers|rtk|Compact verbose command output for agent workflows|rtk git status
-Terminal helpers|papercuts|Record small workflow-friction observations|papercuts add --stdin --source codex
 Terminal helpers|executor|Run the shared local MCP command catalog|executor mcp
 Terminal helpers|plannotator|Review and annotate agent plans|plannotator --help
 Terminal helpers|,|Run a command from Nixpkgs without installing it permanently|, jq --version

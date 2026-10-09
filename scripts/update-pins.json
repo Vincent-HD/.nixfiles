@@ -276,20 +276,6 @@
       ]
     },
     {
-      "name": "papercuts",
-      "type": "nix-update",
-      "description": "Papercuts tagged source compiled with Bun",
-      "command": [
-        "nix",
-        "run",
-        "github:Mic92/nix-update",
-        "--",
-        "--flake",
-        "papercuts",
-        "--use-github-releases"
-      ]
-    },
-    {
       "name": "portless",
       "type": "nix-update",
       "description": "Portless npm release tarball",

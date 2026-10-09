@@ -131,16 +131,3 @@ pnpm fmt
 
 - Default to no comments; add one only when the why is non-obvious.
 - Avoid comments that repeat what code does, commented-out code, obvious comments, or comments used instead of better naming.
-
-<!-- papercuts:begin v1 -->
-## Papercuts
-
-- Proactively record small, concrete friction encountered while working.
-- Use one or two sentences: state what was being done, what got in the way, and optionally a suspected cause or fix.
-- Record each distinct issue at most once per task.
-- Never include secrets, raw transcripts, or large command output.
-- Keep using the project's normal issue workflow for bugs; Papercuts is a friction journal.
-- Pipe the observation to `papercuts add --stdin --source codex`.
-- Continue the primary task if capture fails, and never record that failure as another papercut.
-- Never review transcripts automatically.
-<!-- papercuts:end -->

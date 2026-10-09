@@ -1,4 +1,4 @@
-{ inputs, ... }:
+{ ... }:
 {
   config.flake.modules.homeManager.agentCommon =
     {
@@ -8,15 +8,6 @@
       ...
     }:
     let
-      papercutsPackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.papercuts;
-
-      # Papercuts defaults to a macOS-specific path upstream; keep one XDG path
-      # across both hosts and preserve an explicit caller override.
-      papercuts = pkgs.writeShellScriptBin "papercuts" ''
-        export PAPERCUTS_HOME="''${PAPERCUTS_HOME:-${config.xdg.dataHome}/papercuts}"
-        exec ${lib.getExe papercutsPackage} "$@"
-      '';
-
       # rtk 0.43.0's own test suite denies two unused-code warnings on Darwin.
       # Its release binary builds successfully, so skip only that broken test phase.
       rtk = pkgs.rtk.overrideAttrs (_previousAttrs: {
@@ -47,11 +38,8 @@
       config = {
         home = {
           packages = [
-            papercuts
             rtk
           ];
-
-          sessionVariables.PAPERCUTS_HOME = "${config.xdg.dataHome}/papercuts";
 
           file = skillFiles // {
             # Keep the complete shared guidance available to every AGENTS-aware client.

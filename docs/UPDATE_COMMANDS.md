@@ -173,16 +173,6 @@ nix run github:Mic92/nix-update -- --flake executor --use-update-script
 nix run github:Mic92/nix-update -- --flake arch-ops-server --use-update-script
 ```
 
-### papercuts
-
-- **File**: `packages/papercuts/default.nix`
-- **Pattern**: `stdenvNoCC.mkDerivation` + `fetchFromGitHub` tagged source compiled with Bun
-- **Flake output**: `.#papercuts`
-
-```bash
-nix run github:Mic92/nix-update -- --flake papercuts --use-github-releases
-```
-
 ### portless
 
 - **File**: `packages/portless/default.nix`

@@ -48,7 +48,7 @@ Every user-visible message while this skill runs includes a **progress block**. 
 
 When the same 1–2 files repeat across many commits, say so once (“48 commits, same snapshot hunk; oldest first, descendants may collapse”) instead of 48 identical plans.
 
-**TLDR difficulties:** if something is surprising (whole-file JSON, `:ours` dropping later keys, mixed DAG roots, tree/file/symlink conflict), add a short `**TLDR:**` line in that same block. Record a papercut only for workflow friction, not for the conflict itself.
+**TLDR difficulties:** if something is surprising (whole-file JSON, `:ours` dropping later keys, mixed DAG roots, tree/file/symlink conflict), add a short `**TLDR:**` line in that same block.
 
 ## 0. Inventory
 
