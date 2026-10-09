@@ -47,6 +47,7 @@ in
             hm.graphics
             hm.dms
             hm.dankmail
+            hm.tokitoki
             hm.tokitokiDev
             hm.coding
             hm.agentCommon

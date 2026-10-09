@@ -25,6 +25,7 @@ in
         home-manager.users.${username} = {
           imports = [
             # Migrate one application at a time. Keep this list deliberately small.
+            hm.tokitoki
             hm.browser
             hm.coding
             hm.agentCommon

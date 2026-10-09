@@ -25,7 +25,7 @@ let
     "aarch64-darwin" = {
       platform = "darwin";
       architecture = "arm64";
-      hash = "sha512-28fwaFwDyHrpVG39hhN0uGdWOJgCr0C7EM8P11CUT3ifM4Kg2H2kSCk7VOMk6F7oDtaBdfOObvZkJOadC0CJtw==";
+      hash = "sha512-rPuEL8ibW7k6jkAa714wAiiw3YGWtQ4btMmCSDdLGzEIBj2FoBNjOu76okIF10H3fYbrituss0VeX5KEPFbv/w==";
     };
   };
   source = sources.${stdenvNoCC.hostPlatform.system};

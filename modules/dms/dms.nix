@@ -81,7 +81,6 @@ in
         inputs.dms.homeModules.dank-material-shell
         inputs.dms.homeModules.niri
         inputs.dankcalendar.homeModules.dank-calendar
-        inputs.tokitoki.homeManagerModules.default
       ];
 
       home.packages = [
@@ -103,8 +102,6 @@ in
         pkgs.wl-clipboard
         pkgs.zbar
       ];
-
-      programs.tokitoki.enable = true;
 
       programs.dank-material-shell = {
         enable = true;

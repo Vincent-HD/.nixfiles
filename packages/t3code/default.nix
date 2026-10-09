@@ -18,7 +18,7 @@ let
     "aarch64-darwin" = {
       arch = "arm64";
       ext = "dmg";
-      hash = "sha256-Sjcds6wAOs9a6n5OSsgT7MNyzSTiYO1Fx0cT9URyGmg=";
+      hash = "sha256-Mwb8IXNGWiPkOdrSRyr4RSWWtYu7TkXtBxWBUbqtcWI=";
     };
     "x86_64-darwin" = {
       arch = "x64";

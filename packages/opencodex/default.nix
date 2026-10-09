@@ -8,16 +8,16 @@
 
 let
   pname = "opencodex";
-  version = "2.77.0";
+  version = "2.81.0";
 
   src = fetchurl {
     url = "https://registry.npmjs.org/@bitkyc08/opencodex/-/opencodex-${version}.tgz";
-    hash = "sha256-U8OeR6ySvJW4VVux1UHeEBQtWOZGvo9pc0g+itYuBTo=";
+    hash = "sha256-hhckJB28+QZJQt1qa7g/NN0zgBQAB6bnh5FgabQzir0=";
   };
 
   bunLock = fetchurl {
     url = "https://raw.githubusercontent.com/lidge-jun/opencodex/v${version}/bun.lock";
-    hash = "sha256-LcU/WvVuy/Jpy2knabTJkQ+dGqHXZYrk3rZkRBKfzf0=";
+    hash = "sha256-6B58rZq7oSUVhS0zWOb0fvPxWkxMpTOceEIIhUPSPdk=";
   };
 
   # The npm package omits its lockfile, so fetch the release-matching one.
@@ -56,7 +56,7 @@ let
     '';
 
     outputHashMode = "recursive";
-    outputHash = "sha256-FOJpPhzNLtOgqI8RWBgtmWyIJLILXB+JzpB/+adaxi0=";
+    outputHash = "sha256-BJ7oaKKQ+QP2v7f2LiL7sP8JJksb5+MTfwAphxl2XkQ=";
   };
 in
 stdenvNoCC.mkDerivation (finalAttrs: {

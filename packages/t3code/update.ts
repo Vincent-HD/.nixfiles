@@ -78,11 +78,7 @@ console.log("t3code current: " + currentVersion);
 console.log("t3code latest:  " + version);
 console.log("t3code system:  " + system);
 
-if (currentVersion === version) {
-  console.log("t3code is already current.");
-  process.exit(0);
-}
-
+// GitHub can replace a nightly asset without changing its tag; always refresh its hash.
 const url =
   "https://github.com/pingdotgg/t3code/releases/download/v" +
   version +
