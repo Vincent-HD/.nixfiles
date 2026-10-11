@@ -63,7 +63,7 @@ in
             hm.comma
             hm.direnv
             hm.lazydocker
-            hm.discord
+            hm.equibop
             hm.browser
             hm.thunar
             hm.spotify

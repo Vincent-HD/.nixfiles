@@ -13,12 +13,13 @@ The repository currently provides:
 - the same shared Zsh, coding, command-line, and agent configuration as Linux
 - Darwin-only OrbStack and JetBrains Toolbox paths in the shared shell module
 - selected dark appearance, Dock, and Finder defaults
-- Home Manager applications including Brave, Cursor, VS Code, Discord, DataGrip, LocalSend, and
-  T3 Code
-- declarative Homebrew casks for Codex, Deskflow, and RustDesk
+- Home Manager applications including Brave, Cursor, VS Code, DataGrip, LocalSend, and T3 Code
+- Equibop's Equicord settings managed by Home Manager; the app is installed from the Equibop cask
+- declarative Homebrew casks for Codex, Deskflow, Equibop, and RustDesk
 
-The duplicated Darwin development module was deleted, and the one broad Homebrew/MAS module was
-reduced to what it now declares: casks in `darwin.homebrew` and the four retained App Store apps.
+The duplicated Darwin development module was deleted, and the broad Homebrew/MAS module was
+reduced to shared casks in `darwin.homebrew` and the four retained App Store apps. Feature-owned
+casks are declared alongside their owning modules.
 There is no inactive checklist module left to compose by mistake.
 
 The live Mac may still contain applications installed by Homebrew, the Mac App Store, vendor
@@ -169,7 +170,7 @@ For every item:
 This is the answer to "what is installed right now". Every retained application has exactly one
 owner, and nothing is owned twice.
 
-### Tier 1 - Home Manager (12 applications)
+### Tier 1 - Home Manager
 
 Installed into `~/Applications/Home Manager Apps`:
 
@@ -180,7 +181,6 @@ Installed into `~/Applications/Home Manager Apps`:
 | ChatGPT | `hm.guiApps` | Darwin only, arm64-only upstream build. |
 | Cursor | `hm.agentCursor` | |
 | DataGrip | `hm.work` | |
-| Discord | `hm.discord` | Nixcord with Vencord. |
 | LocalSend | `hm.localSend` | |
 | Scroll Reverser | `hm.guiApps` | Darwin only. AppleDouble sidecars are stripped so the code signature stays valid. |
 | T3 Code (Nightly) | `hm.agentT3Code` | |
@@ -196,13 +196,14 @@ through `hm.commandLine`, `hm.coding`, `hm.agentCommon`, `hm.agentSkills`, `hm.e
 Homebrew font cask. `darwin.macosDefaults` owns appearance, Dock, and Finder, plus the
 `CustomUserPreferences` seeds for Rectangle, AltTab, and Scroll Reverser.
 
-### Tier 3 - declarative Homebrew (11 casks, 1 tap)
+### Tier 3 - declarative Homebrew (13 casks, 1 tap)
 
 | Casks | Declared in |
 | --- | --- |
-| alt-tab, cleanshot, jetbrains-toolbox, moonlight, orbstack, raycast, rectangle | `darwin.homebrew` |
+| alt-tab, cleanshot, curseforge, jetbrains-toolbox, moonlight, orbstack, raycast, rectangle | `darwin.homebrew` |
 | codex | `darwin.agentCodex` |
 | deskflow (with tap `deskflow/tap`) | `darwin.deskflow` |
+| equibop | `darwin.equibop` |
 | ghostty | `darwin.ghostty` |
 | rustdesk | `darwin.rustdesk` |
 

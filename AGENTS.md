@@ -35,7 +35,7 @@ modules/
   command-line/                        # Shared Zsh configuration and CLI tools
   packages.nix                         # Standalone package and app outputs
   browser.nix                          # Brave (HM)
-  discord.nix                          # Nixcord with Vencord (HM)
+  equibop.nix                          # Equibop with Equicord settings and macOS cask
   spotify.nix                          # Spotify (HM)
   bitwarden.nix                        # Bitwarden Desktop (HM)
   printing.nix                         # CUPS printing (NixOS)
@@ -101,13 +101,15 @@ hosts/
 | `import-tree`    | `github:vic/import-tree`              | Auto-import all `.nix` files         |
 | `home-manager`   | `github:nix-community/home-manager`   | User-level config management         |
 | `code-cursor-nix`| `github:jacopone/code-cursor-nix`     | Cursor editor package                |
-| `nixcord`        | `github:FlameFlag/nixcord`            | Discord + Vencord (HM module)        |
 | `spicetify-nix`  | `github:Gerg-L/spicetify-nix`         | Spotify + Spicetify (HM module)      |
 | `niri`           | `github:sodiboo/niri-flake`           | Niri compositor (optional session)   |
 | `noctalia`       | `github:noctalia-dev/noctalia-shell`  | Noctalia shell + HM module           |
 
 All inputs except `flake-parts`, `import-tree`, and `code-cursor-nix` follow `nixpkgs` to avoid
 duplicate evaluations.
+
+Equibop uses the nixpkgs package on Linux and the Homebrew cask on macOS; Home Manager manages its
+Equicord settings on both hosts.
 
 ---
 

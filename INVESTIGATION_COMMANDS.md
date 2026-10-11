@@ -349,7 +349,7 @@ Purpose: validate generated application configuration without first activating t
 ### Inspect a specific Home Manager app package
 
 ```bash
-nix eval --raw '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$USER"'.programs.nixcord.discord.package.pname'
+nix eval --raw '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$USER"'.programs.equibop.package.pname'
 ```
 
 Purpose: confirm the exact app package selected after any override or launcher patch.
@@ -399,7 +399,7 @@ Purpose: realize a flake package whose metadata is marked unfree while preservin
 
 ```bash
 cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" \
-nix build --no-link --print-out-paths '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$USER"'.programs.nixcord.discord.package'
+nix build --no-link --print-out-paths '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$USER"'.programs.equibop.package'
 ```
 
 Purpose: build the exact HM-selected package when you already know the option path you want to verify.
@@ -805,7 +805,7 @@ cd "$REPO" && NIX_CONFIG="$NIX_EVAL_FEATURES" \
 nix eval '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$USER"'.<hm.option.path>' --json
 ```
 
-Purpose: inspect the rendered value of a single Home Manager option or nested attrset, such as `programs.nixcord.config.plugins.<plugin>.enable` or `programs.noctalia-shell.settings`.
+Purpose: inspect the rendered value of a single Home Manager option or nested attrset, such as `programs.equibop.equicord.settings.plugins.<plugin>.enabled` or `programs.noctalia-shell.settings`.
 
 Use `--json` for booleans and attrsets; reserve `--raw` for strings and store paths.
 

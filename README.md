@@ -140,7 +140,6 @@ The main framework and host inputs are:
 - `home-manager-darwin`
 - `nix-darwin`
 - `code-cursor-nix`
-- `nixcord`
 - `niri`
 - `dms`
 - `nix-gaming`

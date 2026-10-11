@@ -4,7 +4,7 @@ Research date: 2026-08-19
 
 ## Recommendation
 
-The closest Spotify equivalent to `nixcord` is [Spicetify-Nix](https://github.com/Gerg-L/spicetify-nix): it provides NixOS and Home Manager modules for the official Spotify client. Pair it with Spicetify's [Lyrics Plus](https://spicetify.app/docs/customization/custom-apps) custom app.
+[Spicetify-Nix](https://github.com/Gerg-L/spicetify-nix) provides NixOS and Home Manager modules for the official Spotify client. Pair it with Spicetify's [Lyrics Plus](https://spicetify.app/docs/customization/custom-apps) custom app.
 
 Lyrics Plus is the strongest match for the requested lyrics behavior. Its current provider implementation includes Spotify's internal lyrics, Musixmatch, Netease, LRCLIB, Genius, and a local cache; it supports karaoke, synced, and unsynced modes. Providers can be enabled and reordered, and the app tries them in order when a provider cannot satisfy the requested mode. The [provider source](https://github.com/spicetify/cli/blob/main/CustomApps/lyrics-plus/Providers.js), [fallback logic](https://github.com/spicetify/cli/blob/main/CustomApps/lyrics-plus/index.js), and [Spicetify-Nix custom-app documentation](https://gerg-l.github.io/spicetify-nix/custom-apps.html) confirm this directly.
 

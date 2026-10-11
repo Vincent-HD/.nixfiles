@@ -61,11 +61,6 @@
     # Cursor's Linux agent-loop crash was fixed upstream in 3.19.13.
     code-cursor-nix.url = "github:jacopone/code-cursor-nix";
 
-    nixcord = {
-      url = "github:FlameFlag/nixcord";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     spicetify-nix = {
       url = "github:Gerg-L/spicetify-nix";
       inputs.nixpkgs.follows = "nixpkgs";

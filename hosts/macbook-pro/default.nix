@@ -17,6 +17,7 @@ in
       darwin.rustdesk
       darwin.ghostty
       darwin.agentT3Code
+      darwin.equibop
 
       inputs.home-manager-darwin.darwinModules.home-manager
       {
@@ -41,7 +42,7 @@ in
             hm.commandLine
             hm.comma
             hm.direnv
-            hm.discord
+            hm.equibop
             hm.lazydocker
             hm.work
             hm.localSend
