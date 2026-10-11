@@ -85,6 +85,9 @@ else
     nativeBuildInputs = [ undmg ];
     sourceRoot = ".";
     dontBuild = true;
+    # Keep the notarized bundle byte-for-byte intact; generic fixup rewrites
+    # executable scripts inside Electron resources and invalidates its signature.
+    dontFixup = true;
 
     installPhase = ''
       runHook preInstall

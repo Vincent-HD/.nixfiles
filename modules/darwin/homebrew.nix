@@ -18,6 +18,7 @@
         casks = [
           "alt-tab"
           "cleanshot"
+          "curseforge"
           "jetbrains-toolbox"
           "moonlight"
           "orbstack"

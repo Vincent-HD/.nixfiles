@@ -1,5 +1,14 @@
 { inputs, ... }:
 {
+  config.flake.modules.darwin.agentT3Code =
+    { pkgs, ... }:
+    {
+      # nix-darwin copies system application bundles into /Applications/Nix Apps.
+      environment.systemPackages = [
+        inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.t3code
+      ];
+    };
+
   config.flake.modules.homeManager.agentT3Code =
     {
       pkgs,
