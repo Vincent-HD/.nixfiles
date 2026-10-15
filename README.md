@@ -315,6 +315,12 @@ If you want to remove a feature, change the relevant host composition under `hos
 - Add a skill once in `modules/agents/skills.nix` through `custom.agentSetup.skills`; Home Manager installs it under the Agent Skills
   standard path, `~/.agents/skills`, which Codex and Cursor discover natively; VS Code is configured to use it through
   `chat.agentSkillsLocations`.
+- Claude Code uses `modules/agents/claude.nix` on both hosts. Its personal skills link to the
+  same shared sources; a prompt hook discovers project `.agents/skills` and their metadata.
+  Its global `CLAUDE.md` imports the shared home `AGENTS.md`, and its native instruction
+  setting loads both `CLAUDE.md` and `AGENTS.md`, including scoped instructions.
+  Executor is registered through Home Manager's native Claude MCP integration. Settings
+  remain writable, with declarative defaults merged during activation.
 - MCPs are deliberately written in each client's native schema: Cursor's global
   `~/.cursor/mcp.json` lives in `modules/agents/cursor.nix`, Codex's lower-precedence
   `/etc/codex/config.toml` lives in `modules/agents/codex.nix`, and VS Code's user-profile

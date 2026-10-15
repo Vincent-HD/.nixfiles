@@ -10,7 +10,7 @@ auto-imported by `import-tree`. The Linux host runs **KDE Plasma 6** on **NVIDIA
 ## Agent References
 
 - `INVESTIGATION_COMMANDS.md` — reusable shell, eval, validation, and debugging command patterns
-- `.agents/skills/` — project-scoped Agent Skills discovered by Codex, Cursor, and VS Code
+- `.agents/skills/` — project-scoped Agent Skills discovered by Codex, Cursor, VS Code, and Claude Code's prompt hook
 - `.agents/skills/update-investigation-commands/SKILL.md` — project skill for maintaining the investigation command reference
 - `reference-repos.md` — only tracks other people's NixOS / nix-darwin / Home Manager configuration repositories. Never add application codebases, packaging repos, skills repos, tooling repos, or other non-config references.
 
@@ -23,7 +23,7 @@ flake.nix                              # Entrypoint: inputs + mkFlake via import
 flake.lock                             # Pinned input versions (auto-generated)
 AGENTS.md                              # This file
 modules/
-  agents/                              # Agent-specific modules: common, skills, Cursor, Codex, T3 Code, VS Code
+  agents/                              # Agent-specific modules: common, skills, Claude, Cursor, Codex, T3 Code, VS Code
   global-options.nix                   # Shared flake-parts options: systems, flake.username
   plasma.nix                           # Inactive KDE Plasma 6 alternative (NixOS + HM)
   niri.nix                             # Active Niri compositor + greetd session (NixOS + HM)
@@ -213,9 +213,12 @@ description; do not create `WIP`, `update`, `changes`, or other vague subjects.
   `chat.agentSkillsLocations`. Do not duplicate them under
   `~/.codex/skills` or `~/.cursor/skills`, and do not manage
   any tool's built-in skill directory.
+  Claude Code's `programs.claude-code.skills` exposes the same registered sources under
+  `~/.claude/skills`; its prompt hook discovers project `.agents/skills` metadata.
 - **Keep MCP definitions explicit in each client's native schema.** Maintain Cursor in
   `modules/agents/cursor.nix`, Codex in `modules/agents/codex.nix`, and VS Code in
-  `modules/agents/vscode.nix`. Repeating the small
+  `modules/agents/vscode.nix`; Claude Code uses `programs.claude-code.mcpServers` in
+  `modules/agents/claude.nix`. Repeating the small
   server list is preferred over a normalizing abstraction. Use pinned executable paths and
   retrieve secret values at process startup through the Bitwarden runtime helper.
 - **Use the generic Bitwarden runtime-secret convention.** Name Login items

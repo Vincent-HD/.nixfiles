@@ -31,8 +31,6 @@
     lib.mkMerge [
       {
         home.packages = [
-          # Install Anthropic's Claude Code CLI from nixpkgs on both hosts.
-          pkgs.claude-code
           cursorAgentPkg
           pkgs.vscode
           cursorPkg

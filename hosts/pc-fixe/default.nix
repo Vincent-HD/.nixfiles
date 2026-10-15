@@ -56,6 +56,7 @@ in
             hm.coding
             hm.agentCommon
             hm.agentSkills
+            hm.agentClaude
             hm.agentOpencode
             hm.agentCursor
             hm.agentCodex
