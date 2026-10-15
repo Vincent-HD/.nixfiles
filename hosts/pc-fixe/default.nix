@@ -40,6 +40,10 @@ in
         # we indicate to HM to rename the old file to ".hm-backup" first, then install the managed one.
         home-manager.backupFileExtension = "hm-backup";
         home-manager.users.${username} = {
+          # Set false to exclude the composer usage footer from the next switch.
+          custom.t3code.enableUsagePatch = true;
+          # Independently exclude the Jujutsu panel on the next switch if needed.
+          custom.t3code.enableJjPanel = true;
           imports = [
             #hm.plasma
             hm.cursorPointer

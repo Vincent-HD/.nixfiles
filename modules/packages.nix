@@ -97,6 +97,26 @@
         bitwarden-secret-tools = bwSecretTools;
       }
       // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
+        t3code-web = pkgs.callPackage ../packages/t3code-web { };
+        t3code-web-jj = pkgs.callPackage ../packages/t3code-web { enableJjPanel = true; };
+        t3code-web-jj-only = pkgs.callPackage ../packages/t3code-web {
+          enableUsagePatch = false;
+          enableJjPanel = true;
+        };
+        t3code-patched = pkgs.callPackage ../packages/t3code-patched {
+          t3code = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.t3code;
+          t3code-web = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.t3code-web-jj;
+          enableJjPanel = true;
+        };
+        t3code-usage = pkgs.callPackage ../packages/t3code-patched {
+          t3code = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.t3code;
+          t3code-web = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.t3code-web;
+        };
+        t3code-jj = pkgs.callPackage ../packages/t3code-patched {
+          t3code = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.t3code;
+          t3code-web = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.t3code-web-jj-only;
+          enableJjPanel = true;
+        };
         codex = pkgs.callPackage ../packages/codex { };
         cpuid-fault-emulation = pkgs.callPackage ../packages/cpuid-fault-emulation { };
         curseforge = unfreePkgs.callPackage ../packages/curseforge { };

@@ -9,7 +9,7 @@
 
 let
   pname = "opencodex";
-  version = "2.81.0";
+  version = "2.86.0";
   targetPlatforms = {
     "aarch64-darwin" = {
       os = "darwin";
@@ -26,7 +26,7 @@ let
   };
   src = fetchurl {
     url = "https://registry.npmjs.org/@bitkyc08/opencodex/-/opencodex-${version}.tgz";
-    hash = "sha256-hhckJB28+QZJQt1qa7g/NN0zgBQAB6bnh5FgabQzir0=";
+    hash = "sha256-qGZhPfIhMgZ3eTiaoOIZ0E1JFx/fVWYZQziGaB57ElQ=";
   };
 
   # The npm package omits its lockfile, so fetch the release-matching one.

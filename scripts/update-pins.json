@@ -383,7 +383,7 @@
     {
       "name": "t3code",
       "type": "nix-update",
-      "description": "T3 Code nightly desktop artifacts for Linux and both macOS architectures",
+      "description": "T3 Code nightly desktop artifacts for Linux and both macOS architectures, plus shared patched renderer/server sources and dependencies",
       "systems": [
         "x86_64-linux",
         "aarch64-darwin",

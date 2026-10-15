@@ -23,6 +23,36 @@ nix run .#<app> -- <app-options>
 
 ## Generated Nix / Expression Checks
 
+### Check JavaScript support in a packaged Electron runtime
+
+```bash
+ELECTRON_RUN_AS_NODE=1 nix run .#<electron-package> -- -p 'process.versions'
+ELECTRON_RUN_AS_NODE=1 nix run .#<electron-package> -- -e '<diagnostic-javascript>'
+```
+
+Purpose: verify the shipped Electron runtime's JavaScript and Intl behavior
+through its Nix wrapper without starting the application's UI or server.
+The Electron package must allow the RunAsNode fuse.
+
+### Evaluate a host with a Home Manager feature temporarily disabled
+
+```bash
+nix eval --impure --raw --expr '
+let
+  flake = builtins.getFlake (toString ./.);
+  username = flake.username;
+  host = flake.nixosConfigurations.<host>.extendModules {
+    modules = [ ({ lib, ... }: {
+      home-manager.users.${username}.custom.<feature>.<enable-option> = lib.mkForce false;
+    }) ];
+  };
+in host.config.home-manager.users.${username}.programs.<program>.package.name'
+```
+
+Purpose: confirm a feature opt-out selects the expected fallback package without
+editing the host, building it, or activating anything. Replace the placeholders
+with the host, option, and program under investigation.
+
 ### Parse a generated Nix expression without evaluating it
 
 ```bash
@@ -129,6 +159,23 @@ Use when:
 - a default kernel has recently changed and you need to verify the fallback specialization's module graph
 
 ## Package / Derivation Inspection
+
+### Verify a source patch against the exact Nix source
+
+```bash
+package_source=$(nix build --no-link --print-out-paths '.#<package>.src')
+patch_workspace=$(mktemp -d)
+cp -R "$package_source/." "$patch_workspace/"
+chmod -R u+w "$patch_workspace"
+patch --directory "$patch_workspace" -p1 --fuzz=0 --batch \
+  --input "$REPO/<path-to-patch>"
+```
+
+Purpose: check all patch context against the source archive selected by the derivation,
+which may differ from a local Git checkout. Use a fresh temporary directory for each
+independent feature variant, and apply patches in their declared order for the combined
+variant. This verifies application only; focused behavioral tests and package builds
+remain separate checks. The temporary copy is modified; the store source is untouched.
 
 ### Determine the executing Nix platform
 
@@ -890,6 +937,18 @@ Purpose: verify that a supervised stdio MCP child is reachable through its local
 
 ## NixOS Host Evaluation
 
+### Build a host while bypassing an unavailable configured substituter
+
+```bash
+cd "$REPO" && NIX_CONFIG=$'substituters = https://cache.nixos.org/\nextra-substituters =\n' \
+nix --extra-experimental-features 'nix-command flakes' \
+  build ".#nixosConfigurations.${HOST}.config.system.build.toplevel" --no-link
+```
+
+Purpose: temporarily exclude extra binary caches when one is unreachable, while continuing to use
+the official NixOS cache. Missing paths may then build locally. This affects only the command and
+does not change the configured substituters.
+
 ### Evaluate a specific NixOS option subtree
 
 ```bash
@@ -1210,6 +1269,22 @@ Use when:
 - a new tracked file must be added for import-tree to discover it
 
 ## Runtime / Environment Checks
+
+### Diagnose an unexpected Nix daemon disconnect
+
+```bash
+SINCE='1 hour ago'
+journalctl -u nix-daemon.service --since "$SINCE" --no-pager -o short-precise
+coredumpctl list nix-daemon --since "$SINCE" --no-pager
+coredumpctl info <daemon-worker-pid> --no-pager
+journalctl -k --since "$SINCE" --no-pager \
+  | rg -i 'oom|out of memory|killed process|segfault|I/O error|no space' || true
+nix eval --impure --raw --expr builtins.currentSystem
+```
+
+Purpose: distinguish a daemon worker crash from memory or disk pressure, inspect its core metadata,
+and confirm whether the daemon still accepts requests. The failing client may leave the systemd
+daemon running while a per-connection worker crashes.
 
 ### Inspect a Nix-managed user service
 

@@ -253,11 +253,59 @@ nix run github:Mic92/nix-update -- --flake cursor-agent --use-update-script
 - **File**: `packages/t3code/default.nix`
 - **Pattern**: Linux AppImage via `appimageTools.wrapType2`; macOS DMG via `undmg`
 - **Flake output**: `.#t3code`
-- **Note**: This tracks GitHub nightly prereleases, not stable tags. The update script refreshes Linux and both macOS artifacts in one run.
+- **Note**: This tracks GitHub nightly prereleases, not stable tags. The update script refreshes Linux and both macOS artifacts, then uses nix-update to refresh `packages/t3code-web/default.nix` (shared renderer/server source and Linux dependency closure). It does not build the app. The Linux custom package variants share these pins, owned by the existing `t3code` registry entry.
 - **Configuration**: `modules/agents/t3code.nix` uses Home Manager mutable settings and the existing Codex home. The desktop wrapper disables upstream auto-updates; this command and the subsequent rebuild own nightly upgrades. Close T3 and back up `~/.t3` before upgrading persistent state; restore that backup along with the old package when rolling back.
 
 ```bash
 nix run github:Mic92/nix-update -- --flake t3code --use-update-script
+```
+
+The Linux host enables `custom.t3code.enableUsagePatch` and `custom.t3code.enableJjPanel` in
+`hosts/pc-fixe/default.nix`. The next `nixos-rebuild switch --flake .#pc-fixe`
+builds and installs the selected patches under `packages/t3code-web/patches/`.
+Patch application uses `--fuzz=0`: context drift fails the build rather than dropping
+context lines. See the [patch repair guide and feature contracts](../packages/t3code-web/patches/README.md)
+for intended behavior, integration points, focused tests and manual acceptance checks.
+No automatic candidate-validation gate is installed.
+Restart T3 Code to load it. Compact footer chips open click popovers for session
+statistics, token usage, context usage, and account quotas. Session totals cover
+available completed main-agent turns in the active provider session; last-response counts
+remain visible in the token card. Throughput divides output tokens for the last
+completed turn by its whole duration, including tools and waits;
+it is not a measurement of model generation speed. Missing provider data is
+shown as unavailable. Token counts use compact K/M/B/T suffixes for thousands,
+millions, billions, and trillions. Click for exact counts, timestamps, reset times,
+cached and reasoning tokens. Overlapping tool calls count once in tool time.
+Completed agent responses also show a turn-usage chip beside their timestamp.
+API-equivalent cost estimates use current `https://models.dev/api.json` rates,
+cached for one hour, and each turn's recorded model/options. Cache reads/writes
+and reasoning subsets are counted once. Missing cache/context details have
+explicit assumptions; unknown model rates remain unpriced, and partial sessions
+show their priced-turn coverage. Canonical-model fallback pricing is identified
+for custom providers. These estimates are separate from subscription charges.
+Provider-reported cost, when available, is shown separately. TTFT and the
+system-prompt/tool/message context breakdown remain unavailable because the
+current contracts do not report them.
+
+The Jujutsu tab lives in the chat's right-panel add menu. It shows the current
+working copy and up to ten preceding revisions in compact rows. Only the working
+copy starts expanded; click a revision row to show its changed files. Description
+editors open on demand, with squash into an ancestor and undo of the panel's own
+most recent action. It uses the thread workspace and never initializes a repository
+automatically.
+
+To exclude either patch, set its host option to `false` and switch again.
+Set both options to `false` to select the original upstream AppImage without
+evaluating or building custom app sources. To isolate a panel failure while
+keeping the footer, set only `custom.t3code.enableJjPanel = false;`.
+macOS keeps the original signed bundle. The desktop and renderer versions must
+match; an upstream release that changes the patched source may require rebasing
+the patch before re-enabling it.
+
+```bash
+nix build .#t3code-patched --no-link # both patches
+nix build .#t3code-usage --no-link   # footer only
+nix build .#t3code-jj --no-link      # Jujutsu only
 ```
 
 ### plannotator

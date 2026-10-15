@@ -5,6 +5,10 @@
 - Keep communication concise and changes focused; avoid speculative abstractions.
 - Use iterative improvement passes when they directly improve tooling or startup performance.
 
+## Codex and ChatGPT model defaults
+
+- When creating a new Codex or ChatGPT thread, conversation, or delegated subagent, use GPT-6 Luna with max reasoning by default unless the user requests a different model or reasoning level.
+
 ### Jujutsu revisions
 
 Keep history as **one logical change per revision** when you *do* split, with conventional, why-focused descriptions. While implementing, keep nits, docs, and small extras on `@`; split only for a substantial new concern (ask if unsure). See `jj-auto-revise`.

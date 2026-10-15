@@ -17,7 +17,15 @@
       ...
     }:
     let
-      t3codePackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.t3code;
+      t3codePackage =
+        if config.custom.t3code.enableUsagePatch && config.custom.t3code.enableJjPanel then
+          inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.t3code-patched
+        else if config.custom.t3code.enableJjPanel then
+          inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.t3code-jj
+        else if config.custom.t3code.enableUsagePatch then
+          inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.t3code-usage
+        else
+          inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.t3code;
       cursorAgentPackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.cursor-agent;
       isLinux = pkgs.stdenv.hostPlatform.isLinux;
       codexPackage =
@@ -47,40 +55,63 @@
       };
     in
     {
-      # Merge declared preferences into writable files so UI edits remain possible.
-      programs.t3code = {
-        enable = true;
-        package = t3code;
-        mutableUserSettings = true;
-        mutableKeybindings = true;
-        mutableClientSettings = true;
-        userSettings.providerInstances.codex = {
-          driver = "codex";
-          enabled = true;
-          config = {
-            binaryPath = if isLinux then lib.getExe codexPackage else "codex";
-            homePath = "${config.home.homeDirectory}/.codex";
-          };
-        };
+      options.custom.t3code.enableUsagePatch = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = "Build the Linux composer usage patch independently of the Jujutsu panel.";
+      };
+      options.custom.t3code.enableJjPanel = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = "Build the Linux Jujutsu panel and its matching server; disable to exclude this patch.";
       };
 
-      xdg.desktopEntries.t3code = lib.mkIf isLinux {
-        name = "T3 Code (Nightly)";
-        comment = "T3 Code desktop build";
-        exec = "t3code %U";
-        icon =
-          if isLinux then
-            "${t3codePackage.extracted}/usr/share/icons/hicolor/512x512/apps/t3code.png"
-          else
-            "t3code";
-        terminal = false;
-        categories = [ "Development" ];
-        mimeType = [
-          "x-scheme-handler/t3code"
-          "x-scheme-handler/t3code-dev"
+      config = {
+        assertions = [
+          {
+            assertion = !config.custom.t3code.enableUsagePatch || isLinux;
+            message = "The T3 Code usage patch currently supports Linux only.";
+          }
+          {
+            assertion = !config.custom.t3code.enableJjPanel || isLinux;
+            message = "The T3 Code Jujutsu panel currently supports Linux only.";
+          }
         ];
-        settings = {
-          StartupWMClass = "t3code";
+        # Merge declared preferences into writable files so UI edits remain possible.
+        programs.t3code = {
+          enable = true;
+          package = t3code;
+          mutableUserSettings = true;
+          mutableKeybindings = true;
+          mutableClientSettings = true;
+          userSettings.providerInstances.codex = {
+            driver = "codex";
+            enabled = true;
+            config = {
+              binaryPath = if isLinux then lib.getExe codexPackage else "codex";
+              homePath = "${config.home.homeDirectory}/.codex";
+            };
+          };
+        };
+
+        xdg.desktopEntries.t3code = lib.mkIf isLinux {
+          name = "T3 Code (Nightly)";
+          comment = "T3 Code desktop build";
+          exec = "t3code %U";
+          icon =
+            if isLinux then
+              "${t3codePackage.extracted}/usr/share/icons/hicolor/512x512/apps/t3code.png"
+            else
+              "t3code";
+          terminal = false;
+          categories = [ "Development" ];
+          mimeType = [
+            "x-scheme-handler/t3code"
+            "x-scheme-handler/t3code-dev"
+          ];
+          settings = {
+            StartupWMClass = "t3code";
+          };
         };
       };
     };

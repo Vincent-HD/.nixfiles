@@ -94,3 +94,20 @@ packageText = packageText.replace(/^(  version = ")[^"]+(";)$/m, "$1" + version 
 
 await Bun.write(packageFile, packageText);
 console.log("Updated " + packageFile);
+
+// Refresh the shared renderer/server source and dependency closure without building the app.
+const nixUpdate = Bun.argv[3];
+if (nixUpdate === undefined) {
+  throw new Error("The Nix-provided nix-update executable is missing");
+}
+const rendererText = await Bun.file(root + "/packages/t3code-web/default.nix").text();
+const rendererVersion = rendererText.match(/^  version = "([^"]+)";$/m)?.[1];
+if (rendererVersion === undefined) {
+  throw new Error("Could not read the renderer version");
+}
+VersionSchema.parse(rendererVersion);
+commandOutput([
+  nixUpdate, "--flake", "t3code-web", "--version",
+  rendererVersion === version ? "skip" : version,
+  "--system", "x86_64-linux",
+], root);
