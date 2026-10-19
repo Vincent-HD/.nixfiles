@@ -931,16 +931,19 @@
     },
     "tokitoki": {
       "inputs": {
+        "home-manager": [
+          "home-manager"
+        ],
         "nixpkgs": [
           "nixpkgs"
         ]
       },
       "locked": {
-        "lastModified": 1789378849,
-        "narHash": "sha256-4IfgcZnJG6gTrMA6sg4P1JqsxD2nB3DWI1y37t6FbWo=",
+        "lastModified": 1792398308,
+        "narHash": "sha256-y/utvNlNR+TthLodp9/H18e7MUXftsHs5WaqxYIcpP0=",
         "owner": "astahmer",
         "repo": "tokitoki",
-        "rev": "99245f7fbd8bf6f693a5a306e04c0f81f3baf0d6",
+        "rev": "a980c480556fad6b92056f050afc5e34bdbbe22f",
         "type": "github"
       },
       "original": {

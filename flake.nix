@@ -152,6 +152,7 @@
     tokitoki = {
       url = "github:astahmer/tokitoki";
       inputs.nixpkgs.follows = "nixpkgs";
+      inputs.home-manager.follows = "home-manager";
     };
   };
 
