@@ -1,0 +1,535 @@
+{
+  "checkedAt": "2026-10-16",
+  "method": "curl GET nix-cache-info and exact output-hash narinfo; no contents downloaded",
+  "outputCount": 459,
+  "requestCount": 5508,
+  "caches": [
+    {
+      "url": "https://cache.nixos.org",
+      "statusCounts": {
+        "200": 303,
+        "404": 156
+      },
+      "hitsByHost": {
+        "linux": 220,
+        "darwin": 72,
+        "linux-graph": 11
+      },
+      "extraBeyondOfficial": []
+    },
+    {
+      "url": "https://codex-desktop-linux.cachix.org",
+      "statusCounts": {
+        "404": 459
+      },
+      "hitsByHost": {
+        "linux": 0,
+        "darwin": 0,
+        "linux-graph": 0
+      },
+      "extraBeyondOfficial": []
+    },
+    {
+      "url": "https://codex-cli.cachix.org",
+      "statusCounts": {
+        "404": 459
+      },
+      "hitsByHost": {
+        "linux": 0,
+        "darwin": 0,
+        "linux-graph": 0
+      },
+      "extraBeyondOfficial": []
+    },
+    {
+      "url": "https://ghostty.cachix.org",
+      "statusCounts": {
+        "404": 459
+      },
+      "hitsByHost": {
+        "linux": 0,
+        "darwin": 0,
+        "linux-graph": 0
+      },
+      "extraBeyondOfficial": []
+    },
+    {
+      "url": "https://hyprland.cachix.org",
+      "statusCounts": {
+        "404": 459
+      },
+      "hitsByHost": {
+        "linux": 0,
+        "darwin": 0,
+        "linux-graph": 0
+      },
+      "extraBeyondOfficial": []
+    },
+    {
+      "url": "https://nix-gaming.cachix.org",
+      "statusCounts": {
+        "404": 459
+      },
+      "hitsByHost": {
+        "linux": 0,
+        "darwin": 0,
+        "linux-graph": 0
+      },
+      "extraBeyondOfficial": []
+    },
+    {
+      "url": "https://noctalia.cachix.org",
+      "statusCounts": {
+        "404": 459
+      },
+      "hitsByHost": {
+        "linux": 0,
+        "darwin": 0,
+        "linux-graph": 0
+      },
+      "extraBeyondOfficial": []
+    },
+    {
+      "url": "https://vicinae.cachix.org",
+      "statusCounts": {
+        "404": 459
+      },
+      "hitsByHost": {
+        "linux": 0,
+        "darwin": 0,
+        "linux-graph": 0
+      },
+      "extraBeyondOfficial": []
+    },
+    {
+      "url": "https://nix-community.cachix.org",
+      "statusCounts": {
+        "404": 447,
+        "200": 12
+      },
+      "hitsByHost": {
+        "linux": 4,
+        "darwin": 8,
+        "linux-graph": 0
+      },
+      "extraBeyondOfficial": [
+        {
+          "path": "/nix/store/qdka0afmkd2ibsjikvgw3pgis9wnnhl4-dummy-xdg-mime-dirs1",
+          "hosts": [
+            "linux"
+          ],
+          "narSize": "776"
+        },
+        {
+          "path": "/nix/store/57wcw0m45xl8imx7vqxj2vym3314bl8x-dummy-xdg-mime-dirs2",
+          "hosts": [
+            "linux"
+          ],
+          "narSize": "776"
+        },
+        {
+          "path": "/nix/store/263m6yw8ssbdl44crnibbn8g1r3zlzwc-nix-index-with-full-db-0.1.11",
+          "hosts": [
+            "linux"
+          ],
+          "narSize": "23808"
+        },
+        {
+          "path": "/nix/store/xzg247m4imw97nn4mbznpnhfs7hdmnsy-darwin-uninstaller",
+          "hosts": [
+            "darwin"
+          ],
+          "narSize": "2016"
+        },
+        {
+          "path": "/nix/store/f3dz3l0gxy97w8hx2rs9yaf4szcgm62h-darwin-version",
+          "hosts": [
+            "darwin"
+          ],
+          "narSize": "1928"
+        },
+        {
+          "path": "/nix/store/miwdv4mibz3qqgs10ahm14zkhvar6kih-darwin-manpages",
+          "hosts": [
+            "darwin"
+          ],
+          "narSize": "495176"
+        },
+        {
+          "path": "/nix/store/glhzf1k8d18zn4394kbaap324n2h2h1s-darwin-manual-html",
+          "hosts": [
+            "darwin"
+          ],
+          "narSize": "1262704"
+        },
+        {
+          "path": "/nix/store/2x33q7q8i2cxi529hw4lhi5pwaann03q-darwin-help",
+          "hosts": [
+            "darwin"
+          ],
+          "narSize": "656"
+        },
+        {
+          "path": "/nix/store/9m3cz61i9pja9l8m2r8x4xxw603lxwc9-nix-index-with-full-db-0.1.11",
+          "hosts": [
+            "darwin"
+          ],
+          "narSize": "57816"
+        },
+        {
+          "path": "/nix/store/23vdx5qzsdyhkh20z75nmi4nl6hfmb0n-claude-code-2.1.291",
+          "hosts": [
+            "darwin"
+          ],
+          "narSize": "233262840"
+        },
+        {
+          "path": "/nix/store/p0d4fihk97g21rjwpsiyysp36q7qq7dv-home-configuration-reference-manpage",
+          "hosts": [
+            "darwin"
+          ],
+          "narSize": "2539960"
+        }
+      ]
+    },
+    {
+      "url": "https://cachix.cachix.org",
+      "statusCounts": {
+        "404": 458,
+        "000": 1
+      },
+      "hitsByHost": {
+        "linux": 0,
+        "darwin": 0,
+        "linux-graph": 0
+      },
+      "extraBeyondOfficial": []
+    },
+    {
+      "url": "https://niri.cachix.org",
+      "statusCounts": {
+        "404": 459
+      },
+      "hitsByHost": {
+        "linux": 0,
+        "darwin": 0,
+        "linux-graph": 0
+      },
+      "extraBeyondOfficial": []
+    },
+    {
+      "url": "https://cache.xinux.uz",
+      "statusCounts": {
+        "200": 227,
+        "404": 232
+      },
+      "hitsByHost": {
+        "linux": 216,
+        "darwin": 0,
+        "linux-graph": 11
+      },
+      "extraBeyondOfficial": [
+        {
+          "path": "/nix/store/2cz0axi430ry92dzc11rmkr56ndgph6y-linux-cachyos-latest-x86_64-v3-7.2.8",
+          "hosts": [
+            "linux"
+          ],
+          "narSize": "27041296"
+        },
+        {
+          "path": "/nix/store/35c7yplgys54b619l6ag2z76dmqkfv8f-linux-cachyos-latest-x86_64-v3-7.2.8-dev",
+          "hosts": [
+            "linux-graph"
+          ],
+          "narSize": "778118672"
+        },
+        {
+          "path": "/nix/store/88s7319zkqq1z6ic7w06hdvbgs7r77mn-linux-cachyos-latest-x86_64-v3-7.2.8-modules",
+          "hosts": [
+            "linux-graph"
+          ],
+          "narSize": "165069920"
+        },
+        {
+          "path": "/nix/store/r2gy17ll55ik3yxxlmw9swmwvg67h3pv-nvidia-egl-external-platforms",
+          "hosts": [
+            "linux-graph"
+          ],
+          "narSize": "7320"
+        }
+      ]
+    }
+  ],
+  "inputs": {
+    "code-cursor-nix": "code-cursor-nix",
+    "codex-desktop-linux": "codex-desktop-linux",
+    "context7-skills": "context7-skills",
+    "dank-greeter": "dank-greeter",
+    "dankcalendar": "dankcalendar",
+    "dms": "dms",
+    "dms-plugins": "dms-plugins",
+    "flake-parts": "flake-parts",
+    "flake-utils": "flake-utils_2",
+    "herdr": "herdr",
+    "home-manager": "home-manager",
+    "home-manager-darwin": "home-manager-darwin",
+    "humanlayer-skills": "humanlayer-skills",
+    "import-tree": "import-tree",
+    "jjui": "jjui",
+    "kitlangton-skills": "kitlangton-skills",
+    "mattpocock-skills": "mattpocock-skills",
+    "niri": "niri",
+    "nix-cachyos-kernel": "nix-cachyos-kernel",
+    "nix-darwin": "nix-darwin",
+    "nix-gaming": "nix-gaming",
+    "nix-index-database": "nix-index-database",
+    "nixpkgs": "nixpkgs_3",
+    "nixpkgs-darwin": "nixpkgs-darwin",
+    "noctalia": "noctalia",
+    "quick-capture": "quick-capture",
+    "screen-capture-toolbar": "screen-capture-toolbar",
+    "spicetify-nix": "spicetify-nix",
+    "tokitoki": "tokitoki"
+  },
+  "cudaSupplement": {
+    "url": "https://cache.nixos-cuda.org",
+    "outputCount": 520,
+    "statusCounts": {
+      "404": 349,
+      "200": 171
+    },
+    "extraBeyondOfficial": [
+      {
+        "path": "/nix/store/v15r5xlrv4py7r4gfzw0vb2ldjhzf85w-sunshine-2026.914.233613",
+        "status": "200",
+        "name": "sunshine-2026.914.233613",
+        "hosts": [
+          "linux"
+        ],
+        "narSize": "33881168",
+        "sig": "cache.nixos-cuda.org:qOSGCRKnHfNvcPL7/5H3Axg8oRiAF26O1mpOEtqYSUKgSeeCSrOSHaGWO/TEp5gzl82mvYSjz4AFan9KT1+rDQ==",
+        "officialStatus": "404"
+      },
+      {
+        "path": "/nix/store/z3cjf7zz4frqgwnd7y42r81ksnar1rvg-nvidia-settings-595.104.02",
+        "status": "200",
+        "name": "nvidia-settings-595.104.02",
+        "hosts": [
+          "linux-graph"
+        ],
+        "narSize": "1779792",
+        "sig": "cache.nixos-cuda.org:wxhpy6svJkaybacNGrW1IZCHdmie2U80kjhz+mbhQsfVmNgGr8FDJ4h2hb1YeYopu5yMNFLHBC52WA59PbyIAQ==",
+        "officialStatus": "404"
+      },
+      {
+        "path": "/nix/store/giv98vzhj009bcb5rhflzx8d07b2ykmx-nvidia-x11-595.104.02-bin",
+        "status": "200",
+        "name": "nvidia-x11-595.104.02-bin",
+        "hosts": [
+          "linux-graph"
+        ],
+        "narSize": "17529032",
+        "sig": "cache.nixos-cuda.org:YiPb4697WIMzUDBv6tsz9TrOzpkzBqPE4p9pRBz6L1a/WEdYf9A/hlTzzMZfUO7szKF/ZlIeOAmPr2qH/7thDA==",
+        "officialStatus": "404"
+      },
+      {
+        "path": "/nix/store/iqhis15achl0i34ibi24ifckjwg6qz6z-nvidia-x11-595.104.02-firmware",
+        "status": "200",
+        "name": "nvidia-x11-595.104.02-firmware",
+        "hosts": [
+          "linux-graph"
+        ],
+        "narSize": "102916088",
+        "sig": "cache.nixos-cuda.org:wOaSgTITdwKJzi5cFzThhjKqk1z5lqBRElvanMHaG7siyDvm8neZ1Wy88mL7Eer1JJjdLAZQUVk8eZI3GHG8Cw==",
+        "officialStatus": "404"
+      },
+      {
+        "path": "/nix/store/slz9j6p7m1wp5z4xfp3sh051wz3x85vm-nvidia-x11-595.104.02-lib32",
+        "status": "200",
+        "name": "nvidia-x11-595.104.02-lib32",
+        "hosts": [
+          "linux-graph"
+        ],
+        "narSize": "576278712",
+        "sig": "cache.nixos-cuda.org:dsK1EVOXNeSCQC2HnDx0VamrqSVOXEQQ8AHQDLzrenaNQfNEKwGojTLdUD5GGQwg6RPNUY1zCebqr0whtnNnCg==",
+        "officialStatus": "404"
+      },
+      {
+        "path": "/nix/store/0jq8dd4yzyjvgs7a0z70lxy0ajlnsl9w-nvidia-x11-595.104.02-modsrc",
+        "status": "200",
+        "name": "nvidia-x11-595.104.02-modsrc",
+        "hosts": [
+          "linux-graph"
+        ],
+        "narSize": "116368296",
+        "sig": "cache.nixos-cuda.org:+jTsrm+hma1xut9klfjLj49yCT5pnZOPGADpRgw1cqrZ3YuEug4cdfTxfyewLhhEL218SLiYWeMqXAKv8scBBQ==",
+        "officialStatus": "404"
+      },
+      {
+        "path": "/nix/store/fprgxisprl0218i079npizclrgfgfja7-nvidia-x11-595.104.02",
+        "status": "200",
+        "name": "nvidia-x11-595.104.02",
+        "hosts": [
+          "linux-graph"
+        ],
+        "narSize": "821869888",
+        "sig": "cache.nixos-cuda.org:Mq47ejopVUuBpk4167wWcfyx8DI/wndm7+BbhfvluajEtTbcXgpicZLkSI23L/KgYFy5MgyWVzz7do6J8Tm4DQ==",
+        "officialStatus": "404"
+      },
+      {
+        "path": "/nix/store/jcssjgz7w14l3828qqhrg5qsa6rbryhr-cuda12.9-cuda_cudart-12.9.79",
+        "status": "200",
+        "name": "cuda12.9-cuda_cudart-12.9.79",
+        "hosts": [
+          "linux-graph"
+        ],
+        "narSize": "9776360",
+        "sig": "cache.nixos-cuda.org:YZEb5DUUVhIXgrzmRV4QVEQPyqtZxKPZVSkEYs9Ge9YMy4UpwMELn4IFo+WUWZHYxxRu1SuoLxvROl09NISCBQ==",
+        "officialStatus": "404"
+      },
+      {
+        "path": "/nix/store/k1qa2rgiv3vlki1ivyk3nmz2wy1m8934-cuda_cudart-12.9.79-source",
+        "status": "200",
+        "name": "cuda_cudart-12.9.79-source",
+        "hosts": [
+          "linux-graph"
+        ],
+        "narSize": "9707024",
+        "sig": "cache.nixos-cuda.org:b12v5UsevEPCJMbbMb62+0vAbqJv7DEGbBtUAKcmSHDzHeha9bX840x5Vr0lkc8HZOPRb6jA4tFPGJsa9RUqAA==",
+        "officialStatus": "404"
+      },
+      {
+        "path": "/nix/store/dwimrz1x0qbqp7zlfqralxra6693w5gw-cuda12.9-cuda_nvcc-12.9.86",
+        "status": "200",
+        "name": "cuda12.9-cuda_nvcc-12.9.86",
+        "hosts": [
+          "linux-graph"
+        ],
+        "narSize": "332752040",
+        "sig": "cache.nixos-cuda.org:dtVxG0Egpy9Z4o2S9/YIYd6O4L5t88POZtyAhmog9JqSVScdDTy09LGZV4gzAm48IqOWad5qGk0u0+leYYQZBw==",
+        "officialStatus": "404"
+      },
+      {
+        "path": "/nix/store/xgylpghrqj1q37vh25i5k6nnaa3c8g77-cuda12.9-cuda_cccl-12.9.27",
+        "status": "200",
+        "name": "cuda12.9-cuda_cccl-12.9.27",
+        "hosts": [
+          "linux-graph"
+        ],
+        "narSize": "13767288",
+        "sig": "cache.nixos-cuda.org:+B9PhO0SIoG7vOe15lUwjXMHfGo41JVheY0uGZbAkEec4TewT72eJBHDd0SqbLWAgQW+BBikNpBU01c45z82BQ==",
+        "officialStatus": "404"
+      },
+      {
+        "path": "/nix/store/5g6vvsyc497kwm2vidq5bfbjl1fh2q9z-cuda_cccl-12.9.27-source",
+        "status": "200",
+        "name": "cuda_cccl-12.9.27-source",
+        "hosts": [
+          "linux-graph"
+        ],
+        "narSize": "13686856",
+        "sig": "cache.nixos-cuda.org:jyQ3iN0ljCG3ofpAHMBEV+hwpisj9Y1CypicE6XteGDfe7erU4OWNxkc2ovYSksx0wG3xlq3nf/orFmjAnHKCA==",
+        "officialStatus": "404"
+      },
+      {
+        "path": "/nix/store/sgj0fk51ajss0gfg8dkipar9lf4l3z4s-cuda_nvcc-12.9.86-source",
+        "status": "200",
+        "name": "cuda_nvcc-12.9.86-source",
+        "hosts": [
+          "linux-graph"
+        ],
+        "narSize": "333283192",
+        "sig": "cache.nixos-cuda.org:ETv/GgmNuXCfxMqiZSwre847D7J0TLfklzR8RtfDxS+0sNbv4D8XGmit+Z8HsfZMHhsQyhs0PplkVO1IOWKPBw==",
+        "officialStatus": "404"
+      },
+      {
+        "path": "/nix/store/lf6dvnnkcxn7glq8k98pmjpig72by1b0-gpu-burn-0-unstable-2026-05-27",
+        "name": "gpu-burn-0-unstable-2026-05-27",
+        "hosts": [
+          "standalone-linux"
+        ],
+        "status": "200",
+        "officialStatus": "404"
+      }
+    ]
+  },
+  "healthAdditional": [
+    {
+      "url": "https://cache.nixos-cuda.org",
+      "status": "200"
+    },
+    {
+      "url": "https://cache.xinux.uz",
+      "status": "200"
+    },
+    {
+      "url": "https://attic.xuyh0120.win/lantian",
+      "status": "000",
+      "error": "Connection refused"
+    },
+    {
+      "url": "https://cuda-maintainers.cachix.org",
+      "status": "401"
+    },
+    {
+      "url": "https://danklinux.cachix.org",
+      "status": "401"
+    },
+    {
+      "url": "https://cache.garnix.io",
+      "status": "000",
+      "error": "Could not resolve host"
+    }
+  ],
+  "verifiedSignatures": {
+    "https://cache.xinux.uz": [
+      "2cz0axi430ry92dzc11rmkr56ndgph6y",
+      "35c7yplgys54b619l6ag2z76dmqkfv8f",
+      "88s7319zkqq1z6ic7w06hdvbgs7r77mn"
+    ],
+    "https://cache.nixos-cuda.org": [
+      "v15r5xlrv4py7r4gfzw0vb2ldjhzf85w",
+      "lf6dvnnkcxn7glq8k98pmjpig72by1b0"
+    ],
+    "https://nix-community.cachix.org": [
+      "23vdx5qzsdyhkh20z75nmi4nl6hfmb0n"
+    ]
+  },
+  "incidentSource": "https://github.com/xddxdd/nix-cachyos-kernel/issues/110#issuecomment-6189203183",
+  "proposedPolicyValidation": {
+    "darwin": {
+      "derivation": "/nix/store/b47d655cyicnq3lllp59sggfjfwxkfa4-darwin-system-26.11.4cff07d.drv",
+      "extraKeys": [
+        "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
+      ],
+      "extraSubstituters": [
+        "https://nix-community.cachix.org"
+      ],
+      "substituters": [
+        "https://cache.nixos.org/"
+      ]
+    },
+    "linux": {
+      "derivation": "/nix/store/22nanab6k5qa4ls8fs4x2hqpnpmwcpzj-nixos-system-pc-fixe-26.11.20261008.e7439b6.drv",
+      "extraKeys": [
+        "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs=",
+        "cache.nixos-cuda.org:74DUi4Ye579gUqzH4ziL9IyiJBlDpMRn9MBN8oNan9M="
+      ],
+      "extraSubstituters": [
+        "https://nix-community.cachix.org",
+        "https://cache.nixos-cuda.org"
+      ],
+      "substituters": [
+        "https://cache.nixos.org/"
+      ]
+    }
+  },
+  "herdrSupplement": {
+    "url": "https://herdr.cachix.org",
+    "healthStatus": "200",
+    "sourceBuildStatus": {
+      "linux": "404",
+      "darwin": "404"
+    }
+  }
+}

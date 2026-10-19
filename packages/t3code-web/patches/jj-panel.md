@@ -15,8 +15,12 @@ The `Jujutsu` tab is opened through the chat's right-panel add menu.
 - Show descriptions and file status; open description editors and revision metadata
   on demand. Include copyable commit/change IDs, authors, timestamps, bookmarks/tags
   and explicit conflict indicators identifying the affected revisions/files.
-  Expanding a row shows its files; full IDs, author/committer, bookmarks/tags and the
-  full description appear only through the dropdown's Show revision details action.
+  Like JJ View, each row shows right-aligned ref pills: local bookmarks, `name@remote`
+  bookmarks whose target differs from the local one, and tags, each visually distinct.
+  `bookmarks` holds local names only, because bookmark actions and publication act on
+  local names; remote refs live in `remoteBookmarks`.
+  Expanding a row shows its files; full IDs, author/committer and the full description
+  appear only through the dropdown's Show revision details action.
   Provide quick revision buttons for Absorb, Abandon, Squash into ancestor and Squash
   into parent, with the remaining actions in the dropdown. File rows expose Restore,
   Squash into ancestor and Squash into parent. These controls appear on hover and
@@ -45,6 +49,10 @@ The `Jujutsu` tab is opened through the chat's right-panel add menu.
   action with a visible remote/bookmark/base summary; support a single revision or
   linear stack and reuse T3's forge and PR/review integrations for status, comments,
   replies and resolution. Do not duplicate authentication or review editors.
+  Push bookmarks never requires typing known values. Its dialog lists the local
+  bookmarks on loaded revisions as checkboxes, preselecting those on the source and
+  selected revisions. It shows the snapshot's `remotes` as choices, defaulting to
+  `origin`, and falls back to a text field when an older server reports no remotes.
 - Use the thread's actual workspace on its environment/server. Never initialize a jj
   repository automatically. Never publish, create PRs or send review comments as a
   side effect of opening, refreshing or editing local revisions.

@@ -19,7 +19,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     hash = "sha256-i2UKRu6NWrXzhUhEs2/i5HZ7O1bloZsW++uBIBAD/PI=";
   };
 
-  outputs = [ "out" ] ++ lib.optional enableJjPanel "server";
+  outputs = [ "out" ] ++ lib.optional (enableUsagePatch || enableJjPanel) "server";
   # Preserve all hunk context; feature intent and repair guidance live in patches/README.md.
   patchFlags = [
     "-p1"
@@ -65,13 +65,15 @@ stdenvNoCC.mkDerivation (finalAttrs: {
       fs.writeFileSync(file, JSON.stringify(pkg));
     '
     pnpm --config.verify-deps-before-run=false --filter @t3tools/web build
-    ${lib.optionalString enableJjPanel "pnpm --config.verify-deps-before-run=false --filter t3 build:bundle"}
+    ${lib.optionalString (
+      enableUsagePatch || enableJjPanel
+    ) "pnpm --config.verify-deps-before-run=false --filter t3 build:bundle"}
     runHook postBuild
   '';
   installPhase = ''
     runHook preInstall
     cp -R apps/web/dist "$out"
-    ${lib.optionalString enableJjPanel ''
+    ${lib.optionalString (enableUsagePatch || enableJjPanel) ''
       cp -R apps/server/dist "$server"
       test -f "$server/bin.mjs"
       test -f "$server/claude-history-worker.mjs"

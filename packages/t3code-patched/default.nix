@@ -5,6 +5,7 @@
   asar,
   t3code,
   t3code-web,
+  enableUsagePatch ? true,
   enableJjPanel ? false,
 }:
 let
@@ -20,7 +21,7 @@ let
         asar extract "$out/resources/app.asar" app
         test -f app/apps/server/dist/client/index.html
         cp app/apps/server/dist/client/third-party-licenses.json third-party-licenses.json
-        ${lib.optionalString enableJjPanel ''
+        ${lib.optionalString (enableUsagePatch || enableJjPanel) ''
           rm -r app/apps/server/dist
           cp -R ${t3code-web.server} app/apps/server/dist
           chmod -R u+w app/apps/server/dist

@@ -80,6 +80,7 @@ in
             hm.kdeConnect
             hm.deskflow
             hm.localSend
+            hm.handy
             hm.androidPhone
             hm.wifiAudioStreaming
             hm.ghostty

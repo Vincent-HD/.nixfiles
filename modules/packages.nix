@@ -115,6 +115,7 @@
         t3code-jj = pkgs.callPackage ../packages/t3code-patched {
           t3code = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.t3code;
           t3code-web = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.t3code-web-jj-only;
+          enableUsagePatch = false;
           enableJjPanel = true;
         };
         codex = pkgs.callPackage ../packages/codex { };

@@ -953,10 +953,10 @@ index 00000000..05d0f738
 +export const layer = Layer.effect(JjForgeService, make);
 diff --git a/apps/server/src/jj/JjPanelService.test.ts b/apps/server/src/jj/JjPanelService.test.ts
 new file mode 100644
-index 00000000..24d397ce
+index 00000000..7e6657d6
 --- /dev/null
 +++ b/apps/server/src/jj/JjPanelService.test.ts
-@@ -0,0 +1,988 @@
+@@ -0,0 +1,1013 @@
 +import * as NodeServices from "@effect/platform-node/NodeServices";
 +import { describe, expect, it } from "@effect/vitest";
 +import {
@@ -1052,6 +1052,31 @@ index 00000000..24d397ce
 +        args: ["for-each-ref", "--format=%(refname) %(objectname)", "refs/heads"],
 +      });
 +      expect(refs.stdout.trim()).toBe(`refs/heads/published ${before.workingCopyCommitId}`);
++    }).pipe(Effect.provide(live)),
++  );
++  it.live("separates local bookmarks from diverged remote bookmarks", () =>
++    Effect.gen(function* () {
++      const f = yield* fixture;
++      const remote = yield* f.fs.makeTempDirectoryScoped({ prefix: "t3-jj-remote-refs-" });
++      const process = yield* VcsProcess.VcsProcess;
++      yield* process.run({
++        operation: "JjPanelService.test.localRemote",
++        command: "git",
++        cwd: remote,
++        args: ["init", "--bare"],
++      });
++      yield* f.cli(["git", "remote", "add", "sandbox", remote]);
++      yield* f.cli(["describe", "-m", "pushed"]);
++      yield* f.cli(["bookmark", "set", "feature", "-r", "@"]);
++      yield* f.cli(["git", "push", "--remote", "sandbox", "--bookmark", "feature"]);
++      yield* f.cli(["new", "-m", "local only"]);
++      yield* f.cli(["bookmark", "set", "feature", "-r", "@"]);
++      const panel = yield* f.panel();
++      expect(panel.revisions[0]?.bookmarks).toEqual(["feature"]);
++      expect(panel.revisions[0]?.remoteBookmarks).toEqual([]);
++      expect(panel.revisions[1]?.bookmarks).toEqual([]);
++      expect(panel.revisions[1]?.remoteBookmarks).toEqual(["feature@sandbox"]);
++      expect(panel.remotes).toEqual(["sandbox"]);
 +    }).pipe(Effect.provide(live)),
 +  );
 +  it.live(
@@ -1947,10 +1972,10 @@ index 00000000..24d397ce
 +});
 diff --git a/apps/server/src/jj/JjPanelService.ts b/apps/server/src/jj/JjPanelService.ts
 new file mode 100644
-index 00000000..09c94168
+index 00000000..e5c9a855
 --- /dev/null
 +++ b/apps/server/src/jj/JjPanelService.ts
-@@ -0,0 +1,837 @@
+@@ -0,0 +1,856 @@
 +import * as Crypto from "effect/Crypto";
 +import {
 +  JjPanelError,
@@ -1960,6 +1985,7 @@ index 00000000..09c94168
 +  JjChangedFile,
 +  JjSignature,
 +  JjFilePath,
++  JjBookmarkName,
 +  JjRunActionInput,
 +  JjGetDiffInput,
 +  type JjDiffResult,
@@ -2000,7 +2026,9 @@ index 00000000..09c94168
 +  current: Schema.Boolean,
 +  files: Schema.Array(JjChangedFile),
 +  filesTruncated: Schema.Boolean,
-+  bookmarks: Schema.Array(Schema.String),
++  bookmarks: Schema.Array(
++    Schema.Struct({ name: Schema.String, remote: Schema.NullOr(Schema.String) }),
++  ),
 +  tags: Schema.Array(Schema.String),
 +  conflictPaths: Schema.Array(Schema.String),
 +});
@@ -2015,6 +2043,11 @@ index 00000000..09c94168
 +    .map(([key, value]) => `${quote(`${quote(key)}:`)} ++ ${value}`)
 +    .join(` ++ ${quote(",")} ++ `)} ++ ${quote("}")}`;
 +const fileTemplate = jsonObjectTemplate({ path: "json(f.path())", status: "json(f.status())" });
++// jj's `bookmarks` keyword lists a remote bookmark only where it differs from the local one.
++const bookmarkTemplate = jsonObjectTemplate({
++  name: "json(b.name())",
++  remote: `if(b.remote(), json(b.remote()), ${quote("null")})`,
++});
 +const revisionTemplate = jsonObjectTemplate({
 +  commit: "json(self)",
 +  immutable: "json(immutable)",
@@ -2023,7 +2056,7 @@ index 00000000..09c94168
 +  current: "json(current_working_copy)",
 +  files: `${quote("[")} ++ diff.files().take(256).map(|f| ${fileTemplate}).join(",") ++ ${quote("]")}`,
 +  filesTruncated: "json(diff.files().len() > 256)",
-+  bookmarks: "json(bookmarks.take(64).map(|b| b.name()))",
++  bookmarks: `${quote("[")} ++ bookmarks.take(64).map(|b| ${bookmarkTemplate}).join(",") ++ ${quote("]")}`,
 +  tags: "json(tags.take(64).map(|t| t.name()))",
 +  conflictPaths: "json(conflicted_files.take(256).map(|f| f.path()))",
 +});
@@ -2233,13 +2266,23 @@ index 00000000..09c94168
 +      files: revision.files,
 +      author: revision.commit.author,
 +      committer: revision.commit.committer,
-+      bookmarks: revision.bookmarks,
++      bookmarks: revision.bookmarks
++        .filter((bookmark) => bookmark.remote === null)
++        .map((bookmark) => bookmark.name),
++      remoteBookmarks: revision.bookmarks.flatMap((bookmark) =>
++        bookmark.remote === null ? [] : [`${bookmark.name}@${bookmark.remote}`],
++      ),
 +      tags: revision.tags,
 +      conflictPaths: revision.conflictPaths,
 +    });
 +    const revisions = decoded.map(toRevision);
 +    if (!revisions.some((revision) => revision.commitId === wc && revision.current))
 +      return yield* error("invalid-output");
++    const remoteLines = yield* cli({ cwd: input.cwd, args: ["git", "remote", "list"] });
++    const remotes = remoteLines
++      .split("\n")
++      .flatMap((line) => /^(\S+)\s/.exec(line)?.[1] ?? [])
++      .filter((name) => Schema.is(JjBookmarkName)(name));
 +    return {
 +      status: "ready",
 +      cwd: input.cwd,
@@ -2252,6 +2295,7 @@ index 00000000..09c94168
 +      ),
 +      visibleRevisions: extra.slice(0, 64).map(toRevision),
 +      visibleRevisionsTruncated: extra.length > 64,
++      remotes,
 +    } satisfies JjPanelReady;
 +  });
 +  const snapshot = Effect.fn("JjPanelService.snapshot")(function* (input: {
@@ -4114,10 +4158,10 @@ index 00000000..360883f9
 +};
 diff --git a/apps/web/src/components/jj/JjPanel.tsx b/apps/web/src/components/jj/JjPanel.tsx
 new file mode 100644
-index 00000000..5709447c
+index 00000000..4e83b642
 --- /dev/null
 +++ b/apps/web/src/components/jj/JjPanel.tsx
-@@ -0,0 +1,1108 @@
+@@ -0,0 +1,1158 @@
 +import { useAtomValue } from "@effect/atom-react";
 +import { AuthOrchestrationReadScope } from "@t3tools/contracts";
 +import type {
@@ -4131,6 +4175,7 @@ index 00000000..5709447c
 +import { AsyncResult } from "effect/reactivity";
 +import {
 +  ArrowDown,
++  Bookmark,
 +  ChevronsDown,
 +  Combine,
 +  Trash2,
@@ -4140,6 +4185,7 @@ index 00000000..5709447c
 +  Copy,
 +  Ellipsis,
 +  RefreshCw,
++  Tag,
 +} from "lucide-react";
 +import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 +import { useEnvironmentScope } from "~/state/session";
@@ -4201,6 +4247,48 @@ index 00000000..5709447c
 +  "push",
 +];
 +const workspaceKey = (panel: JjPanelReady) => JSON.stringify(panel.workspaceIdentity);
++
++const refPillStyles = {
++  bookmark: "border-info/50 bg-info/10 text-info",
++  remote: "border-violet-500/50 bg-violet-500/10 text-violet-600 dark:text-violet-300/90",
++  tag: "border-success/50 bg-success/10 text-success",
++};
++
++const RefPill = (props: { kind: keyof typeof refPillStyles; label: string }) => (
++  <Tooltip>
++    <TooltipTrigger
++      render={
++        <span
++          className={`inline-flex h-4 min-w-0 shrink items-center gap-0.5 rounded-full border px-1.5 text-2xs ${refPillStyles[props.kind]}`}
++        />
++      }
++    >
++      {props.kind === "tag" ? (
++        <Tag aria-hidden="true" className="size-2.5 shrink-0" />
++      ) : (
++        <Bookmark aria-hidden="true" className="size-2.5 shrink-0" />
++      )}
++      <span className="truncate">{props.label}</span>
++    </TooltipTrigger>
++    <TooltipPopup>{props.label}</TooltipPopup>
++  </Tooltip>
++);
++
++const RevisionRefPills = (props: { revision: JjRevision }) => {
++  const pills = [
++    ...(props.revision.bookmarks ?? []).map((label) => ({ kind: "bookmark" as const, label })),
++    ...(props.revision.remoteBookmarks ?? []).map((label) => ({ kind: "remote" as const, label })),
++    ...(props.revision.tags ?? []).map((label) => ({ kind: "tag" as const, label })),
++  ];
++  if (pills.length === 0) return null;
++  return (
++    <span className="flex min-w-0 max-w-[50%] shrink items-center gap-1 overflow-hidden">
++      {pills.map((pill) => (
++        <RefPill key={`${pill.kind}:${pill.label}`} kind={pill.kind} label={pill.label} />
++      ))}
++    </span>
++  );
++};
 +
 +const JjPanel = (props: {
 +  environmentId: EnvironmentId;
@@ -4654,6 +4742,7 @@ index 00000000..5709447c
 +              {dirty ? (stale ? " · stale draft" : " · unsaved draft") : ""}
 +            </span>
 +          </button>
++          <RevisionRefPills revision={revision} />
 +          {revision.conflict && <span className="text-2xs text-destructive">Conflict</span>}
 +          {revision.immutable && <span className="text-2xs text-muted-foreground">Immutable</span>}
 +          <span
@@ -4807,6 +4896,9 @@ index 00000000..5709447c
 +                  </p>
 +                )}
 +                <p className="break-words">Bookmarks: {revision.bookmarks?.join(", ") || "none"}</p>
++                <p className="break-words">
++                  Remote bookmarks: {revision.remoteBookmarks?.join(", ") || "none"}
++                </p>
 +                <p className="break-words">Tags: {revision.tags?.join(", ") || "none"}</p>
 +              </div>
 +            )}
@@ -5082,7 +5174,9 @@ index 00000000..5709447c
 +                  >
 +                    Abandon selected revisions
 +                  </MenuItem>
-+                  <MenuItem onClick={() => openAction("push", source)}>Push bookmarks…</MenuItem>
++                  <MenuItem onClick={() => openAction("push", source, { useSelection: true })}>
++                    Push bookmarks…
++                  </MenuItem>
 +                </>
 +              )}
 +            </MenuPopup>
@@ -5228,10 +5322,10 @@ index 00000000..5709447c
 +export default JjPanel;
 diff --git a/apps/web/src/components/jj/jj-action-dialog.tsx b/apps/web/src/components/jj/jj-action-dialog.tsx
 new file mode 100644
-index 00000000..ebcc065d
+index 00000000..872cbbfd
 --- /dev/null
 +++ b/apps/web/src/components/jj/jj-action-dialog.tsx
-@@ -0,0 +1,412 @@
+@@ -0,0 +1,467 @@
 +import type { EnvironmentId, JjPanelReady, JjRevision, JjRunActionInput } from "@t3tools/contracts";
 +import { useState } from "react";
 +import { Button } from "~/components/ui/button";
@@ -5327,6 +5421,10 @@ index 00000000..ebcc065d
 +        sourceCommitId: preview.source.commitId,
 +        revisions,
 +      });
++  const pushableBookmarks = revisions.flatMap((revision) =>
++    (revision.bookmarks ?? []).map((name) => ({ name, changeId: revision.changeId })),
++  );
++  const remotes = preview.panel.remotes ?? [];
 +  const [fields, setFields] = useState<JjActionFields>(() => ({
 +    targetCommitIds:
 +      preview.kind === "new" || preview.kind === "merge"
@@ -5341,8 +5439,18 @@ index 00000000..ebcc065d
 +    description: preview.source.description,
 +    replaceMessage: false,
 +    bookmarkName: preview.source.bookmarks?.[0] ?? "",
-+    bookmarkNames: [],
-+    remote: "",
++    bookmarkNames: [
++      ...new Set(
++        revisions
++          .filter(
++            (revision) =>
++              revision.commitId === preview.source.commitId ||
++              preview.selectedCommitIds.includes(revision.commitId),
++          )
++          .flatMap((revision) => revision.bookmarks ?? []),
++      ),
++    ],
++    remote: remotes.includes("origin") ? "origin" : (remotes[0] ?? ""),
 +  }));
 +  const update = (next: Partial<JjActionFields>) =>
 +    setFields((current) => ({ ...current, ...next }));
@@ -5575,22 +5683,63 @@ index 00000000..ebcc065d
 +          )}
 +          {preview.kind === "push" && (
 +            <>
-+              <label className="block space-y-1 text-xs">
-+                <span>Bookmarks to publish (one per line)</span>
-+                <Textarea
-+                  value={fields.bookmarkNames.join("\n")}
-+                  disabled={props.busy}
-+                  onChange={(event) => update({ bookmarkNames: event.target.value.split("\n") })}
-+                />
-+              </label>
-+              <label className="block space-y-1 text-xs">
-+                <span>Remote</span>
-+                <Input
-+                  value={fields.remote}
-+                  disabled={props.busy}
-+                  onChange={(event) => update({ remote: event.target.value })}
-+                />
-+              </label>
++              <fieldset className="space-y-1 text-xs">
++                <legend>Bookmarks to publish</legend>
++                {pushableBookmarks.length === 0 && (
++                  <p className="text-muted-foreground">
++                    No local bookmarks on the loaded revisions. Set a bookmark first.
++                  </p>
++                )}
++                <div className="max-h-40 space-y-1 overflow-y-auto">
++                  {pushableBookmarks.map((bookmark) => (
++                    <label key={bookmark.name} className="flex items-center gap-2">
++                      <Checkbox
++                        checked={fields.bookmarkNames.includes(bookmark.name)}
++                        disabled={props.busy}
++                        onCheckedChange={(checked) =>
++                          update({
++                            bookmarkNames: checked
++                              ? [...fields.bookmarkNames, bookmark.name]
++                              : fields.bookmarkNames.filter((name) => name !== bookmark.name),
++                          })
++                        }
++                      />
++                      <span className="break-all font-mono">{bookmark.name}</span>
++                      <span className="font-mono text-muted-foreground">
++                        {bookmark.changeId.slice(0, 8)}
++                      </span>
++                    </label>
++                  ))}
++                </div>
++              </fieldset>
++              {remotes.length > 0 ? (
++                <fieldset className="space-y-1 text-xs">
++                  <legend>Remote</legend>
++                  <div className="flex flex-wrap gap-1">
++                    {remotes.map((remote) => (
++                      <Button
++                        key={remote}
++                        size="xs"
++                        variant={fields.remote === remote ? "default" : "outline"}
++                        aria-pressed={fields.remote === remote}
++                        disabled={props.busy}
++                        onClick={() => update({ remote })}
++                      >
++                        {remote}
++                      </Button>
++                    ))}
++                  </div>
++                </fieldset>
++              ) : (
++                <label className="block space-y-1 text-xs">
++                  <span>Remote</span>
++                  <Input
++                    value={fields.remote}
++                    disabled={props.busy}
++                    onChange={(event) => update({ remote: event.target.value })}
++                  />
++                </label>
++              )}
 +              <p className="break-words text-xs">
 +                Publish: {fields.bookmarkNames.filter(Boolean).join(", ") || "(choose bookmarks)"} →{" "}
 +                {fields.remote || "(choose remote)"}
@@ -8094,10 +8243,10 @@ index 00000000..66e151c7
 +});
 diff --git a/packages/contracts/src/jj.ts b/packages/contracts/src/jj.ts
 new file mode 100644
-index 00000000..e9f0edee
+index 00000000..68842f3c
 --- /dev/null
 +++ b/packages/contracts/src/jj.ts
-@@ -0,0 +1,228 @@
+@@ -0,0 +1,230 @@
 +import * as Schema from "effect/Schema";
 +
 +export const JjCommitId = Schema.String.check(Schema.isPattern(/^[0-9a-f]{40}$/));
@@ -8132,6 +8281,7 @@ index 00000000..e9f0edee
 +  author: Schema.optionalKey(JjSignature),
 +  committer: Schema.optionalKey(JjSignature),
 +  bookmarks: Schema.optionalKey(Schema.Array(Schema.String)),
++  remoteBookmarks: Schema.optionalKey(Schema.Array(Schema.String)),
 +  tags: Schema.optionalKey(Schema.Array(Schema.String)),
 +  conflictPaths: Schema.optionalKey(Schema.Array(Schema.String)),
 +});
@@ -8146,6 +8296,7 @@ index 00000000..e9f0edee
 +  filesTruncated: Schema.Boolean,
 +  visibleRevisions: Schema.optionalKey(Schema.Array(JjRevision)),
 +  visibleRevisionsTruncated: Schema.optionalKey(Schema.Boolean),
++  remotes: Schema.optionalKey(Schema.Array(Schema.String)),
 +});
 +export type JjPanelReady = typeof JjPanelReady.Type;
 +export const JjPanelSnapshot = Schema.Union([

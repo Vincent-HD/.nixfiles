@@ -14,21 +14,13 @@
       programs.steam.platformOptimizations.enable = true;
 
       # Use the tested x86-64-v3 CachyOS kernel as the normal boot entry. It is compatible with
-      # this host's Zen 3 CPU and is available from the release binary cache.
+      # this host's Zen 3 CPU.
       boot.kernelPackages = pkgs.cachyosKernels."linuxPackages-cachyos-latest-x86_64-v3";
 
       # Keep an explicitly named stock-kernel entry in the same generation for rollback without
       # changing the rest of the gaming configuration.
       specialisation.stock.configuration = {
         boot.kernelPackages = lib.mkForce pkgs.linuxPackages;
-      };
-
-      # nix-cachyos-kernel's release branch publishes its prebuilt kernels to this cache.
-      nix.settings = {
-        extra-substituters = [ "https://attic.xuyh0120.win/lantian" ];
-        extra-trusted-public-keys = [
-          "lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc="
-        ];
       };
     };
 }

@@ -2119,3 +2119,341 @@ index 00000000..54af6a9f
 +/** One unauthenticated catalog request is shared by every mounted consumer. */
 +export const useModelsDevPricing = (): ModelsDevPricingState =>
 +  useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+diff --git a/packages/provider-cursor/src/server/adapter.test.ts b/packages/provider-cursor/src/server/adapter.test.ts
+index 01adb995..3269e56c 100644
+--- a/packages/provider-cursor/src/server/adapter.test.ts
++++ b/packages/provider-cursor/src/server/adapter.test.ts
+@@ -40,14 +40,15 @@ const decodeCursorSettings = Schema.decodeEffect(CursorSettings);
+ 
+ describe("CursorAdapterV2", () => {
+   it.effect.each([
+-    { status: "finished", model: undefined, lateModel: undefined },
+-    { status: "cancelled", model: "claude-opus-4-6", lateModel: undefined },
+-    { status: "error", model: "custom-fable", lateModel: undefined },
+-    { status: "finished", model: undefined, lateModel: "gpt-6-sol" },
+-    { status: "finished", model: "gpt-6-sol", lateModel: null },
++    { status: "finished", model: undefined, lateModel: undefined, missingUsage: false },
++    { status: "cancelled", model: "claude-opus-4-6", lateModel: undefined, missingUsage: false },
++    { status: "error", model: "custom-fable", lateModel: undefined, missingUsage: false },
++    { status: "finished", model: undefined, lateModel: "gpt-6-sol", missingUsage: false },
++    { status: "finished", model: "gpt-6-sol", lateModel: null, missingUsage: false },
++    { status: "finished", model: undefined, lateModel: undefined, missingUsage: true },
+   ] as const)(
+-    "projects Cursor tasks: $status, late model $lateModel",
+-    ({ status, model, lateModel }) =>
++    "projects Cursor tasks: $status, late model $lateModel, missing usage $missingUsage",
++    ({ status, model, lateModel, missingUsage }) =>
+       Effect.gen(function* () {
+         const fileSystem = yield* FileSystem.FileSystem;
+         const workspace = yield* fileSystem.makeTempDirectoryScoped({
+@@ -122,6 +123,20 @@ describe("CursorAdapterV2", () => {
+                         },
+                       }).pipe(Effect.orDie);
+                     }
++                    yield* input.onDelta!({
++                      type: "turn-ended",
++                      ...(missingUsage
++                        ? {}
++                        : {
++                            usage: {
++                              inputTokens: 100,
++                              outputTokens: 40,
++                              cacheReadTokens: 60,
++                              cacheWriteTokens: 20,
++                              reasoningTokens: 10,
++                            },
++                          }),
++                    }).pipe(Effect.orDie);
+                     return {
+                       agentId: "native-cursor-lifecycle",
+                       runId: "native-cursor-run",
+@@ -131,6 +146,18 @@ describe("CursorAdapterV2", () => {
+                         status,
+                         model: { id: "composer-2.5" },
+                         durationMs: 1,
++                        ...(status === "error"
++                          ? {}
++                          : {
++                              usage: {
++                                inputTokens: 100,
++                                outputTokens: 40,
++                                cacheReadTokens: 60,
++                                cacheWriteTokens: 20,
++                                reasoningTokens: 10,
++                                totalTokens: 220,
++                              },
++                            }),
+                       }),
+                       cancel: Effect.void,
+                     };
+@@ -213,6 +240,23 @@ describe("CursorAdapterV2", () => {
+                 : "failed",
+         );
+         assert.isNotNull(rows.at(-1)?.subagent.completedAt);
++        const turns = events.filter((event) => event.type === "provider_turn.updated");
++        assert.isUndefined(turns[0]?.providerTurn.turnTokenUsage);
++        assert.deepEqual(
++          turns.at(-1)?.providerTurn.turnTokenUsage,
++          status === "error"
++            ? { usageScope: "main_agent", usageStatus: "unavailable", hasSubagents: true }
++            : {
++                usageScope: "main_agent",
++                usageStatus: status === "finished" && !missingUsage ? "complete" : "partial",
++                inputTokens: 180,
++                outputTokens: 40,
++                cachedInputTokens: 60,
++                cacheCreationTokens: 20,
++                reasoningTokens: 10,
++                hasSubagents: true,
++              },
++        );
+       }).pipe(
+         Effect.scoped,
+         Effect.provide(
+diff --git a/packages/provider-cursor/src/server/adapter.ts b/packages/provider-cursor/src/server/adapter.ts
+index b77ec70d..09cfe23e 100644
+--- a/packages/provider-cursor/src/server/adapter.ts
++++ b/packages/provider-cursor/src/server/adapter.ts
+@@ -47,6 +47,7 @@ import * as McpProviderSessions from "@t3tools/provider-core/server/McpProviderS
+ import * as McpProviderSession from "@t3tools/provider-core/server/mcpSession";
+ import { CursorTransportFailure } from "./transportFailure.ts";
+ import { cursorSdkModelSelection } from "./sdkModel.ts";
++import { cursorTurnTokenUsage } from "./turn-usage.ts";
+ import {
+   discoverCursorSkills,
+   hasCursorSkillMention,
+@@ -834,6 +835,7 @@ interface ActiveCursorTurn {
+   readonly assistantReply: CursorTransportFailure;
+   readonly reasoning: ActiveCursorTextStream;
+   interrupted: boolean;
++  hasMissingUsage: boolean;
+   finalized: boolean;
+ }
+ 
+@@ -1910,8 +1912,12 @@ export const makeCursorAdapterV2 = Effect.fn("makeCursorAdapterV2")(function* (
+               yield* completeReasoning(context);
+               yield* handleToolUpdate(context, update);
+               return;
+-            case "step-completed":
+             case "turn-ended":
++              context.hasMissingUsage ||= update.usage === undefined;
++              yield* completeAssistant(context);
++              yield* completeReasoning(context);
++              return;
++            case "step-completed":
+               yield* completeAssistant(context);
+               yield* completeReasoning(context);
+               return;
+@@ -1935,6 +1941,7 @@ export const makeCursorAdapterV2 = Effect.fn("makeCursorAdapterV2")(function* (
+           readonly context: ActiveCursorTurn;
+           readonly status: OrchestrationV2ProviderTurn["status"];
+           readonly completedAt: DateTime.Utc | null;
++          readonly usage?: RunResult["usage"];
+         }): OrchestrationV2ProviderTurn => ({
+           id: input.context.providerTurnId,
+           providerThreadId: input.context.input.providerThread.id,
+@@ -1949,6 +1956,16 @@ export const makeCursorAdapterV2 = Effect.fn("makeCursorAdapterV2")(function* (
+           status: input.status,
+           startedAt: input.context.startedAt,
+           completedAt: input.completedAt,
++          ...(input.completedAt === null
++            ? {}
++            : {
++                turnTokenUsage: cursorTurnTokenUsage({
++                  usage: input.usage,
++                  status: input.status,
++                  hasSubagents: input.context.subagents.size > 0,
++                  hasMissingUsage: input.context.hasMissingUsage,
++                }),
++              }),
+         });
+ 
+         const finalizeTurn = Effect.fnUntraced(function* (input: {
+@@ -1959,6 +1976,7 @@ export const makeCursorAdapterV2 = Effect.fn("makeCursorAdapterV2")(function* (
+           >;
+           readonly failure?: OrchestrationV2ProviderFailure;
+           readonly threadDisposition?: "reusable" | "broken";
++          readonly usage?: RunResult["usage"];
+         }) {
+           if (input.context.finalized) {
+             return;
+@@ -1997,6 +2015,7 @@ export const makeCursorAdapterV2 = Effect.fn("makeCursorAdapterV2")(function* (
+               context: input.context,
+               status: input.status,
+               completedAt,
++              usage: input.usage,
+             }),
+           });
+           yield* emitProviderEvent({
+@@ -2247,6 +2266,7 @@ export const makeCursorAdapterV2 = Effect.fn("makeCursorAdapterV2")(function* (
+                 nextSegment: 0,
+               },
+               interrupted: false,
++              hasMissingUsage: false,
+               finalized: false,
+             };
+             yield* Ref.set(activeTurn, context);
+@@ -2297,6 +2317,7 @@ export const makeCursorAdapterV2 = Effect.fn("makeCursorAdapterV2")(function* (
+                     yield* finalizeTurn({
+                       context,
+                       status,
++                      usage: result.usage,
+                       ...(status === "failed"
+                         ? {
+                             failure: makeProviderFailure({
+diff --git a/packages/provider-cursor/src/server/turn-usage.test.ts b/packages/provider-cursor/src/server/turn-usage.test.ts
+new file mode 100644
+index 00000000..e0f597d2
+--- /dev/null
++++ b/packages/provider-cursor/src/server/turn-usage.test.ts
+@@ -0,0 +1,99 @@
++import { assert, describe, it } from "@effect/vitest";
++import type { RunResult } from "@cursor/sdk";
++import { cursorTurnTokenUsage } from "./turn-usage.ts";
++
++const usage = {
++  inputTokens: 100,
++  outputTokens: 40,
++  cacheReadTokens: 60,
++  cacheWriteTokens: 20,
++  reasoningTokens: 10,
++  totalTokens: 220,
++};
++
++describe("cursorTurnTokenUsage", () => {
++  it("normalizes cache and reasoning without counting them twice", () => {
++    assert.deepEqual(
++      cursorTurnTokenUsage({
++        usage,
++        status: "completed",
++        hasSubagents: true,
++        hasMissingUsage: false,
++      }),
++      {
++        usageScope: "main_agent",
++        usageStatus: "complete",
++        inputTokens: 180,
++        outputTokens: 40,
++        cachedInputTokens: 60,
++        cacheCreationTokens: 20,
++        reasoningTokens: 10,
++        hasSubagents: true,
++      },
++    );
++  });
++
++  it.each(["interrupted", "failed", "cancelled"] as const)(
++    "marks reported usage as partial for %s responses",
++    (status) => {
++      const report = cursorTurnTokenUsage({
++        usage,
++        status,
++        hasSubagents: false,
++        hasMissingUsage: false,
++      });
++      assert.equal(report.usageStatus, "partial");
++      assert.equal(report.outputTokens, 40);
++    },
++  );
++
++  it("keeps incomplete run coverage partial even when the run succeeds", () => {
++    assert.equal(
++      cursorTurnTokenUsage({
++        usage,
++        status: "completed",
++        hasSubagents: false,
++        hasMissingUsage: true,
++      }).usageStatus,
++      "partial",
++    );
++  });
++
++  it.each<RunResult["usage"]>([
++    undefined,
++    { ...usage, inputTokens: -1 },
++    { ...usage, cacheReadTokens: -1 },
++    { ...usage, outputTokens: NaN },
++    { ...usage, cacheWriteTokens: 1.5 },
++    { ...usage, reasoningTokens: 41 },
++  ])("keeps missing or invalid counts unavailable (%j)", (reported) => {
++    assert.deepEqual(
++      cursorTurnTokenUsage({
++        usage: reported,
++        status: "completed",
++        hasSubagents: false,
++        hasMissingUsage: false,
++      }),
++      { usageScope: "main_agent", usageStatus: "unavailable", hasSubagents: false },
++    );
++  });
++
++  it("preserves reported zeroes and absent reasoning", () => {
++    const report = cursorTurnTokenUsage({
++      usage: {
++        inputTokens: 0,
++        outputTokens: 0,
++        cacheReadTokens: 0,
++        cacheWriteTokens: 0,
++        totalTokens: 0,
++      },
++      status: "completed",
++      hasSubagents: false,
++      hasMissingUsage: false,
++    });
++    assert.equal(report.usageStatus, "complete");
++    assert.equal(report.inputTokens, 0);
++    assert.equal(report.outputTokens, 0);
++    assert.notProperty(report, "reasoningTokens");
++  });
++});
+diff --git a/packages/provider-cursor/src/server/turn-usage.ts b/packages/provider-cursor/src/server/turn-usage.ts
+new file mode 100644
+index 00000000..c3b11a04
+--- /dev/null
++++ b/packages/provider-cursor/src/server/turn-usage.ts
+@@ -0,0 +1,45 @@
++import type { RunResult } from "@cursor/sdk";
++import { TurnTokenUsage, type OrchestrationV2ProviderTurn } from "@t3tools/contracts";
++import * as Schema from "effect/Schema";
++
++const TokenCount = Schema.Int.check(Schema.isGreaterThanOrEqualTo(0));
++const CursorTokenUsage = Schema.Struct({
++  inputTokens: TokenCount,
++  outputTokens: TokenCount,
++  cacheReadTokens: TokenCount,
++  cacheWriteTokens: TokenCount,
++  reasoningTokens: Schema.optional(TokenCount),
++});
++const isCursorTokenUsage = Schema.is(CursorTokenUsage);
++const isTurnTokenUsage = Schema.is(TurnTokenUsage);
++
++export const cursorTurnTokenUsage = (input: {
++  readonly usage: RunResult["usage"];
++  readonly status: OrchestrationV2ProviderTurn["status"];
++  readonly hasSubagents: boolean;
++  readonly hasMissingUsage: boolean;
++}): TurnTokenUsage => {
++  const unavailable: TurnTokenUsage = {
++    usageScope: "main_agent",
++    usageStatus: "unavailable",
++    hasSubagents: input.hasSubagents,
++  };
++  if (!isCursorTokenUsage(input.usage)) return unavailable;
++  const usage = input.usage;
++  if (usage.reasoningTokens !== undefined && usage.reasoningTokens > usage.outputTokens) {
++    return unavailable;
++  }
++
++  // Cursor reports cache separately; T3 input includes it. Reasoning is already in output.
++  const normalized = {
++    usageScope: "main_agent",
++    usageStatus: input.status === "completed" && !input.hasMissingUsage ? "complete" : "partial",
++    inputTokens: usage.inputTokens + usage.cacheReadTokens + usage.cacheWriteTokens,
++    outputTokens: usage.outputTokens,
++    cachedInputTokens: usage.cacheReadTokens,
++    cacheCreationTokens: usage.cacheWriteTokens,
++    ...(usage.reasoningTokens === undefined ? {} : { reasoningTokens: usage.reasoningTokens }),
++    hasSubagents: input.hasSubagents,
++  };
++  return isTurnTokenUsage(normalized) ? normalized : unavailable;
++};

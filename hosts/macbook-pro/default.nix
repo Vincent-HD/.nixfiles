@@ -47,6 +47,7 @@ in
             hm.lazydocker
             hm.work
             hm.localSend
+            hm.handy
             hm.guiApps
             hm.wifiAudioStreaming
             hm.ghostty

@@ -239,6 +239,18 @@ nix build ".#packages.${SYSTEM}.<pkg>" --no-link
 
 Purpose: validate the platform-specific artifact and catch fixed-output hash mismatches before rebuilding the full host configuration.
 
+### Build the derivation referenced by a generated launcher string
+
+```bash
+nix eval '.#<configuration>.<launcher-exec-option>' \
+  --apply 'value: builtins.attrNames (builtins.getContext value)' --json
+nix-store --realise /nix/store/<selected-launcher>.drv
+```
+
+Purpose: build and shell-check a wrapper held in a module's private `let` binding without
+building the whole Home Manager profile. Inspect the context list and select the launcher
+derivation; a generated command can reference more than one derivation.
+
 ### Build a package through nixpkgs multilib
 
 ```bash
@@ -949,6 +961,27 @@ Purpose: temporarily exclude extra binary caches when one is unreachable, while 
 the official NixOS cache. Missing paths may then build locally. This affects only the command and
 does not change the configured substituters.
 
+After removing a broken cache from the flake, use the new cache list for the first switch,
+because the running system still has the previous settings:
+
+```bash
+replacement_caches=$(nix eval --raw ".#nixosConfigurations.${HOST}.config.nix.settings" \
+  --apply 'settings: builtins.concatStringsSep " " (settings.substituters ++ (settings.extra-substituters or []))')
+replacement_cache_keys=$(nix eval --raw ".#nixosConfigurations.${HOST}.config.nix.settings" \
+  --apply 'settings: builtins.concatStringsSep " " (settings.trusted-public-keys ++ (settings.extra-trusted-public-keys or []))')
+sudo nixos-rebuild switch --flake ".#${HOST}" \
+  --option substituters "$replacement_caches" \
+  --option extra-substituters '' \
+  --option trusted-public-keys "$replacement_cache_keys"
+```
+
+This applies the configuration while retaining the remaining extra caches and allowing newly
+declared signing keys during the first rebuild. Packages only available from the removed cache
+may need to build locally. Run the privileged rebuild yourself if the agent environment blocks sudo.
+Override `substituters` itself: passing only `--option extra-substituters` appends to the current
+list and leaves an unavailable cache from `/etc/nix/nix.conf` active. The empty extra setting alone
+does not remove entries already accumulated while loading that file.
+
 ### Evaluate a specific NixOS option subtree
 
 ```bash
@@ -1030,6 +1063,33 @@ nix eval '.#nixosConfigurations.'"$HOST"'.config.nix.settings.extra-trusted-publ
 Purpose: verify that host-level Cachix or upstream binary caches are rendered before rebuilding or debugging unexpectedly slow builds.
 
 ### Compare binary cache impact from an empty temporary store
+
+Before an expensive whole-host comparison, check the cache endpoint and an exact output hash:
+
+```bash
+curl --fail --silent --show-error --max-time 15 "${CACHE_URL}/nix-cache-info"
+curl --fail --silent --show-error --max-time 15 "${CACHE_URL}/<store-hash>.narinfo"
+nix store verify --store "$CACHE_URL" --no-contents --sigs-needed 1 \
+  --option trusted-public-keys "$CACHE_PUBLIC_KEY" /nix/store/<hash>-<package>
+```
+
+Purpose: distinguish a reachable cache from one that actually serves the exact pinned output,
+and verify its metadata signature without downloading package contents. HTTP 404 is an exact-path
+miss; a timeout is inconclusive. A valid signature establishes the signer, not build provenance.
+Check published incident reports before replacing an unavailable cache with a mirror.
+
+The store hash is the first 32 characters of the output basename; use the output path rather
+than its `.drv` path. Derivation graph inspection also finds packages used only by services:
+
+```bash
+nix derivation show --recursive /nix/store/<host-toplevel>.drv > /tmp/host-derivations.json
+```
+
+Purpose: inspect service dependencies and locally overridden packages that may not be obvious
+from `environment.systemPackages` or Home Manager's package list. Recent Nix versions wrap
+the graph under `derivations` and expose output paths under each entry's `outputs` object.
+
+For a full comparison:
 
 ```bash
 cd "$REPO"

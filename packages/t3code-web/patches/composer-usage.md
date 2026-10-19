@@ -30,8 +30,13 @@ Put a turn-usage chip beside the completed assistant response's actions/timestam
 
 Historical metadata retrieval/backfill is intentionally outside scope: the user requested
 future turns. Do not add unbounded transcript downloads to recover old statistics.
-Current data comes from upstream provider-turn reports; the patch does not add metering
-to providers that lack reports. This is a web/desktop renderer patch, not mobile UI.
+Current data comes from provider-turn reports. The patch also forwards Cursor SDK run
+usage to new provider turns: input includes cache reads/writes, output already includes
+reasoning, and absent counts remain unavailable. Interrupted/failed runs and runs with
+observed missing turn reports are partial. Subagent presence is recorded without adding
+child usage to the main-agent totals. This does not supply a context-fullness estimate
+or account quotas. The patch rebuilds the server as well as the web/desktop renderer;
+it does not add mobile UI.
 
 ## Integration and verification
 
@@ -39,12 +44,15 @@ In upstream source, inspect `ChatView.tsx`, `chat/ChatComposer.tsx`,
 `chat/ComposerUsageFooter.tsx` and `chat/MessagesTimeline.tsx` under `apps/web/src/components/`.
 Turn association is in `turn-usage.logic.ts`; counts/timing in `composer-usage.logic.ts`;
 pricing in `models-dev-pricing.ts`, `usage-pricing.ts` and `use-models-dev-pricing.ts`.
+Cursor mapping is in `packages/provider-cursor/src/server/turn-usage.ts` and `adapter.ts`.
 Prefer upstream recorded run selection and provider-driver IDs over current UI selection.
 
 Existing focused tests under `apps/web/src/components/chat/`:
 `composer-usage.logic.test.ts`, `models-dev-pricing.test.ts`, `turn-usage.logic.test.ts`,
 `usage-popover.test.tsx`, and the affected `MessagesTimeline.test.tsx` cases.
 They cover real calculations and click behavior; they do not establish visual fidelity.
+Cursor's `turn-usage.test.ts` and `adapter.test.ts` cover normalization, unavailable and
+partial reports, subagent attribution, and emission on the terminal provider turn.
 
 Manual acceptance: complete a new turn, open footer/response details by click, inspect
 counts and missing-data states, switch model and verify recorded attribution, then

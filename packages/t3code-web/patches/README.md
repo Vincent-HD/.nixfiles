@@ -7,7 +7,7 @@ these contracts throughout upstream source.
 
 | Patch | Feature contract | Build output | Host option |
 | --- | --- | --- | --- |
-| `composer-usage.patch` | [Usage statistics](composer-usage.md) | Web renderer | `custom.t3code.enableUsagePatch` |
+| `composer-usage.patch` | [Usage statistics](composer-usage.md) | Web renderer and server | `custom.t3code.enableUsagePatch` |
 | `jj-panel.patch` | [Jujutsu panel](jj-panel.md) | Web renderer and server | `custom.t3code.enableJjPanel` |
 
 Current patch base: upstream tag `v0.0.46-nightly.20261015.3158`, commit

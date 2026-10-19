@@ -20,7 +20,7 @@
       # there by agentVscode. Do not also install these under client-specific paths.
       custom.agentSetup.skills = {
         # Select only these directories from their pinned upstream source trees.
-        context7-mcp = "${inputs.context7-skills}/plugins/claude/context7/skills/context7-mcp";
+        context7-mcp = "${inputs.context7-skills}/skills/context7-mcp";
         # Keep the Effect v4 references with the skill and match its slash-invocation name.
         effect-program-design = effectProgramDesignSkill;
         # User-invoked grilling entry points and their delegated disciplines.
