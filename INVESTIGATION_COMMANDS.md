@@ -140,6 +140,16 @@ Use when:
 Note: after bumping, diff the new revision for the paths your config references before rebuilding, for example
 `git -C <upstream-clone> diff --stat <old-rev>..<new-rev> -- <path>`.
 
+### Trace the source of a NixOS option value
+
+```bash
+nix eval --json '.#nixosConfigurations.<host>.options.<option-path>.definitionsWithLocations'
+```
+
+Purpose: identify which local or pinned upstream module sets an option, especially when a
+deprecation warning names an option absent from the repository. Inspect the returned source
+file before choosing an override.
+
 ### Validate shared modules across configured hosts
 
 ```bash

@@ -12,6 +12,17 @@
         package = pkgs.sunshine.override { cudaSupport = true; };
       };
 
+      # Replace nixpkgs Sunshine's obsolete Avahi defaults while preserving discovery.
+      services.avahi = {
+        publish.enable = null;
+        publish.userServices = null;
+        settings.publish = {
+          disable-publishing = false;
+          disable-user-service-publishing = false;
+          publish-addresses = true;
+        };
+      };
+
       networking.firewall.interfaces.tailscale0 = {
         allowedTCPPorts = [
           47984
