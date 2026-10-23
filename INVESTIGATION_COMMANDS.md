@@ -1442,6 +1442,20 @@ Purpose: check whether a user service is running and filter the current boot log
 
 Use when a Home Manager or NixOS-managed user service starts but fails at runtime.
 
+### Validate a generated user unit and its drop-ins without starting it
+
+```bash
+UNIT_DIR=/path/to/staged-units
+SYSTEMD_PACKAGE=$(readlink -f /run/current-system/systemd)
+SYSTEMD_UNIT_PATH="$UNIT_DIR:/run/current-system/etc/systemd/user:$SYSTEMD_PACKAGE/example/systemd/user" \
+  systemd-analyze --user verify "$UNIT_DIR/<service>.service"
+```
+
+Place accompanying drop-ins in `$UNIT_DIR/<service>.service.d/`. This validates the
+generated unit with the installed NixOS dependencies without touching the running
+service. Explicit paths avoid false `basic.target not found` failures when the
+inspection environment cannot see the live manager's `/etc/systemd/user` tree.
+
 ### Try a temporary command override for a Nix-managed user service
 
 ```bash

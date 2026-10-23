@@ -49,6 +49,7 @@ in
             hm.niri
             hm.graphics
             hm.dms
+            hm.easyeffects
             hm.dankmail
             hm.tokitoki
             hm.coding

@@ -7,11 +7,6 @@
       services.pulseaudio.enable = false;
       security.rtkit.enable = true;
 
-      # EasyEffects: PipeWire effects (noise gate, compressor, EQ, etc.) for mic and output.
-      environment.systemPackages = [
-        pkgs.easyeffects
-      ];
-
       services.pipewire = {
         enable = true;
         alsa.enable = true;

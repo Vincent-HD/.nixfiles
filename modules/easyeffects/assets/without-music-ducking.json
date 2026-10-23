@@ -1,0 +1,45 @@
+{
+    "output": {
+        "blocklist": [],
+        "compressor#0": {
+            "attack": 50.0,
+            "boost-amount": 6.0,
+            "boost-threshold": -72.0,
+            "bypass": true,
+            "dry": -80.01,
+            "hpf-frequency": 10.0,
+            "hpf-mode": "Off",
+            "input-gain": 0.0,
+            "input-to-link": -80.01,
+            "input-to-sidechain": -80.01,
+            "knee": -6.0,
+            "link-to-input": -80.01,
+            "link-to-sidechain": -80.01,
+            "lpf-frequency": 20000.0,
+            "lpf-mode": "Off",
+            "makeup": 0.0,
+            "mode": "Downward",
+            "output-gain": 0.0,
+            "ratio": 4.0,
+            "release": 400.0,
+            "release-threshold": -80.01,
+            "sidechain": {
+                "lookahead": 2.0,
+                "mode": "Peak",
+                "preamp": 40.0,
+                "reactivity": 35.0,
+                "source": "Middle",
+                "stereo-split-source": "Left/Right",
+                "type": "External"
+            },
+            "sidechain-to-input": -80.01,
+            "sidechain-to-link": -80.01,
+            "stereo-split": false,
+            "threshold": -12.0,
+            "wet": 0.0
+        },
+        "plugins_order": [
+            "compressor#0"
+        ]
+    }
+}
