@@ -4,7 +4,11 @@ defaults_file="$1"
 settings_file="$2"
 existing_file="$settings_file"
 if [[ ! -e "$existing_file" ]]; then
-  existing_file=/dev/null
+  # Preserve widget credentials on the first activation after DMS's directory rename.
+  existing_file="${3:-/dev/null}"
+  if [[ ! -e "$existing_file" ]]; then
+    existing_file=/dev/null
+  fi
 fi
 
 temporary_file="$(mktemp "${settings_file}.XXXXXX")"

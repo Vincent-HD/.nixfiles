@@ -27,7 +27,7 @@ nix run .#update-pins -- --validate fast
 nix run .#update-pins -- --list
 ```
 
-Commit-pinned inputs (`noctalia`, `code-cursor-nix`, and the three DMS plugin sources) are disabled
+Commit-pinned inputs (`noctalia` and the three DMS plugin sources) are disabled
 manual entries. Running `nix flake update <name>` cannot advance a revision embedded in `flake.nix`;
 edit the reviewed revision first, then refresh its lock entry. `noctalia` is additionally denylisted
 to make the intentional v4 hold visible.

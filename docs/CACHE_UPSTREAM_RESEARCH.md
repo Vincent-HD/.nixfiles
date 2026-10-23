@@ -68,6 +68,25 @@ The upstream [release README](https://github.com/xddxdd/nix-cachyos-kernel/blob/
 - URL: `https://cache.xinux.uz`
 - Key: `cache.xinux.uz:BXCrtqejFjWzWEB9YuGB7X2MV4ttBur1N8BkwQRdH+0=`
 
+Live probe on 2026-10-23: the original Attic endpoint returned HTTP 503 with an
+explicit server-compromise notice. The maintainer [reported the shutdown on
+October 15](https://github.com/xddxdd/nix-cachyos-kernel/issues/110#issuecomment-6189203183).
+Their [October 21 update](https://github.com/xddxdd/nix-cachyos-kernel/issues/110#issuecomment-6310662239)
+says Hydra is restored, but the binary cache remains offline pending monitoring
+and will return under a new URL and signing key. They found no apparent data
+modifications; this is the maintainer's assessment, not independent verification.
+The mirror
+served matching narinfo for all three outputs of the pinned
+`linux-cachyos-latest-x86_64-v3-7.2.8` derivation (`out`, `dev`, and `modules`).
+Their metadata signatures verified against the documented mirror key, and ranged
+GET requests to their advertised NAR URLs succeeded. HEAD requests returned 404,
+so HEAD alone gives a false miss for this gateway. The active local substituter
+and trusted-key lists contain neither this mirror nor the original Attic cache.
+Signature verification establishes the mirror's signer, not independent evidence
+that its artifacts were rebuilt outside the compromised infrastructure. Its
+operator [advertises a separate Hydra build service](https://github.com/xddxdd/nix-cachyos-kernel/issues/89),
+but the exact outputs' build provenance was not checked here.
+
 The CachyOS-kernel maintainer explicitly says they cannot guarantee the mirror’s security or availability. Treat it as a third-party option requiring separate trust and endpoint checks. The project documents its own cache as tied to an exact nixpkgs revision and demonstrates `overlays.pinned`; this repo deliberately does **not** set `inputs.nix-cachyos-kernel.inputs.nixpkgs.follows` and uses that pinned overlay ([root input](../flake.nix), [kernel module](../modules/gaming-optimization.nix)). This is the important exception to the repo’s normal `follows = "nixpkgs"` convention.
 
 ## Pinning and configuration implications
@@ -76,7 +95,7 @@ The CachyOS-kernel maintainer explicitly says they cannot guarantee the mirror�
 2. `follows` redirects an input edge to another locked input; this can change package derivations compared with the upstream flake’s own lock graph. Noctalia and Vicinae explicitly warn about cache misses when nixpkgs is overridden/followed; CachyOS documents the need for its pinned nixpkgs. See the [Nix flake input/lock documentation](https://github.com/NixOS/nix/blob/master/src/nix/flake.md#inputs).
 3. Flake `nixConfig` cache settings are not a substitute for durable host configuration: Nix asks before applying most flake settings unless `accept-flake-config` is enabled globally. The Linux host’s explicit `nix.settings.extra-substituters` and `extra-trusted-public-keys` are its durable settings; macOS currently has none. Nix also verifies cache signatures against trusted public keys when requiring signatures. See [flake `nixConfig`](https://github.com/NixOS/nix/blob/master/src/nix/flake.md#flake-nix) and the [Nix configuration manual](https://nix.dev/manual/nix/2.30/command-ref/conf-file.html#conf-trusted-public-keys).
 4. `overrideAttrs` changes the resulting derivation path. The DMS override therefore prevents substituting the unmodified `dms-shell` output, although its dependencies can still come from any matching configured cache.
-5. This audit reports upstream cache intent and local package selection. It does not check endpoint reachability, query cache contents, or evaluate exact derivation paths.
+5. Apart from the targeted CachyOS probe recorded above, this audit reports upstream cache intent and local package selection. Other cache endpoints and exact output paths have not been checked for availability.
 
 ## Other direct inputs
 

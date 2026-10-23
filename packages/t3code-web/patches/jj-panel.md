@@ -93,8 +93,11 @@ Onto depends on jj's experimental `--onto` option.
 ## Integration and verification
 
 In upstream source, inspect `apps/web/src/components/jj/JjPanel.tsx` and
-`jj-panel-state.ts`, right-panel/tab stores and `ChatView.tsx`; server behavior lives
-in `apps/server/src/jj/JjPanelService.ts`. Shared RPC contracts live in
+`jj-panel-state.ts`, right-panel/tab stores, `ChatView.tsx`,
+`chat/RightPanelSurfaceContent.tsx` and `chat/useRightPanelActions.ts`. The panel
+body is mounted by the surface content switch; opening a revision diff and the Diff
+tab goes through the actions hook. Server behavior lives in
+`apps/server/src/jj/JjPanelService.ts`. Shared RPC contracts live in
 `packages/contracts/src/jj.ts`, with environment-aware client state in
 `packages/client-runtime/src/state/jj.ts`. Keep RPC registration, authorization,
 instrumentation and capability reporting consistent when upstream APIs move.
@@ -108,8 +111,10 @@ Forge behavior lives in `JjForgeService.ts`, `jj-forge.ts` and the JJ forge sect
 the application-owned source-control and pull-request service layers.
 
 Existing tests include server `JjPanelService.test.ts`, web `jj-panel-state.test.ts`,
-right-panel/store/reopen tests, contracts `jj.test.ts` and `environment.test.ts`, and
-client-runtime `commandPermissions.test.ts`. Server tests exercise actual temporary jj
+right-panel/store/reopen tests, `RightPanelTabs.test.tsx` shortcut matching,
+contracts `jj.test.ts` and `environment.test.ts`, and client-runtime
+`commandPermissions.test.ts`. The old `RightPanelTabs.keyboard.test.tsx` render
+harness was removed upstream. Server tests exercise actual temporary jj
 repositories; keep mutation safeguards covered when repairing the service.
 The expanded panel also has `jj-forge.test.ts`, `JjForgeService.test.ts`,
 `jj-forge-state.test.ts` and diff-selection tests in `diffPanelStore.test.ts`.

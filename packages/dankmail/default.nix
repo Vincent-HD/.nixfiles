@@ -8,13 +8,13 @@
 }:
 buildGoModule (finalAttrs: {
   pname = "dankmail";
-  version = "0.3.11";
+  version = "0.3.12";
 
   src = fetchFromGitHub {
     owner = "arqueon";
     repo = "dankmail";
     rev = "v${finalAttrs.version}";
-    hash = "sha256-PGGDxhC1Ykhg/YsSHHZ/40dq338epraIlPv6pzJaX10=";
+    hash = "sha256-7c/hQjRYARNIAxOAQz9F+zoKksE+EOUGZulJKjVri2w=";
   };
 
   # The upstream handler test's 1s deadline can expire during SQLite migration

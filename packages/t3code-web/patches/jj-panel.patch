@@ -1,5 +1,5 @@
 diff --git a/apps/server/src/auth/RpcAuthorization.ts b/apps/server/src/auth/RpcAuthorization.ts
-index 5b8d483d..168474d9 100644
+index 18919cea..c3214e10 100644
 --- a/apps/server/src/auth/RpcAuthorization.ts
 +++ b/apps/server/src/auth/RpcAuthorization.ts
 @@ -18,6 +18,7 @@ import {
@@ -10,7 +10,7 @@ index 5b8d483d..168474d9 100644
    AuthPreviewOperateScope,
    AuthRelayReadScope,
    AuthRelayWriteScope,
-@@ -173,6 +174,15 @@ export const RPC_REQUIRED_SCOPES = {
+@@ -167,6 +168,15 @@ export const RPC_REQUIRED_SCOPES = {
    [WS_METHODS.subscribeWorktreeSetup]: AuthOrchestrationReadScope,
    [WS_METHODS.worktreeSetupCancel]: AuthOrchestrationOperateScope,
    [WS_METHODS.subscribeResourceTelemetry]: AuthDiagnosticsReadScope,
@@ -27,7 +27,7 @@ index 5b8d483d..168474d9 100644
    [WS_METHODS.gitResolvePullRequest]: AuthOrchestrationReadScope,
    [WS_METHODS.vcsListRefs]: AuthOrchestrationReadScope,
 diff --git a/apps/server/src/environment/ServerEnvironment.ts b/apps/server/src/environment/ServerEnvironment.ts
-index 8e635f98..0fa1a5aa 100644
+index fbb59705..41c68690 100644
 --- a/apps/server/src/environment/ServerEnvironment.ts
 +++ b/apps/server/src/environment/ServerEnvironment.ts
 @@ -222,6 +222,10 @@ export const make = Effect.gen(function* () {
@@ -43,10 +43,10 @@ index 8e635f98..0fa1a5aa 100644
        requiredWorktreeBootstrap: true,
 diff --git a/apps/server/src/jj/JjForgeService.test.ts b/apps/server/src/jj/JjForgeService.test.ts
 new file mode 100644
-index 00000000..2311c674
+index 00000000..ca21c7e3
 --- /dev/null
 +++ b/apps/server/src/jj/JjForgeService.test.ts
-@@ -0,0 +1,461 @@
+@@ -0,0 +1,462 @@
 +import * as NodeServices from "@effect/platform-node/NodeServices";
 +import { describe, expect, it } from "@effect/vitest";
 +import {
@@ -303,7 +303,8 @@ index 00000000..2311c674
 +        operation: "JjForgeService.test",
 +        command: "git",
 +        cwd: f.remote,
-+        args: ["for-each-ref"],
++        // Upstream names bare repositories only through --git-dir.
++        args: ["--git-dir", f.remote, "for-each-ref"],
 +      });
 +      expect(refs.stdout).toBe("");
 +    }).pipe(Effect.provide(live)),
@@ -953,10 +954,10 @@ index 00000000..05d0f738
 +export const layer = Layer.effect(JjForgeService, make);
 diff --git a/apps/server/src/jj/JjPanelService.test.ts b/apps/server/src/jj/JjPanelService.test.ts
 new file mode 100644
-index 00000000..7e6657d6
+index 00000000..c614ee2a
 --- /dev/null
 +++ b/apps/server/src/jj/JjPanelService.test.ts
-@@ -0,0 +1,1013 @@
+@@ -0,0 +1,1014 @@
 +import * as NodeServices from "@effect/platform-node/NodeServices";
 +import { describe, expect, it } from "@effect/vitest";
 +import {
@@ -1049,7 +1050,8 @@ index 00000000..7e6657d6
 +        operation: "JjPanelService.test.localRemote",
 +        command: "git",
 +        cwd: remote,
-+        args: ["for-each-ref", "--format=%(refname) %(objectname)", "refs/heads"],
++        // Upstream names bare repositories only through --git-dir.
++        args: ["--git-dir", remote, "for-each-ref", "--format=%(refname) %(objectname)", "refs/heads"],
 +      });
 +      expect(refs.stdout.trim()).toBe(`refs/heads/published ${before.workingCopyCommitId}`);
 +    }).pipe(Effect.provide(live)),
@@ -2833,11 +2835,11 @@ index 00000000..e5c9a855
 +});
 +export const layer = Layer.effect(JjPanelService, make);
 diff --git a/apps/server/src/observability/RpcInstrumentation.ts b/apps/server/src/observability/RpcInstrumentation.ts
-index 167ce8d1..d9e08fcd 100644
+index 3f3942e7..559ea79c 100644
 --- a/apps/server/src/observability/RpcInstrumentation.ts
 +++ b/apps/server/src/observability/RpcInstrumentation.ts
-@@ -15,6 +15,15 @@ type WsRpcMethod = RpcGroup.Rpcs<typeof WsRpcGroup>["_tag"];
-  * prefix. Adding an RPC to `WsRpcGroup` without a label is a type error.
+@@ -14,6 +14,15 @@ type WsRpcMethod = RpcGroup.Rpcs<typeof WsRpcGroup>["_tag"];
+  * even where they differ from the method prefix.
   */
  const RPC_AGGREGATES = {
 +  [WS_METHODS.jjRunAction]: "jj",
@@ -2853,7 +2855,7 @@ index 167ce8d1..d9e08fcd 100644
    [ORCHESTRATION_V2_WS_METHODS.getWorkflowScript]: "orchestration",
    [ORCHESTRATION_V2_WS_METHODS.stopWorkflow]: "orchestration",
 diff --git a/apps/server/src/server.ts b/apps/server/src/server.ts
-index 23981a93..f6baff1a 100644
+index 48d70110..d2092088 100644
 --- a/apps/server/src/server.ts
 +++ b/apps/server/src/server.ts
 @@ -1,3 +1,5 @@
@@ -2861,8 +2863,8 @@ index 23981a93..f6baff1a 100644
 +import * as JjForgeService from "./jj/JjForgeService.ts";
  import * as ProviderEventLoggers from "@t3tools/provider-core/server/ProviderEventLoggers";
  import type { RelayManagedEndpointRuntimeConfig } from "@t3tools/contracts/relay";
- import * as Clock from "effect/Clock";
-@@ -381,6 +383,14 @@ const layerReview = ReviewService.layer.pipe(
+ import * as Random from "effect/Random";
+@@ -395,6 +397,14 @@ const layerReview = ReviewService.layer.pipe(
  );
  
  const layerVcs = Layer.empty.pipe(
@@ -2878,7 +2880,7 @@ index 23981a93..f6baff1a 100644
    Layer.provideMerge(layerVcsDriverRegistry),
    Layer.provideMerge(VcsProvisioningService.layer.pipe(Layer.provide(layerVcsDriverRegistry))),
 diff --git a/apps/server/src/ws.ts b/apps/server/src/ws.ts
-index 96994ee3..f38313ac 100644
+index 1ba4ff99..5b69c03e 100644
 --- a/apps/server/src/ws.ts
 +++ b/apps/server/src/ws.ts
 @@ -1,3 +1,5 @@
@@ -2887,7 +2889,7 @@ index 96994ee3..f38313ac 100644
  import { OrchestrationDispatchCommandError } from "@t3tools/contracts";
  import * as Crypto from "effect/Crypto";
  import * as Orchestrator from "./orchestration-v2/Orchestrator.ts";
-@@ -1278,6 +1280,8 @@ const layerWsRpc = (
+@@ -1262,6 +1264,8 @@ export const layerWsRpc = (
        const externalLauncher = yield* ExternalLauncher.ExternalLauncher;
        const remoteOpenTargets = yield* RemoteOpenTargets.RemoteOpenTargets;
        const directEndpoints = yield* DirectEndpoints.DirectEndpoints;
@@ -2896,7 +2898,7 @@ index 96994ee3..f38313ac 100644
        const gitWorkflow = yield* GitWorkflowService.GitWorkflowService;
        const review = yield* ReviewService.ReviewService;
        const vcsProvisioning = yield* VcsProvisioningService.VcsProvisioningService;
-@@ -2825,6 +2829,15 @@ const layerWsRpc = (
+@@ -2803,6 +2807,15 @@ export const layerWsRpc = (
            worktreeSetupTracker
              .cancel(input.threadId)
              .pipe(Effect.map((cancelled) => ({ cancelled }))),
@@ -2912,18 +2914,6 @@ index 96994ee3..f38313ac 100644
          [WS_METHODS.vcsRefreshStatus]: (input) => vcsStatusBroadcaster.refreshStatus(input.cwd),
          [WS_METHODS.vcsPull]: (input) =>
            gitWorkflow.pullCurrentBranch(input.cwd).pipe(
-diff --git a/apps/web/src/closedViewStore.test.ts b/apps/web/src/closedViewStore.test.ts
-index 6bb4631b..02065fe4 100644
---- a/apps/web/src/closedViewStore.test.ts
-+++ b/apps/web/src/closedViewStore.test.ts
-@@ -85,6 +85,7 @@ describe("closedViewStore", () => {
- 
-   it("preserves every supported saved panel type and its restore data", async () => {
-     const surfaces = [
-+      { kind: "jj", id: "jj" },
-       { kind: "diff", id: "diff" },
-       { kind: "files", id: "files" },
-       { kind: "pull-requests", id: "pull-requests" },
 diff --git a/apps/web/src/closedViewStore.ts b/apps/web/src/closedViewStore.ts
 index 76fee83a..5b73208d 100644
 --- a/apps/web/src/closedViewStore.ts
@@ -2937,31 +2927,19 @@ index 76fee83a..5b73208d 100644
      case "files":
      case "pull-requests":
 diff --git a/apps/web/src/components/ChatView.tsx b/apps/web/src/components/ChatView.tsx
-index f8766398..61219b21 100644
+index 92707af8..679c942a 100644
 --- a/apps/web/src/components/ChatView.tsx
 +++ b/apps/web/src/components/ChatView.tsx
-@@ -184,7 +184,11 @@ import * as Cause from "effect/Cause";
+@@ -117,7 +117,7 @@ import {
+ } from "@t3tools/client-runtime/state/runtime";
  import { AsyncResult } from "effect/reactivity";
  import { isElectron } from "../env";
- import { readLocalApi } from "../localApi";
 -import { useDiffPanelStore } from "../diffPanelStore";
-+import {
-+  type JjDiffContext,
-+  selectThreadDiffPanelSelection,
-+  useDiffPanelStore,
-+} from "../diffPanelStore";
++import { selectThreadDiffPanelSelection, useDiffPanelStore } from "../diffPanelStore";
  import { useActiveThreadRef } from "../hooks/useActiveThreadRef";
+ import { composerRequiresModifier } from "../composer-logic";
  import {
-   type ComposerSubmissionIntent,
-@@ -712,6 +716,7 @@ function useDraftHeroLayoutTransition(
- const PreviewPanel = lazy(() =>
-   import("./preview/PreviewPanel").then((module) => ({ default: module.PreviewPanel })),
- );
-+const JjPanel = lazy(() => import("./jj/JjPanel"));
- const DiffPanel = lazy(() => import("./DiffPanel"));
- const selectAutoShowFloatingPreview = (settings: { browserAutoShowFloatingPreview: boolean }) =>
-   settings.browserAutoShowFloatingPreview;
-@@ -2411,13 +2416,21 @@ export default function ChatView(props: ChatViewProps) {
+@@ -919,11 +919,21 @@ export default function ChatView(props: ChatViewProps) {
      selectActiveRightPanel(state.byThreadKey, activeThreadRef),
    );
    const diffOpen = activeRightPanelKind === "diff";
@@ -2972,8 +2950,6 @@ index f8766398..61219b21 100644
    useLayoutEffect(() => {
      const explicitThreadRef = explicitDiffOpenRef.current;
      explicitDiffOpenRef.current = null;
--    // Generic openings always show Changes, including tab fallbacks and thread changes.
--    // A timeline click instead opens the specific turn/file the user requested.
 -    if (diffOpen && activeThreadRef && explicitThreadRef !== activeThreadRef) {
 +    // Preserve JJ selections when reopening the tab, including in pure JJ workspaces.
 +    if (
@@ -2986,67 +2962,32 @@ index f8766398..61219b21 100644
        useDiffPanelStore.getState().selectGitScope(activeThreadRef, "branch");
      }
    }, [activeThreadRef, diffOpen]);
-@@ -5372,8 +5385,8 @@ export default function ChatView(props: ChatViewProps) {
-   };
-   const createBrowserSurfaceStable = useStableCallback(createBrowserSurface);
-   const addDiffSurface = () => {
--    if (!activeThreadRef || !isServerThread || !isGitRepo) return;
--    useDiffPanelStore.getState().selectGitScope(activeThreadRef, "branch");
-+    if (!activeThreadRef || !isServerThread || (!isGitRepo && !isJjDiffSelected)) return;
-+    if (isGitRepo) useDiffPanelStore.getState().selectGitScope(activeThreadRef, "branch");
-     useRightPanelStore.getState().open(activeThreadRef, "diff");
-     onDiffPanelOpen?.();
-   };
-@@ -10778,6 +10791,16 @@ export default function ChatView(props: ChatViewProps) {
-     onDiffPanelOpen?.();
-   };
-   const onOpenTurnDiffStable = useStableCallback(onOpenTurnDiff);
-+  const onOpenJjDiff = (revisionCommitId: string, filePath: string, context?: JjDiffContext) => {
-+    if (!isServerThread || !activeThreadRef) return;
-+    explicitDiffOpenRef.current = diffOpen ? null : activeThreadRef;
-+    useDiffPanelStore
-+      .getState()
-+      .selectJjRevision(activeThreadRef, revisionCommitId, filePath, context);
-+    useRightPanelStore.getState().open(activeThreadRef, "diff");
-+    onDiffPanelOpen?.();
-+  };
-+  const onOpenJjDiffStable = useStableCallback(onOpenJjDiff);
-   const onTimelineRollbackCheckpoint = (input: {
-     readonly checkpointId: string;
-     readonly scopeId: string;
-@@ -10865,6 +10888,26 @@ export default function ChatView(props: ChatViewProps) {
-         newShortcutLabel={newTerminalShortcutLabel ?? undefined}
-         closeShortcutLabel={closeTerminalShortcutLabel ?? undefined}
-       />
-+    ) : renderedRightPanelSurface?.kind === "jj" ? (
-+      <Suspense fallback={null}>
-+        <JjPanel
-+          key={`${activeThreadRef.environmentId}:${gitCwd}`}
-+          environmentId={activeThreadRef.environmentId}
-+          cwd={gitCwd}
-+          visible={rightPanelOpen && activeRightPanelSurface?.kind === "jj"}
-+          onOpenDiff={onOpenJjDiffStable}
-+          projectId={activeThread?.projectId}
-+          onOpenPullRequest={({ environmentId, reference }) => {
-+            if (environmentId !== activeThreadRef.environmentId) return;
-+            useRightPanelStore.getState().openPullRequest(activeThreadRef, {
-+              projectId: reference.projectId,
-+              repository: reference.repository,
-+              number: reference.number,
-+              ...(reference.host ? { host: reference.host } : {}),
-+            });
-+          }}
-+        />
-+      </Suspense>
-     ) : renderedRightPanelSurface?.kind === "diff" ? (
-       <Suspense fallback={null}>
-         <DiffPanel
-@@ -11846,13 +11889,16 @@ export default function ChatView(props: ChatViewProps) {
+@@ -2398,6 +2408,7 @@ export default function ChatView(props: ChatViewProps) {
+     createBrowserSurface,
+     createBrowserSurfaceStable,
+     moveRightPanelSurfaceStable,
++    onOpenJjDiffStable,
+     onOpenTurnDiffStable,
+     openChangesFromThreadPanelStable,
+     openFileSurfaceStable,
+@@ -3076,6 +3087,9 @@ export default function ChatView(props: ChatViewProps) {
+       workspaceMutationId={workspaceMutationId}
+       getShortcutContext={getShortcutContextStable}
+       onSendAnnotation={sendPreviewAnnotationStable}
++      cwd={gitCwd}
++      projectId={activeThread.projectId}
++      onOpenJjDiff={onOpenJjDiffStable}
+       onCloseSurface={closeRightPanelSurface}
+       terminal={{
+         launchContext: activeTerminalLaunchContext ?? null,
+@@ -3868,13 +3882,18 @@ export default function ChatView(props: ChatViewProps) {
            onAddBrowserInProfile={createBrowserSurfaceStable}
            onAddTerminal={addTerminalSurfaceStable}
            onAddDiff={addDiffSurfaceStable}
 +          onAddJj={
-+            gitCwd ? () => useRightPanelStore.getState().open(activeThreadRef, "jj") : undefined
++            gitCwd && activeThreadRef
++              ? () => useRightPanelStore.getState().open(activeThreadRef, "jj")
++              : undefined
 +          }
            onAddFiles={addFilesSurfaceStable}
            onAddPullRequest={addPullRequestSurfaceStable}
@@ -3059,29 +3000,11 @@ index f8766398..61219b21 100644
            filesAvailable={activeProject !== null}
            pullRequestAvailable={pullRequestSurfaceAvailable}
            pullRequestsAvailable={pullRequestsSurfaceAvailable}
-@@ -11905,13 +11951,16 @@ export default function ChatView(props: ChatViewProps) {
-             onAddBrowserInProfile={createBrowserSurfaceStable}
-             onAddTerminal={addTerminalSurfaceStable}
-             onAddDiff={addDiffSurfaceStable}
-+            onAddJj={
-+              gitCwd ? () => useRightPanelStore.getState().open(activeThreadRef, "jj") : undefined
-+            }
-             onAddFiles={addFilesSurfaceStable}
-             onAddPullRequest={addPullRequestSurfaceStable}
-             onAddPullRequests={addPullRequestsSurfaceStable}
-             onAddDevice={addDeviceSurfaceStable}
-             browserAvailable={canOperatePreview && browserAvailable}
-             terminalAvailable={activeProject !== null && canOperateTerminal}
--            diffAvailable={isServerThread && isGitRepo}
-+            diffAvailable={isServerThread && (isGitRepo || isJjDiffSelected)}
-             filesAvailable={activeProject !== null}
-             pullRequestAvailable={pullRequestSurfaceAvailable}
-             pullRequestsAvailable={pullRequestsSurfaceAvailable}
 diff --git a/apps/web/src/components/DiffPanel.tsx b/apps/web/src/components/DiffPanel.tsx
-index 0c7a4a28..4c10f235 100644
+index 9ac0dae6..1a6d2f18 100644
 --- a/apps/web/src/components/DiffPanel.tsx
 +++ b/apps/web/src/components/DiffPanel.tsx
-@@ -7,7 +7,12 @@ import {
+@@ -6,7 +6,12 @@ import {
    squashAtomCommandFailure,
  } from "@t3tools/client-runtime/state/runtime";
  import { safeErrorLogAttributes } from "@t3tools/client-runtime/errors";
@@ -3095,7 +3018,7 @@ index 0c7a4a28..4c10f235 100644
  import {
    ArrowRightIcon,
    CheckIcon,
-@@ -80,11 +85,13 @@ import {
+@@ -82,11 +87,13 @@ import {
    DropdownMenuTrigger,
  } from "./ui/menu";
  import { Tooltip, TooltipPopup, TooltipTrigger } from "./ui/tooltip";
@@ -3110,7 +3033,7 @@ index 0c7a4a28..4c10f235 100644
  import { buildBaseRefChoices, filterBaseRefChoices } from "../lib/baseRefChoices";
  import { createGitDiffFileContentsLoader } from "../lib/diffFileContents";
  
-@@ -248,17 +255,145 @@ export default function DiffPanel({
+@@ -243,17 +250,145 @@ export default function DiffPanel({
      serverConfig?.availableEditors ?? [],
    );
    const getDiffFileContents = useAtomCommand(reviewEnvironment.diffFileContents);
@@ -3258,9 +3181,9 @@ index 0c7a4a28..4c10f235 100644
 -    selectThreadDiffPanelSelection(state.byThreadKey, routeThreadRef),
 -  );
    const isGitRepo = gitStatusQuery.data?.isRepo ?? true;
-   const { turnDiffSummaries, inferredCheckpointTurnCountByRunId } =
-     useTurnDiffSummaries(activeThreadProjection);
-@@ -288,9 +423,12 @@ export default function DiffPanel({
+   const turnDiffSummaries = useThreadCheckpointSummaries(routeThreadRef);
+   const orderedTurnDiffSummaries = turnDiffSummaries.toSorted((left, right) => {
+@@ -274,9 +409,12 @@ export default function DiffPanel({
    const selectedRunId = diffSelection.kind === "turn" ? diffSelection.turnId : null;
    const selectedGitScope = diffSelection.kind === "unstaged" ? "unstaged" : "branch";
    const selectedBaseRef = diffSelection.kind === "branch" ? diffSelection.baseRef : null;
@@ -3275,9 +3198,9 @@ index 0c7a4a28..4c10f235 100644
    const selectedTurn =
      selectedRunId === null
        ? undefined
-@@ -300,24 +438,31 @@ export default function DiffPanel({
-     selectedTurn &&
-     (selectedTurn.checkpointTurnCount ?? inferredCheckpointTurnCountByRunId[selectedTurn.runId]);
+@@ -284,24 +422,31 @@ export default function DiffPanel({
+         orderedTurnDiffSummaries[0]);
+   const selectedCheckpointTurnCount = selectedTurn?.checkpointTurnCount;
    const latestTurn = orderedTurnDiffSummaries[0];
 -  const selectedScopeLabel =
 -    selectedRunId === null
@@ -3312,10 +3235,10 @@ index 0c7a4a28..4c10f235 100644
 +      : selectedGitScope === "unstaged"
 +        ? "Uncommitted"
 +        : "Changes";
-   const selectedCheckpointRange = useMemo(
-     () =>
-       typeof selectedCheckpointTurnCount === "number"
-@@ -340,7 +485,7 @@ export default function DiffPanel({
+   const selectedCheckpointRange =
+     typeof selectedCheckpointTurnCount === "number"
+       ? {
+@@ -321,7 +466,7 @@ export default function DiffPanel({
      { enabled: isGitRepo && selectedTurn !== undefined },
    );
    const branchDiffPreview = useEnvironmentQuery(
@@ -3324,7 +3247,7 @@ index 0c7a4a28..4c10f235 100644
        ? reviewEnvironment.diffPreview({
            environmentId: activeThread.environmentId,
            input: {
-@@ -352,20 +497,35 @@ export default function DiffPanel({
+@@ -333,39 +478,62 @@ export default function DiffPanel({
        : null,
    );
    const canRefreshGitDiff =
@@ -3353,37 +3276,12 @@ index 0c7a4a28..4c10f235 100644
 +    ? () => setJjRefreshId((current) => current + 1)
 +    : refreshPreviewQuery;
  
-   const currentLoadDiffFiles = useMemo<FileDiffContentsLoader | undefined>(() => {
-     const preview = branchDiffPreview.data;
--    if (selectedRunId !== null || !activeThread || !preview || !selectedGitSource) {
-+    if (
-+      selectedJjRevision ||
-+      selectedRunId !== null ||
-+      !activeThread ||
-+      !preview ||
-+      !selectedGitSource
-+    ) {
-       return undefined;
-     }
- 
-@@ -385,6 +545,7 @@ export default function DiffPanel({
-     canReadFiles,
-     selectedGitSource,
-     selectedRunId,
-+    selectedJjRevision,
-   ]);
-   const loadDiffFilesRef = useRef(currentLoadDiffFiles);
-   loadDiffFilesRef.current = currentLoadDiffFiles;
-@@ -443,16 +604,28 @@ export default function DiffPanel({
-   ];
+-  const preview = branchDiffPreview.data;
++const preview = branchDiffPreview.data;
    const gitDiff = selectedGitSource?.diff;
- 
+-
 -  const selectedPatch = selectedTurn ? activeCheckpointDiff.data?.diff : gitDiff;
 -  const isSelectedPatchTruncated = !selectedTurn && selectedGitSource?.truncated === true;
--  const isLoadingSelectedPatch = selectedTurn
--    ? activeCheckpointDiff.isPending
--    : branchDiffPreview.isPending;
--  const selectedPatchError = selectedTurn ? activeCheckpointDiff.error : branchDiffPreview.error;
 +  const selectedPatch = selectedJjRevision
 +    ? currentJjDiff?.data?.diff
 +    : selectedTurn
@@ -3392,13 +3290,14 @@ index 0c7a4a28..4c10f235 100644
 +  const isSelectedPatchTruncated = selectedJjRevision
 +    ? currentJjDiff?.data?.truncated === true
 +    : !selectedTurn && selectedGitSource?.truncated === true;
+   const selectedPatchQuery = selectedTurn ? activeCheckpointDiff : branchDiffPreview;
+-  const isLoadingSelectedPatch = selectedPatchQuery.isPending && selectedPatchQuery.data === null;
+-  const selectedPatchError = selectedTurn ? activeCheckpointDiff.error : branchDiffPreview.error;
 +  const isLoadingSelectedPatch = selectedJjRevision
 +    ? !currentJjDiff || currentJjDiff.pending
-+    : selectedTurn
-+      ? activeCheckpointDiff.isPending
-+      : branchDiffPreview.isPending;
++    : selectedPatchQuery.isPending && selectedPatchQuery.data === null;
 +  const selectedPatchError = selectedJjRevision
-+    ? currentJjDiff?.error
++    ? (currentJjDiff?.error ?? null)
 +    : selectedTurn
 +      ? activeCheckpointDiff.error
 +      : branchDiffPreview.error;
@@ -3409,69 +3308,50 @@ index 0c7a4a28..4c10f235 100644
 +    !selectedJjRevision && !selectedTurn && selectedGitSource?.truncated && selectedGitSource.files
        ? selectedGitSource
        : null;
-   const renderablePatch = useMemo(
-@@ -461,8 +634,16 @@ export default function DiffPanel({
-         ? null
-         : getRenderablePatch(selectedPatch, `diff-panel:${resolvedTheme}`, {
-             compactPartialHunkOffsets: selectedRunId === null,
-+            ignoreWhitespace: Boolean(selectedJjRevision) && diffIgnoreWhitespace,
-           }),
--    [lazySource, resolvedTheme, selectedPatch, selectedRunId],
-+    [
-+      diffIgnoreWhitespace,
-+      lazySource,
-+      resolvedTheme,
-+      selectedPatch,
-+      selectedRunId,
-+      selectedJjRevision,
-+    ],
+   const renderablePatch = getRenderablePatch(
+     lazySource ? undefined : selectedPatch,
+     `diff-panel:${resolvedTheme}`,
+-    { compactPartialHunkOffsets: selectedRunId === null },
++    {
++      compactPartialHunkOffsets: selectedRunId === null,
++      ignoreWhitespace: Boolean(selectedJjRevision) && diffIgnoreWhitespace,
++    },
    );
-   const fileStats = useMemo(
-     () => new Map(lazySource?.files?.map((file) => [file.path, file])),
-@@ -506,7 +687,9 @@ export default function DiffPanel({
-     resourceKey: `diff:${activeThreadRefreshKey ?? ""}`,
-   });
+   const fileStats = new Map(lazySource?.files?.map((file) => [file.path, file]));
+   const sourceLineStat =
+-    !selectedTurn && selectedGitSource?.files
++    !selectedJjRevision && !selectedTurn && selectedGitSource?.files
+       ? selectedGitSource.files.reduce(
+           (total, file) => ({
+             additions: total.additions + file.additions,
+@@ -375,7 +543,12 @@ export default function DiffPanel({
+         )
+       : null;
+   const currentLoadDiffFiles =
+-    selectedRunId === null && activeThread && preview && selectedGitSource && canReadFiles
++    !selectedJjRevision &&
++    selectedRunId === null &&
++    activeThread &&
++    preview &&
++    selectedGitSource &&
++    canReadFiles
+       ? createGitDiffFileContentsLoader(getDiffFileContents, {
+           environmentId: activeThread.environmentId,
+           cwd: preview.cwd,
+@@ -503,7 +676,9 @@ export default function DiffPanel({
+     return () => window.removeEventListener("focus", refreshOnFocus);
+   }, [canRefreshGitDiff, refreshBranchDiffPreview]);
  
 -  const isRefreshingDiff = branchDiffPreview.isPending || areFilePatchesPending;
 +  const isRefreshingDiff = selectedJjRevision
 +    ? isLoadingSelectedPatch
 +    : branchDiffPreview.isPending || areFilePatchesPending;
-   const renderableFileEntries = useMemo(
-     () => renderableFiles.map(getCachedFileEntry),
-     [renderableFiles],
-@@ -618,16 +801,21 @@ export default function DiffPanel({
- 
-   const externalRevealRef = useRef<{ cache: string; key: string } | null>(null);
-   useEffect(() => {
--    if (!lazySource || !selectedFilePath) return;
-+    if (!selectedFilePath || (!lazySource && !selectedDiffFileKey)) return;
-+    const cache = collapseScopeKey ?? filePatchScope;
-     const key = `${selectedFilePath}:${selectedFileRevealRequestId}`;
--    if (
--      externalRevealRef.current?.cache === filePatchScope &&
--      externalRevealRef.current.key === key
--    )
--      return;
--    externalRevealRef.current = { cache: filePatchScope, key };
-+    if (externalRevealRef.current?.cache === cache && externalRevealRef.current.key === key) return;
-+    externalRevealRef.current = { cache, key };
-     revealDiffFile(selectedFilePath);
--  }, [lazySource, selectedFilePath, selectedFileRevealRequestId, filePatchScope, revealDiffFile]);
-+  }, [
-+    collapseScopeKey,
-+    lazySource,
-+    selectedDiffFileKey,
-+    selectedFilePath,
-+    selectedFileRevealRequestId,
-+    filePatchScope,
-+    revealDiffFile,
-+  ]);
- 
-   const openDiffFile = useCallback(
-     (filePath: string) => {
-@@ -717,8 +905,9 @@ export default function DiffPanel({
-   // turn as "latest", while the turn sub-menu keys every turn by id so the
-   // latest turn is also marked there.
+   const renderableFileEntries = renderableFiles.map(getCachedFileEntry);
+   const diffFileKeys = renderableFileEntries.map((file) => file.fileKey);
+   const defaultCollapsedDiffFileKeys = settings.diffFilesCollapsed
+@@ -644,8 +819,9 @@ export default function DiffPanel({
+     useDiffPanelStore.getState().selectBranchBaseRef(routeThreadRef, baseRef);
+   };
    const selectedTurnValue = selectedTurn ? `turn:${selectedTurn.runId}` : "";
 -  const selectedScopeValue =
 -    selectedRunId === null
@@ -3481,7 +3361,7 @@ index 0c7a4a28..4c10f235 100644
        ? selectedGitScope
        : selectedTurn?.runId === latestTurn?.runId
          ? "latest"
-@@ -748,6 +937,11 @@ export default function DiffPanel({
+@@ -675,6 +851,11 @@ export default function DiffPanel({
            </DropdownMenuTrigger>
            <DropdownMenuContent align="start">
              <DropdownMenuRadioGroup value={selectedScopeValue} onValueChange={selectScopeValue}>
@@ -3493,7 +3373,7 @@ index 0c7a4a28..4c10f235 100644
                <DropdownMenuRadioItem value="branch" closeOnClick>
                  <span>Changes</span>
                </DropdownMenuRadioItem>
-@@ -912,7 +1106,7 @@ export default function DiffPanel({
+@@ -842,7 +1023,7 @@ export default function DiffPanel({
              layout="inline"
            />
          ) : null}
@@ -3502,7 +3382,7 @@ index 0c7a4a28..4c10f235 100644
            <Tooltip>
              <TooltipTrigger
                render={
-@@ -1046,7 +1240,7 @@ export default function DiffPanel({
+@@ -976,7 +1157,7 @@ export default function DiffPanel({
          <div className="flex flex-1 items-center justify-center px-5 text-center text-xs text-muted-foreground/70">
            Select a thread to inspect turn diffs.
          </div>
@@ -3511,7 +3391,7 @@ index 0c7a4a28..4c10f235 100644
          <div className="flex flex-1 items-center justify-center px-5 text-center text-xs text-muted-foreground/70">
            Turn diffs are unavailable because this project is not a git repository.
          </div>
-@@ -1054,7 +1248,17 @@ export default function DiffPanel({
+@@ -984,7 +1165,17 @@ export default function DiffPanel({
          <div className="flex flex-1 items-center justify-center px-5 text-center text-xs text-muted-foreground/70">
            No completed turns yet.
          </div>
@@ -3530,7 +3410,7 @@ index 0c7a4a28..4c10f235 100644
          fileAccess.isPending ? (
            <DiffPanelLoadingState label="Checking file access..." />
          ) : (
-@@ -1073,18 +1277,24 @@ export default function DiffPanel({
+@@ -1003,18 +1194,24 @@ export default function DiffPanel({
              )}
              {selectedPatchError && !renderablePatch && (
                <div className="px-3">
@@ -3561,30 +3441,35 @@ index 0c7a4a28..4c10f235 100644
                    }
                  />
                ) : (
-diff --git a/apps/web/src/components/RightPanelTabs.keyboard.test.tsx b/apps/web/src/components/RightPanelTabs.keyboard.test.tsx
-index e7a952ba..f334fcb5 100644
---- a/apps/web/src/components/RightPanelTabs.keyboard.test.tsx
-+++ b/apps/web/src/components/RightPanelTabs.keyboard.test.tsx
-@@ -110,6 +110,17 @@ async function press(key: string, options: KeyboardEventInit = {}) {
- }
+diff --git a/apps/web/src/components/RightPanelTabs.test.tsx b/apps/web/src/components/RightPanelTabs.test.tsx
+index fa9cbf01..94080ac5 100644
+--- a/apps/web/src/components/RightPanelTabs.test.tsx
++++ b/apps/web/src/components/RightPanelTabs.test.tsx
+@@ -28,6 +28,22 @@ describe("surface shortcuts", () => {
+     { shortcut: "D", available: false, label: "Diff" },
+   ] as const;
  
- describe("right panel new-tab shortcut", () => {
-+  it("opens Jujutsu with its launcher shortcut", async () => {
-+    let opened = 0;
-+    await renderPanel({
-+      onAddJj: () => {
-+        opened++;
-+      },
-+    });
-+    await press("j");
-+    expect(opened).toBe(1);
++  it("opens an available Jujutsu launcher from J", () => {
++    const actions = [
++      { shortcut: "J", available: true, label: "Jujutsu" },
++      { shortcut: "D", available: true, label: "Diff" },
++    ] as const;
++    expect(surfaceShortcutActionForKey(actions, shortcutEvent("j"))?.label).toBe("Jujutsu");
++    expect(
++      surfaceShortcutActionForKey(
++        actions.map((action) =>
++          action.shortcut === "J" ? { ...action, available: false } : action,
++        ),
++        shortcutEvent("j"),
++      ),
++    ).toBeNull();
 +  });
 +
-   it.each(["MacIntel", "Win32", "Linux x86_64"])(
-     "opens the menu on %s and chooses a tab",
-     async (platform) => {
+   it("leaves modified, composing, and already-handled key events alone", () => {
+     expect(surfaceShortcutActionForKey(actions, shortcutEvent("b", { metaKey: true }))).toBeNull();
+     expect(
 diff --git a/apps/web/src/components/RightPanelTabs.tsx b/apps/web/src/components/RightPanelTabs.tsx
-index 5c8323a7..996d71cf 100644
+index 4c1059ea..cbc3b030 100644
 --- a/apps/web/src/components/RightPanelTabs.tsx
 +++ b/apps/web/src/components/RightPanelTabs.tsx
 @@ -31,6 +31,7 @@ import {
@@ -3595,7 +3480,7 @@ index 5c8323a7..996d71cf 100644
    Files,
    Globe2,
    Plus,
-@@ -139,6 +140,7 @@ interface RightPanelTabsProps {
+@@ -133,6 +134,7 @@ export interface RightPanelTabsProps {
    onAddBrowserInProfile: (profileId: string) => void;
    onAddTerminal: () => void;
    onAddDiff: () => void;
@@ -3603,7 +3488,7 @@ index 5c8323a7..996d71cf 100644
    onAddFiles: () => void;
    onAddPullRequest: () => void;
    onAddPullRequests: () => void;
-@@ -337,6 +339,7 @@ function RightPanelEmptyState(props: {
+@@ -311,6 +313,7 @@ function RightPanelEmptyState(props: {
    browserProfiles: ReadonlyArray<{ readonly id: string; readonly name: string }>;
    onAddTerminal: () => void;
    onAddDiff: () => void;
@@ -3611,7 +3496,7 @@ index 5c8323a7..996d71cf 100644
    onAddFiles: () => void;
    onAddPullRequest: () => void;
    onAddPullRequests: () => void;
-@@ -377,6 +380,14 @@ function RightPanelEmptyState(props: {
+@@ -350,6 +353,14 @@ function RightPanelEmptyState(props: {
        disabledReason: SURFACE_UNAVAILABLE_HINTS.files,
        onClick: props.onAddFiles,
      },
@@ -3626,7 +3511,7 @@ index 5c8323a7..996d71cf 100644
      {
        label: "Diff",
        icon: FileDiff,
-@@ -601,6 +612,8 @@ function surfaceTitle(
+@@ -548,6 +559,8 @@ function surfaceTitle(
    terminalLabelsById: ReadonlyMap<string, string>,
  ): string {
    switch (surface.kind) {
@@ -3635,16 +3520,19 @@ index 5c8323a7..996d71cf 100644
      case "diff":
        return "Diff";
      case "files":
-@@ -676,6 +689,8 @@ function SurfaceIcon({
-         favicon && url && sameOrigin(favicon.pageUrl, url) ? favicon.dataUrl : null;
-       return <PreviewFavicon capturedUrl={capturedUrl} url={url} />;
-     }
+@@ -628,8 +641,10 @@ function SurfaceIcon({
+   pullRequestStatusSeed: PullRequestTabStatusSeed | undefined;
+ }) {
+   switch (surface.kind) {
+-    case "preview":
++case "preview":
+       return <PreviewFavicon capturedUrl={previewCapturedUrl} url={previewUrl} />;
 +    case "jj":
 +      return <GitBranch className="size-3 shrink-0" />;
      case "diff":
        return <FileDiff className="size-3 shrink-0" />;
      case "files":
-@@ -959,6 +974,14 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
+@@ -1052,6 +1067,14 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
        disabledReason: SURFACE_DISABLED_REASONS.files,
        onClick: props.onAddFiles,
      },
@@ -3659,7 +3547,7 @@ index 5c8323a7..996d71cf 100644
      {
        label: "Diff",
        icon: FileDiff,
-@@ -1479,6 +1502,7 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
+@@ -1453,6 +1476,7 @@ export function RightPanelTabs(props: RightPanelTabsProps) {
              browserProfiles={browserProfiles}
              onAddTerminal={props.onAddTerminal}
              onAddDiff={props.onAddDiff}
@@ -3667,6 +3555,126 @@ index 5c8323a7..996d71cf 100644
              onAddFiles={props.onAddFiles}
              onAddPullRequest={props.onAddPullRequest}
              onAddPullRequests={props.onAddPullRequests}
+diff --git a/apps/web/src/components/chat/RightPanelSurfaceContent.tsx b/apps/web/src/components/chat/RightPanelSurfaceContent.tsx
+index 1940a0bf..f03263f4 100644
+--- a/apps/web/src/components/chat/RightPanelSurfaceContent.tsx
++++ b/apps/web/src/components/chat/RightPanelSurfaceContent.tsx
+@@ -12,6 +12,7 @@ import { scopedThreadKey } from "@t3tools/client-runtime/environment";
+ import { lazy, Suspense } from "react";
+ import type { ComposerImageAttachment, DraftId } from "../../composerDraftStore";
+ import type { ShortcutMatchContext } from "../../keybindings";
++import { type JjDiffContext } from "../../diffPanelStore";
+ import { type RightPanelSurface, useRightPanelStore } from "../../rightPanelStore";
+ import {
+   PersistentThreadTerminalPanel,
+@@ -26,6 +27,7 @@ import { ThreadPullRequestsPanel } from "../pullRequest/ThreadPullRequestsPanel"
+ const PreviewPanel = lazy(() =>
+   import("../preview/PreviewPanel").then((module) => ({ default: module.PreviewPanel })),
+ );
++const JjPanel = lazy(() => import("../jj/JjPanel"));
+ const DiffPanel = lazy(() => import("../DiffPanel"));
+ const DevicePanel = lazy(() =>
+   import("../device/DevicePanel").then((module) => ({ default: module.DevicePanel })),
+@@ -74,6 +76,13 @@ export function RightPanelSurfaceContent(props: {
+     image: ComposerImageAttachment | null,
+   ) => void;
+   readonly onCloseSurface: (surface: RightPanelSurface) => void;
++  readonly cwd: string | null;
++  readonly projectId: ProjectId | null;
++  readonly onOpenJjDiff: (
++    revisionCommitId: string,
++    filePath: string,
++    context?: JjDiffContext,
++  ) => void;
+   readonly terminal: RightPanelTerminalProps;
+   readonly pullRequest: RightPanelPullRequestProps;
+   readonly files: RightPanelFileProps;
+@@ -103,6 +112,28 @@ export function RightPanelSurfaceContent(props: {
+           surface={surface}
+         />
+       );
++    case "jj":
++      return (
++        <Suspense fallback={null}>
++          <JjPanel
++            key={`${props.environmentId}:${props.cwd}`}
++            environmentId={props.environmentId}
++            cwd={props.cwd}
++            visible={visible && props.activeSurfaceId === surface.id}
++            onOpenDiff={props.onOpenJjDiff}
++            projectId={props.projectId ?? undefined}
++            onOpenPullRequest={({ environmentId, reference }) => {
++              if (environmentId !== props.environmentId) return;
++              useRightPanelStore.getState().openPullRequest(threadRef, {
++                projectId: reference.projectId,
++                repository: reference.repository,
++                number: reference.number,
++                ...(reference.host ? { host: reference.host } : {}),
++              });
++            }}
++          />
++        </Suspense>
++      );
+     case "diff":
+       return (
+         <Suspense fallback={null}>
+diff --git a/apps/web/src/components/chat/useRightPanelActions.ts b/apps/web/src/components/chat/useRightPanelActions.ts
+index 0ee09f12..4c2c5372 100644
+--- a/apps/web/src/components/chat/useRightPanelActions.ts
++++ b/apps/web/src/components/chat/useRightPanelActions.ts
+@@ -12,7 +12,11 @@ import {
+   isAtomCommandInterrupted,
+   squashAtomCommandFailure,
+ } from "@t3tools/client-runtime/state/runtime";
+-import { useDiffPanelStore } from "../../diffPanelStore";
++import {
++  type JjDiffContext,
++  selectThreadDiffPanelSelection,
++  useDiffPanelStore,
++} from "../../diffPanelStore";
+ import { type ThreadPanelPresentation } from "../../rightPanelLayout";
+ import {
+   selectActiveRightPanel,
+@@ -125,8 +129,12 @@ export function useRightPanelActions(input: RightPanelActionsInput) {
+   };
+   const createBrowserSurfaceStable = useStableCallback(createBrowserSurface);
+   const addDiffSurface = () => {
+-    if (!activeThreadRef || !isServerThread || !isGitRepo) return;
+-    useDiffPanelStore.getState().selectGitScope(activeThreadRef, "branch");
++    if (!activeThreadRef || !isServerThread) return;
++    const jjSelected =
++      selectThreadDiffPanelSelection(useDiffPanelStore.getState().byThreadKey, activeThreadRef)
++        .kind === "jj";
++    if (!isGitRepo && !jjSelected) return;
++    if (isGitRepo) useDiffPanelStore.getState().selectGitScope(activeThreadRef, "branch");
+     useRightPanelStore.getState().open(activeThreadRef, "diff");
+     onDiffPanelOpen?.();
+   };
+@@ -285,6 +293,16 @@ export function useRightPanelActions(input: RightPanelActionsInput) {
+     onDiffPanelOpen?.();
+   };
+   const onOpenTurnDiffStable = useStableCallback(onOpenTurnDiff);
++  const onOpenJjDiff = (revisionCommitId: string, filePath: string, context?: JjDiffContext) => {
++    if (!isServerThread || !activeThreadRef) return;
++    explicitDiffOpenRef.current = diffOpen ? null : activeThreadRef;
++    useDiffPanelStore
++      .getState()
++      .selectJjRevision(activeThreadRef, revisionCommitId, filePath, context);
++    useRightPanelStore.getState().open(activeThreadRef, "diff");
++    onDiffPanelOpen?.();
++  };
++  const onOpenJjDiffStable = useStableCallback(onOpenJjDiff);
+   useEffect(
+     () =>
+       subscribePreviewAction((action) => {
+@@ -319,6 +337,7 @@ export function useRightPanelActions(input: RightPanelActionsInput) {
+     createBrowserSurface,
+     createBrowserSurfaceStable,
+     moveRightPanelSurfaceStable,
++    onOpenJjDiffStable,
+     onOpenTurnDiffStable,
+     onToggleDiffStable,
+     openChangesFromThreadPanelStable,
 diff --git a/apps/web/src/components/jj/JjForgeSection.tsx b/apps/web/src/components/jj/JjForgeSection.tsx
 new file mode 100644
 index 00000000..360883f9
@@ -7153,13 +7161,22 @@ index 00000000..5e4b6e3d
 +  return action && isJjRunAction(action) ? action : null;
 +};
 diff --git a/apps/web/src/diffPanelStore.test.ts b/apps/web/src/diffPanelStore.test.ts
-index 737f3cc2..790c95a1 100644
+index b7238e8e..ebaa2126 100644
 --- a/apps/web/src/diffPanelStore.test.ts
 +++ b/apps/web/src/diffPanelStore.test.ts
-@@ -5,6 +5,15 @@ import { beforeEach, describe, expect, it } from "vite-plus/test";
- import { selectThreadDiffPanelSelection, useDiffPanelStore } from "./diffPanelStore";
+@@ -1,6 +1,23 @@
++import { scopeThreadRef } from "@t3tools/client-runtime/environment";
++import { EnvironmentId, ThreadId, RunId } from "@t3tools/contracts";
+ import { beforeEach, describe, expect, it } from "vite-plus/test";
  
- const THREAD_REF = scopeThreadRef(EnvironmentId.make("environment-1"), ThreadId.make("thread-1"));
+-import { useDiffPanelSessionStore, useDiffPanelStore } from "./diffPanelStore";
++import {
++  selectThreadDiffPanelSelection,
++  useDiffPanelSessionStore,
++  useDiffPanelStore,
++} from "./diffPanelStore";
++
++const THREAD_REF = scopeThreadRef(EnvironmentId.make("environment-1"), ThreadId.make("thread-1"));
 +const JJ_CONTEXT = {
 +  workspaceIdentity: {
 +    workspaceRoot: "/workspace",
@@ -7171,10 +7188,10 @@ index 737f3cc2..790c95a1 100644
 +const JJ_COMMIT_ID = "b".repeat(40);
  
  describe("diffPanelStore", () => {
-   beforeEach(() =>
-@@ -122,4 +131,151 @@ describe("diffPanelStore", () => {
-       revealRequestId: 1,
-     });
+   beforeEach(() => {
+@@ -41,4 +58,151 @@ describe("diffPanelStore", () => {
+     );
+     expect(defaults).toEqual(new Set(["src/app.ts", "src/index.ts"]));
    });
 +
 +  it("selects a JJ file with the displayed workspace and operation", () => {
@@ -7325,7 +7342,7 @@ index 737f3cc2..790c95a1 100644
 +  });
  });
 diff --git a/apps/web/src/diffPanelStore.ts b/apps/web/src/diffPanelStore.ts
-index 534eee59..4fe2bdba 100644
+index eb6f0e9d..92350728 100644
 --- a/apps/web/src/diffPanelStore.ts
 +++ b/apps/web/src/diffPanelStore.ts
 @@ -1,14 +1,26 @@
@@ -7355,9 +7372,9 @@ index 534eee59..4fe2bdba 100644
 +      context?: JjDiffContext;
 +    };
  
- // "branch" is the Changes view: everything this checkout changed since its base.
  const DEFAULT_SELECTION: DiffPanelSelection = { kind: "branch", baseRef: null };
-@@ -19,6 +31,12 @@ interface DiffPanelStoreState {
+ 
+@@ -18,6 +30,12 @@ interface DiffPanelStoreState {
    selectGitScope: (ref: ScopedThreadRef, scope: "branch" | "unstaged") => void;
    selectBranchBaseRef: (ref: ScopedThreadRef, baseRef: string | null) => void;
    selectTurn: (ref: ScopedThreadRef, turnId: RunId, filePath?: string) => void;
@@ -7370,7 +7387,7 @@ index 534eee59..4fe2bdba 100644
    reconcileTurnSelection: (ref: ScopedThreadRef, availableTurnIds: ReadonlyArray<RunId>) => void;
    removeThread: (ref: ScopedThreadRef) => void;
  }
-@@ -86,6 +104,23 @@ export const useDiffPanelStore = create<DiffPanelStoreState>()(
+@@ -85,6 +103,23 @@ export const useDiffPanelStore = create<DiffPanelStoreState>()(
              },
            };
          }),
@@ -7395,10 +7412,10 @@ index 534eee59..4fe2bdba 100644
          set((state) => {
            const threadKey = scopedThreadKey(ref);
 diff --git a/apps/web/src/reopenClosedView.test.ts b/apps/web/src/reopenClosedView.test.ts
-index 452c59cf..03deb2f0 100644
+index bd33011e..b7192789 100644
 --- a/apps/web/src/reopenClosedView.test.ts
 +++ b/apps/web/src/reopenClosedView.test.ts
-@@ -74,6 +74,7 @@ describe("reopenClosedView", () => {
+@@ -69,6 +69,7 @@ describe("reopenClosedView", () => {
        workspaceAvailable: false,
      };
      for (const surface of [
@@ -7407,10 +7424,10 @@ index 452c59cf..03deb2f0 100644
        {
          kind: "file",
 diff --git a/apps/web/src/reopenClosedView.ts b/apps/web/src/reopenClosedView.ts
-index 551119a1..f4d97704 100644
+index 2ae5e087..1bcd94ef 100644
 --- a/apps/web/src/reopenClosedView.ts
 +++ b/apps/web/src/reopenClosedView.ts
-@@ -122,7 +122,9 @@ export async function reopenClosedView(
+@@ -113,7 +113,9 @@ export async function reopenClosedView(
    const surface = view.surface;
    if (
      !options.workspaceAvailable &&
@@ -7422,11 +7439,11 @@ index 551119a1..f4d97704 100644
      return false;
    switch (surface.kind) {
 diff --git a/apps/web/src/rightPanelStore.test.ts b/apps/web/src/rightPanelStore.test.ts
-index 961a4a17..707f44ae 100644
+index 2f4d8d6d..4d9ef74a 100644
 --- a/apps/web/src/rightPanelStore.test.ts
 +++ b/apps/web/src/rightPanelStore.test.ts
-@@ -30,6 +30,29 @@ beforeEach(() => {
- });
+@@ -39,6 +39,29 @@ async function reloadRightPanelStore() {
+ }
  
  describe("rightPanelStore", () => {
 +  it("keeps Jujutsu singleton, restores it, and scopes it to its thread", () => {
@@ -7456,10 +7473,10 @@ index 961a4a17..707f44ae 100644
      const store = useRightPanelStore.getState();
      const pr = pullRequestSurface({
 diff --git a/apps/web/src/rightPanelStore.ts b/apps/web/src/rightPanelStore.ts
-index fa417786..36d0c464 100644
+index 85e34b88..adb27036 100644
 --- a/apps/web/src/rightPanelStore.ts
 +++ b/apps/web/src/rightPanelStore.ts
-@@ -23,6 +23,7 @@ import type { ChatFileAttachment } from "./types";
+@@ -14,6 +14,7 @@ import type { ChatFileAttachment } from "./types";
  
  const RIGHT_PANEL_KINDS = [
    "diff",
@@ -7467,15 +7484,15 @@ index fa417786..36d0c464 100644
    "files",
    "file",
    "preview",
-@@ -52,6 +53,7 @@ export type RightPanelSurface =
+@@ -45,6 +46,7 @@ export type RightPanelSurface =
        activeTerminalId: string;
        splitDirection?: "horizontal" | "vertical";
      }
 +  | { id: "jj"; kind: "jj" }
    | { id: "diff"; kind: "diff" }
-   | { id: "files"; kind: "files" }
    | {
-@@ -217,6 +219,8 @@ const singletonSurface = (
+       id: "files";
+@@ -219,6 +221,8 @@ const singletonSurface = (
    kind: Exclude<RightPanelKind, "file" | "preview" | "terminal" | "pull-request">,
  ): RightPanelSurface => {
    switch (kind) {
@@ -7495,33 +7512,33 @@ index 00000000..6dd45546
 +
 +export const jjEnvironment = createJjEnvironmentAtoms(connectionAtomRuntime);
 diff --git a/packages/client-runtime/package.json b/packages/client-runtime/package.json
-index 703d418a..e1ae00f0 100644
+index 7bec2b2c..7e3cfb58 100644
 --- a/packages/client-runtime/package.json
 +++ b/packages/client-runtime/package.json
-@@ -418,6 +418,10 @@
-     "./pull-request-markdown": {
+@@ -435,6 +435,10 @@
        "types": "./src/pullRequestMarkdown.ts",
        "default": "./src/pullRequestMarkdown.ts"
-+    },
+     },
 +    "./state/jj": {
 +      "types": "./src/state/jj.ts",
-+      "import": "./src/state/jj.ts"
-     }
-   },
-   "scripts": {
++      "default": "./src/state/jj.ts"
++    },
+     "./pull-request-query": {
+       "types": "./src/pullRequestQuery.ts",
+       "default": "./src/pullRequestQuery.ts"
 diff --git a/packages/client-runtime/src/state/commandPermissions.test.ts b/packages/client-runtime/src/state/commandPermissions.test.ts
-index 58a77730..cc2c2599 100644
+index 09927e38..d168f4c7 100644
 --- a/packages/client-runtime/src/state/commandPermissions.test.ts
 +++ b/packages/client-runtime/src/state/commandPermissions.test.ts
-@@ -10,6 +10,7 @@ import {
-   AuthOrchestrationOperateScope,
+@@ -12,6 +12,7 @@ import {
+   AuthPreviewOperateScope,
    AuthSettingsWriteScope,
    AuthSourceControlWriteScope,
 +  AuthFilesystemReadScope,
    ThreadId,
    EnvironmentId,
    ScheduledTaskId,
-@@ -309,3 +310,65 @@ it.effect("rejects protected unary and streamed RPCs outside a guarded command",
+@@ -346,3 +347,65 @@ it.effect("rejects protected unary and streamed RPCs outside a guarded command",
      expect(writes).toBe(0);
    }),
  );
@@ -7639,18 +7656,18 @@ index 00000000..604e7879
 +  }),
 +});
 diff --git a/packages/contracts/src/clientRpcPermissions.ts b/packages/contracts/src/clientRpcPermissions.ts
-index e85e5df7..00cde9c4 100644
+index f9eaedb4..6570e7a1 100644
 --- a/packages/contracts/src/clientRpcPermissions.ts
 +++ b/packages/contracts/src/clientRpcPermissions.ts
-@@ -4,6 +4,7 @@ import {
-   AuthOrchestrationOperateScope,
+@@ -6,6 +6,7 @@ import {
+   AuthPreviewOperateScope,
    AuthSettingsWriteScope,
    AuthSourceControlWriteScope,
 +  AuthFilesystemReadScope,
    type AuthEnvironmentScope,
  } from "./auth.ts";
  import { ORCHESTRATION_V2_WS_METHODS } from "./orchestrationV2.ts";
-@@ -32,6 +33,12 @@ export const CLIENT_GUARDED_RPC_SCOPES = {
+@@ -34,6 +35,12 @@ export const CLIENT_GUARDED_RPC_SCOPES = {
    [WS_METHODS.projectCloneStart]: AuthSourceControlWriteScope,
    [WS_METHODS.projectCloneCancel]: AuthSourceControlWriteScope,
    [WS_METHODS.projectCloneRetry]: AuthSourceControlWriteScope,
@@ -7664,17 +7681,19 @@ index e85e5df7..00cde9c4 100644
    [WS_METHODS.gitRunStackedAction]: AuthSourceControlWriteScope,
    [WS_METHODS.gitPreparePullRequestThread]: AuthSourceControlWriteScope,
 diff --git a/packages/contracts/src/environment.test.ts b/packages/contracts/src/environment.test.ts
-index ed6a67d6..2c3b9e74 100644
+index 80f11566..554e9682 100644
 --- a/packages/contracts/src/environment.test.ts
 +++ b/packages/contracts/src/environment.test.ts
-@@ -61,6 +61,32 @@ describe("ExecutionEnvironmentDescriptor", () => {
-     expect(decodeDescriptor(descriptor).capabilities.pullRequests).toBeUndefined();
+@@ -33,4 +33,33 @@ describe("ExecutionEnvironmentDescriptor", () => {
+       ).toBeUndefined();
+     }
    });
- 
++
 +  it("requires an advertised Jujutsu panel capability under version skew", () => {
 +    expect(decodeDescriptor(descriptor).capabilities.jjPanel).toBeUndefined();
 +    expect(decodeDescriptor(descriptor).capabilities.jjPanelActions).toBeUndefined();
 +    expect(decodeDescriptor(descriptor).capabilities.jjPanelDiff).toBeUndefined();
++    expect(decodeDescriptor(descriptor).capabilities.jjPanelForge).toBeUndefined();
 +    expect(
 +      decodeDescriptor({
 +        ...descriptor,
@@ -7683,7 +7702,7 @@ index ed6a67d6..2c3b9e74 100644
 +    ).toBe(true);
 +  });
 +
-+  it("advertises expanded Jujutsu actions and diff independently from legacy panel reads", () => {
++  it("advertises expanded Jujutsu actions, diff and publication independently from panel reads", () => {
 +    const capabilities = decodeDescriptor({
 +      ...descriptor,
 +      capabilities: {
@@ -7691,22 +7710,21 @@ index ed6a67d6..2c3b9e74 100644
 +        jjPanel: true,
 +        jjPanelActions: true,
 +        jjPanelDiff: true,
++        jjPanelForge: true,
 +      },
 +    }).capabilities;
 +    expect(capabilities.jjPanelActions).toBe(true);
 +    expect(capabilities.jjPanelDiff).toBe(true);
++    expect(capabilities.jjPanelForge).toBe(true);
 +  });
-+
-   it("preserves an advertised pull-request capability", () => {
-     expect(
-       decodeDescriptor({
+ });
 diff --git a/packages/contracts/src/environment.ts b/packages/contracts/src/environment.ts
-index 53170883..6fb9d520 100644
+index 18d09c30..0beaa1a6 100644
 --- a/packages/contracts/src/environment.ts
 +++ b/packages/contracts/src/environment.ts
-@@ -111,6 +111,11 @@ export const ExecutionEnvironmentCapabilities = Schema.Struct({
-   /** Server exposes the pull-request list, detail, activity, diff, and mutation APIs. Absent on
-       servers from before the pull-request workspace shipped, so clients must not probe them. */
+@@ -82,6 +82,11 @@ export const ExecutionEnvironmentCapabilities = Schema.Struct({
+     }),
+   ),
    pullRequests: Schema.optionalKey(Schema.Boolean),
 +  /** Missing on unpatched servers; clients must not probe Jujutsu RPCs there. */
 +  jjPanel: Schema.optionalKey(Schema.Boolean),
@@ -7714,13 +7732,13 @@ index 53170883..6fb9d520 100644
 +  jjPanelDiff: Schema.optionalKey(Schema.Boolean),
 +  jjPanelForge: Schema.optionalKey(Schema.Boolean),
    pullRequestChecks: Schema.optionalKey(Schema.Boolean),
-   /** Server understands canonical inline context links plus their message context records.
-       Absent on servers from before inline context shipped, which drop the records and forward
+   /** Absent on servers from before inline context shipped, which drop the records and forward
+       the links as literal text -- so a client must serialize context the legacy way for them. */
 diff --git a/packages/contracts/src/index.ts b/packages/contracts/src/index.ts
-index 600d503a..f52210be 100644
+index 7f38a38d..b93379cd 100644
 --- a/packages/contracts/src/index.ts
 +++ b/packages/contracts/src/index.ts
-@@ -65,3 +65,6 @@ export * from "./rpc.ts";
+@@ -66,3 +66,6 @@ export * from "./rpc.ts";
  export * from "./worktreeSetup.ts";
  export * from "./secretRequest.ts";
  export * from "./clientRpcPermissions.ts";
@@ -8478,7 +8496,7 @@ index 00000000..68842f3c
 +  }
 +}
 diff --git a/packages/contracts/src/rpc.ts b/packages/contracts/src/rpc.ts
-index 61304c52..5e8d93b6 100644
+index d7a11234..4514cded 100644
 --- a/packages/contracts/src/rpc.ts
 +++ b/packages/contracts/src/rpc.ts
 @@ -1,3 +1,24 @@
@@ -8506,9 +8524,9 @@ index 61304c52..5e8d93b6 100644
  import {
    OrchestrationV2SearchThreadError,
    OrchestrationV2SearchThreadInput,
-@@ -422,6 +443,15 @@ export const WS_METHODS = {
+@@ -425,6 +446,15 @@ export const WS_METHODS = {
+   providerInstallRemove: "provider.install.remove",
  
-   // VCS methods
    vcsPull: "vcs.pull",
 +  jjGetPanel: "jj.getPanel",
 +  jjRunAction: "jj.runAction",
@@ -8522,7 +8540,7 @@ index 61304c52..5e8d93b6 100644
    vcsRefreshStatus: "vcs.refreshStatus",
    vcsListRefs: "vcs.listRefs",
    vcsCreateWorktree: "vcs.createWorktree",
-@@ -1358,6 +1388,52 @@ const WsVcsPullRpc = Rpc.make(WS_METHODS.vcsPull, {
+@@ -1357,6 +1387,52 @@ const WsVcsPullRpc = Rpc.make(WS_METHODS.vcsPull, {
    error: Schema.Union([GitCommandError, EnvironmentAuthorizationError]),
  });
  
@@ -8575,7 +8593,7 @@ index 61304c52..5e8d93b6 100644
  const WsVcsRefreshStatusRpc = Rpc.make(WS_METHODS.vcsRefreshStatus, {
    payload: VcsStatusInput,
    success: VcsStatusResult,
-@@ -2006,6 +2082,15 @@ export const WsRpcGroup = RpcGroup.make(
+@@ -2013,6 +2089,15 @@ export const WsRpcGroup = RpcGroup.make(
    WsSubscribeWorktreeSetupRpc,
    WsWorktreeSetupCancelRpc,
    WsVcsPullRpc,

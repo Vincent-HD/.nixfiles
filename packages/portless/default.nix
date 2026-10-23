@@ -21,13 +21,13 @@ let
 in
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "portless";
-  version = "0.15.7";
+  version = "0.15.9";
 
   # Portless publishes a self-contained npm package: the release tarball
   # contains the compiled CLI and has no runtime npm dependencies.
   src = fetchurl {
     url = "https://registry.npmjs.org/portless/-/portless-${finalAttrs.version}.tgz";
-    hash = "sha256-ghfH91djeBkcMk5vGi058xqceHo072g3K25o+VbJqPw=";
+    hash = "sha256-E+cRPdh/TUm80mZg3zAshlOtEp+TFf4eSPCZwHoKS4w=";
   };
 
   nativeBuildInputs = [ makeWrapper ];

@@ -6,9 +6,20 @@ in
   # Expose DroidCam's video stream as a stable V4L2 webcam device.
   config.flake.modules.nixos.androidPhone =
     { config, ... }:
+    let
+      # Backport nixpkgs#575861: NixOS generates depmod metadata for the combined
+      # module tree, so v4l2loopback must not install conflicting private copies.
+      v4l2loopbackPackage = config.boot.kernelPackages.v4l2loopback.overrideAttrs (previousAttrs: {
+        preBuild = "";
+        installFlags = (previousAttrs.installFlags or [ ]) ++ [
+          "DEPMOD=true"
+          "INSTALL_MOD_PATH=${builtins.placeholder "out"}"
+        ];
+      });
+    in
     {
       boot.kernelModules = [ "v4l2loopback" ];
-      boot.extraModulePackages = [ config.boot.kernelPackages.v4l2loopback ];
+      boot.extraModulePackages = [ v4l2loopbackPackage ];
       boot.extraModprobeConfig = ''
         options v4l2loopback devices=1 video_nr=42 card_label="Android Phone Camera" exclusive_caps=1
       '';

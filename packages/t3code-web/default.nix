@@ -12,11 +12,11 @@
 }:
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "t3code-web";
-  version = "0.0.46-nightly.20261015.3158";
+  version = "0.1.2-nightly.20261022.3541";
 
   src = fetchzip {
     url = "https://github.com/pingdotgg/t3code/archive/refs/tags/v${finalAttrs.version}.tar.gz";
-    hash = "sha256-i2UKRu6NWrXzhUhEs2/i5HZ7O1bloZsW++uBIBAD/PI=";
+    hash = "sha256-C5l7541kanlsukhswrAEu8GFpr/YpWDnofJ5dlg7+LM=";
   };
 
   outputs = [ "out" ] ++ lib.optional (enableUsagePatch || enableJjPanel) "server";
@@ -31,7 +31,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
   # The unchanged dependency graph already has notices in the pinned desktop artifact.
   postPatch = ''
     substituteInPlace apps/web/vite.config.ts \
-      --replace-fail '      thirdPartyLicensesPlugin({' '      false && thirdPartyLicensesPlugin({'
+      --replace-fail '        : thirdPartyLicensesPlugin({' '        : false && thirdPartyLicensesPlugin({'
   '';
   nativeBuildInputs = [
     nodejs_24
@@ -48,7 +48,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     pnpm = pnpm_11;
     pnpmWorkspaces = finalAttrs.pnpmWorkspaces;
     fetcherVersion = 4;
-    hash = "sha256-r1Y9ObydHCPqn/4NvDAUSd1cdabhmdADyiBGRa/hxH8=";
+    hash = "sha256-vUfwaOFB6DsdH0UHGDjspL8F/GDU+I/cOBNBSV5wwk8=";
   };
 
   env.APP_VERSION = finalAttrs.version;

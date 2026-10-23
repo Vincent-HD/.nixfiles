@@ -9,7 +9,7 @@
 
 let
   pname = "opencodex";
-  version = "2.86.0";
+  version = "2.91.0";
   targetPlatforms = {
     "aarch64-darwin" = {
       os = "darwin";
@@ -21,18 +21,18 @@ let
     };
   };
   bunDepsHashes = {
-    "aarch64-darwin" = "sha256-BJ7oaKKQ+QP2v7f2LiL7sP8JJksb5+MTfwAphxl2XkQ=";
-    "x86_64-linux" = "sha256-NwnxZQ3UgSPpv7wtWIUsm66Qna0F/79lgKgH94CYjyw=";
+    "aarch64-darwin" = "sha256-o9PsmJGkqy/yOb85U9XNdmmQqr2FXLpuz1KUQvrn5ws=";
+    "x86_64-linux" = "sha256-rOXkkmXBIYWGqPEWYfKGwiiCM8IohEiiySIZ3mCuC/I=";
   };
   src = fetchurl {
     url = "https://registry.npmjs.org/@bitkyc08/opencodex/-/opencodex-${version}.tgz";
-    hash = "sha256-qGZhPfIhMgZ3eTiaoOIZ0E1JFx/fVWYZQziGaB57ElQ=";
+    hash = "sha256-N2WjTIw5SaZtr8KSNNX9hLUM+sBQJ1CCIkABQusUQ0M=";
   };
 
   # The npm package omits its lockfile, so fetch the release-matching one.
   bunLock = fetchurl {
     url = "https://raw.githubusercontent.com/lidge-jun/opencodex/v${version}/bun.lock";
-    hash = "sha256-6B58rZq7oSUVhS0zWOb0fvPxWkxMpTOceEIIhUPSPdk=";
+    hash = "sha256-lFnvIrM9Tdumcqu7j0VyncJsW8KJJ+CVgmFpXfmsDao=";
   };
 
   mkBunDeps =

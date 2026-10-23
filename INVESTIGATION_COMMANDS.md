@@ -154,6 +154,13 @@ nix eval --json ".#nixosConfigurations.${HOST}.config.specialisation.<name>.conf
 Purpose: compare the default and alternate kernel paths and confirm that out-of-tree modules such as
 NVIDIA or a custom kernel module are rebuilt against the selected kernel before switching or rebooting.
 
+Build only the merged module trees to catch file collisions and depmod failures before a full rebuild:
+
+```bash
+nix build --no-link --print-out-paths ".#nixosConfigurations.${HOST}.config.system.modulesTree"
+nix build --no-link --print-out-paths ".#nixosConfigurations.${HOST}.config.specialisation.<name>.configuration.system.modulesTree"
+```
+
 Use when:
 - a host exposes an alternate kernel, scheduler, or hardware profile through `specialisation.*`
 - a default kernel has recently changed and you need to verify the fallback specialization's module graph
@@ -176,6 +183,27 @@ which may differ from a local Git checkout. Use a fresh temporary directory for 
 independent feature variant, and apply patches in their declared order for the combined
 variant. This verifies application only; focused behavioral tests and package builds
 remain separate checks. The temporary copy is modified; the store source is untouched.
+
+### Restore a pnpm dependency closure for focused source tests
+
+```bash
+package_pnpm_deps=$(nix build --no-link --print-out-paths '.#<package>.pnpmDeps')
+test_pnpm_store=$(mktemp -d)
+tar --zstd -xf "$package_pnpm_deps/pnpm-store.tar.zst" -C "$test_pnpm_store"
+chmod -R u+w "$test_pnpm_store"
+if [ -f "$test_pnpm_store/v11/index.db.sql" ]; then
+  sqlite3 "$test_pnpm_store/v11/index.db" < "$test_pnpm_store/v11/index.db.sql"
+fi
+```
+
+Purpose: reuse a realized `fetchPnpmDeps` closure in a writable source-test workspace.
+Use tar with zstd support and SQLite from Nix. The archive preserves read-only store
+permissions, and pnpm 11's reproducible SQL dump must become a database before use.
+Run the package's pinned pnpm with `--store-dir "$test_pnpm_store"`; mirror the
+locked nixpkgs `pnpm-config-hook.sh` settings when installing outside a Nix build.
+For pnpm 11, that includes `pnpm_config_pm_on_fail=ignore` and
+`pnpm_config_trust_lockfile=true`, rather than the older
+`manage-package-manager-versions` setting. This modifies only the temporary store.
 
 ### Determine the executing Nix platform
 
@@ -275,10 +303,25 @@ or Vulkan layer.
 
 ```bash
 nix derivation show <derivation.drv> \
-  | jq '.derivations[] | .env | {name, version, src, outputHash, nativeBuildInputs}'
+  | jq '.derivations[] | (.env + (.structuredAttrs // {})) | {name, version, src, outputHash, nativeBuildInputs}'
 ```
 
 Purpose: compare the declared fixed-output hash and the source/toolchain used by a failing derivation. This helps distinguish a stale source hash from a change in the fetcher or build toolchain.
+
+### Diagnose a declared package output that was not produced
+
+```bash
+nix derivation show <derivation.drv> \
+  | jq '.derivations[] | {outputs, attributes: (.env + (.structuredAttrs // {}))}'
+nix build --no-link --print-out-paths '.#nixosConfigurations.<host>.pkgs.<package>^*'
+```
+
+Purpose: compare the declared outputs with the build phases and their inputs, then
+realize every output after fixing the package. Use the host's `pkgs` when testing a
+host-local overlay. With structured attributes, lists become Bash arrays and may
+not appear in `.env`; check `.structuredAttrs` too. A hook that expands an array
+as a scalar can silently run only its first requested builder, leaving a later
+documentation output missing even when application tests pass.
 
 ### Read a failed derivation log and locate its source failure
 
@@ -1077,6 +1120,18 @@ Purpose: distinguish a reachable cache from one that actually serves the exact p
 and verify its metadata signature without downloading package contents. HTTP 404 is an exact-path
 miss; a timeout is inconclusive. A valid signature establishes the signer, not build provenance.
 Check published incident reports before replacing an unavailable cache with a mirror.
+
+For a matching narinfo, also probe its `URL:` with a small ranged GET:
+
+```bash
+curl --fail --silent --show-error --max-time 15 --range 0-0 --max-filesize 1024 \
+  --output /tmp/cache-artifact-probe "${CACHE_URL}/<URL-from-narinfo>"
+```
+
+Some cache gateways return 404 for HEAD while serving GET correctly. A narinfo
+hit alone does not establish artifact availability; this probe avoids downloading
+the full artifact. It fails safely if the server ignores the range and advertises
+a response larger than the size limit.
 
 The store hash is the first 32 characters of the output basename; use the output path rather
 than its `.drv` path. Derivation graph inspection also finds packages used only by services:

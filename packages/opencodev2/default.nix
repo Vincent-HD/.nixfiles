@@ -11,18 +11,18 @@ let
   sources = {
     "aarch64-darwin" = {
       package = "cli-darwin-arm64";
-      hash = "sha512-XklldeO6eWgG8vkPNLcdlBPEm1Y+/tyhEXGZvXbk8uytpPP7SEVV2R9oZ98NMSSPH9kBAO/+Xo4sKfvD6CHAsw==";
+      hash = "sha512-EwunTL9Q/6GT+vnA5e9NJyLdFFHpj77bQI1JdyNNtSI7dKO/DHW2RlvKMty2uvONCTfA4zdkwop9GalLw5becg==";
     };
     "x86_64-linux" = {
       package = "cli-linux-x64";
-      hash = "sha512-UIA2/1Ik8HaN54C4xp7H+OHgRfq995XUixrX+kLmFs8EPn1fAcmn3OoiN+3c3Vc3jEV/LHmj0Cy1SL6nW4wdGw==";
+      hash = "sha512-WVO7TebdgAcPnoOQ390ny3oyqpCH5MpPU76lHXml3G/wJz6QLxjzsQW2Lrabiewg046yAeKlf+1nPPZElF1qPw==";
     };
   };
   source = sources.${stdenvNoCC.hostPlatform.system};
 in
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "opencodev2";
-  version = "2.0.26";
+  version = "2.1.3";
 
   src = fetchurl {
     url = "https://registry.npmjs.org/@opencode/${source.package}/-/${source.package}-${finalAttrs.version}.tgz";

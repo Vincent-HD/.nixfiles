@@ -1,21 +1,49 @@
 diff --git a/apps/web/src/components/ChatView.tsx b/apps/web/src/components/ChatView.tsx
-index f8766398..79b783c8 100644
+index 92707af8..8df5ffcb 100644
 --- a/apps/web/src/components/ChatView.tsx
 +++ b/apps/web/src/components/ChatView.tsx
-@@ -444,6 +444,9 @@ import {
-   waitForThreadShell,
+@@ -43,6 +43,7 @@ import {
+ } from "@t3tools/shared/orchestrationV2ThreadError";
+ import type { UsageLimitSourceSnapshots } from "@t3tools/contracts";
+ import { feedbackBannerItem } from "./chat/ComposerFeedback";
++import { collectProviderUsageLimits } from "@t3tools/shared/usageLimits";
+ import { useUsageLimitsPanel } from "./chat/useUsageLimitsPanel";
+ import { useWorktreeSetup } from "./chat/useWorktreeSetup";
+ import { useChatShortcuts } from "./chat/useChatShortcuts";
+@@ -104,7 +105,7 @@ import { sourceControlRepositorySelector } from "@t3tools/shared/sourceControl";
+ import { resolveThreadReferenceCopyTarget } from "@t3tools/shared/threadReference";
+ import { resolveTerminalSessionLabel } from "@t3tools/shared/terminalLabels";
+ import { useAtomValue } from "@effect/atom-react";
+-import { type SetStateAction, useEffect, useLayoutEffect, useRef, useState } from "react";
++import { type SetStateAction, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+ import { useLocation, useNavigate } from "@tanstack/react-router";
+ import { assistantCitationFromLocation } from "../lib/assistantCitationNavigation";
+ import type { AssistantCitationSourceAnchor } from "~/lib/assistantTextSelection";
+@@ -244,6 +245,9 @@ import {
+   useThreadCheckpointSummaries,
  } from "../state/entities";
- import { environmentShell } from "../state/shell";
+ import { useEnvironmentShellHasSnapshot } from "../state/shell";
 +import { resolveUsageTurn } from "./chat/turn-usage.logic";
 +import { selectComposerUsageAccounts } from "./chat/composer-usage.logic";
 +import { ComposerUsageFooter } from "./chat/ComposerUsageFooter";
  import { ChatComposer, type ChatComposerHandle } from "./chat/ChatComposer";
- import { createPageScrollController, type PageScrollKey } from "./chat/pageScrollController";
- import { isTimelineScrollTarget } from "./chat/timelineScrollTarget";
-@@ -3617,6 +3620,18 @@ export default function ChatView(props: ChatViewProps) {
-       usageLimitsPanel,
-     ],
-   );
+ import { DraftHeroHeadline } from "./chat/DraftHeroHeadline";
+ import { ExpandedImageDialogHost, openExpandedImagePreview } from "./chat/ExpandedImageDialog";
+@@ -1337,6 +1341,7 @@ export default function ChatView(props: ChatViewProps) {
+           activeThread?.latestRun?.runId ?? "",
+           activePendingApproval?.requestId ?? activePendingUserInput?.requestId ?? "",
+         ].join(":");
++const usageLimitSources = serverConfig?.usageLimitSources ?? EMPTY_USAGE_LIMIT_SOURCES;
+   const {
+     banner: usageLimitsBanner,
+     offered: usageLimitsOffered,
+@@ -1349,8 +1354,20 @@ export default function ChatView(props: ChatViewProps) {
+     providerInstanceId: activeProviderInstanceId,
+     providerDriver: activeProviderStatus?.driver ?? null,
+     providers: providerStatuses,
+-    sources: serverConfig?.usageLimitSources ?? EMPTY_USAGE_LIMIT_SOURCES,
++    sources: usageLimitSources,
+   });
 +  const composerUsageAccounts = useMemo(() => {
 +    if (activeProviderInstanceId === null || activeProviderStatus === null) return [];
 +    return selectComposerUsageAccounts(
@@ -28,14 +56,14 @@ index f8766398..79b783c8 100644
 +      activeProviderInstanceId,
 +    );
 +  }, [activeProviderInstanceId, activeProviderStatus, providerStatuses, usageLimitSources]);
-   const usageLimitsBanner = useMemo(
-     () =>
-       usageLimitsReport !== null && usageLimitsPanel !== null
-@@ -3720,6 +3735,29 @@ export default function ChatView(props: ChatViewProps) {
-       ),
-     [activeThreadLiveTokenUsage, serverVisibleTurnItems, serverProjection],
+   const {
+     beginLocalDispatch,
+     resetLocalDispatch,
+@@ -1411,6 +1428,29 @@ export default function ChatView(props: ChatViewProps) {
+     activeThreadLiveTokenUsage,
+     activeProviderThread,
    );
-+  const composerUsageSession = useMemo(() => {
++const composerUsageSession = useMemo(() => {
 +    const turns =
 +      serverProjection?.providerTurns.filter(
 +        (turn) => turn.providerThreadId === serverProjection.thread.activeProviderThreadId,
@@ -58,10 +86,10 @@ index f8766398..79b783c8 100644
 +      : [];
 +    return { turns, toolCalls, usageTurns };
 +  }, [serverProjection]);
-   const pendingBackgroundTasks = useMemo(() => {
-     if (serverProjection === null || serverProjection === undefined) {
-       return [];
-@@ -11578,6 +11616,24 @@ export default function ChatView(props: ChatViewProps) {
+   const pendingBackgroundTasks = deriveThreadPendingBackgroundTasks(serverProjection);
+   const activeWorkStartedAt =
+     deriveActiveWorkStartedAt(activeActivityRun, activeRuntime, localDispatchStartedAt) ??
+@@ -3566,6 +3606,24 @@ export default function ChatView(props: ChatViewProps) {
                                }
                                activeThreadModelSelection={activeThread?.modelSelection}
                                activeProjectId={activeProject?.id ?? null}
@@ -80,26 +108,25 @@ index f8766398..79b783c8 100644
 +                                          serverProjection.thread.activeProviderThreadId,
 +                                    ) ?? null
 +                                  }
-+                                  onOpenLimits={openUsageLimitsStable}
++                                  onOpenLimits={openUsageLimits}
 +                                />
 +                              }
                                activeContextWindow={activeContextWindow}
                                activeTasksProgress={activeComposerTasksProgress}
                                activeTaskSteps={activeComposerTaskSteps}
 diff --git a/apps/web/src/components/chat/ChatComposer.tsx b/apps/web/src/components/chat/ChatComposer.tsx
-index 5f775123..c4d84ff2 100644
+index b74e691d..247b00b3 100644
 --- a/apps/web/src/components/chat/ChatComposer.tsx
 +++ b/apps/web/src/components/chat/ChatComposer.tsx
-@@ -1634,6 +1634,8 @@ export interface ChatComposerProps {
-   /** The active project, so the picker can fold in its provider instance overrides. */
+@@ -447,6 +447,7 @@ export interface ChatComposerProps {
+   reportedModelSelection?: ModelSelection | null;
    activeProjectId: ProjectId | null;
  
 +  usageFooter?: ReactNode;
-+
-   // Context window
    activeContextWindow: ContextWindowSnapshot | null;
    compactThreadUnavailable: boolean;
-@@ -7673,6 +7675,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
+   compactDisabled: boolean;
+@@ -3985,6 +3986,7 @@ export const ChatComposer = memo(function ChatComposer(props: ChatComposerProps)
                </div>
              ) : null}
            </div>
@@ -386,28 +413,36 @@ index 00000000..b984e2e7
 +    </div>
 +  );
 +};
-diff --git a/apps/web/src/components/chat/MessagesTimeline.tsx b/apps/web/src/components/chat/MessagesTimeline.tsx
-index 3ac4952e..6f398d56 100644
---- a/apps/web/src/components/chat/MessagesTimeline.tsx
-+++ b/apps/web/src/components/chat/MessagesTimeline.tsx
-@@ -185,6 +185,8 @@ import {
-   rememberTimelinePosition,
-   timelineContentOverflowsViewport,
- } from "./timelineScrollAnchoring";
+diff --git a/apps/web/src/components/chat/TimelineAssistantRows.tsx b/apps/web/src/components/chat/TimelineAssistantRows.tsx
+index 6f992130..30c77f06 100644
+--- a/apps/web/src/components/chat/TimelineAssistantRows.tsx
++++ b/apps/web/src/components/chat/TimelineAssistantRows.tsx
+@@ -1,5 +1,6 @@
+ import { shouldPreserveAssistantLineBreaks } from "@t3tools/shared/markdownPipeline";
+ import { type RunId } from "@t3tools/contracts";
++import { scopeThreadRef } from "@t3tools/client-runtime/environment";
+ import { canForkProjectedAssistantItem } from "@t3tools/client-runtime/state/thread-workflows";
+ import { memo, use, useState } from "react";
+ import { type ChatMessage, type TurnDiffSummary } from "../../types";
+@@ -11,7 +12,7 @@ import { HtmlRenderFrame } from "./HtmlRenderFrame";
+ import { McpAppFrame } from "./McpAppFrame";
+ import { ChangedFilesCard } from "./ChangedFilesTree";
+ import { useFileContextMenuHandler } from "../../fileContextMenu";
+-import { useProject, useThreadShell } from "../../state/entities";
++import { useProject, useThreadProjection, useThreadShell } from "../../state/entities";
+ import { MessageCopyButton } from "./MessageCopyButton";
+ import { AssistantCitationSource } from "./AssistantCitationSource";
+ import { resolveAssistantMessageCopyState } from "./MessagesTimeline.logic";
+@@ -22,6 +23,8 @@ import { formatChatTimestampTooltip, formatDayAwareTimestamp } from "../../times
+ import { useV2ItemSupport } from "../../state/v2ItemSupport";
+ import { TimelineRowCtx, TimelineRowActivityCtx, type TimelineRow } from "./timelineRowContext";
+ import { MESSAGE_HEADING_LEVEL, MessageAuthorHeading } from "./TimelineRowParts";
 +import { TurnUsage } from "./turn-usage";
 +import { resolveUsageTurn } from "./turn-usage.logic";
- import { MessageCopyButton } from "./MessageCopyButton";
- import { promptLinkFor } from "../promptLinks/copyPromptLink";
- import { PierreEntryIcon } from "./PierreEntryIcon";
-@@ -2873,6 +2875,7 @@ function AssistantTimelineRow({ row }: { row: Extract<TimelineRow, { kind: "mess
-             message={row.message}
-             showCopyButton={row.showAssistantCopyButton}
-             copyStreaming={row.assistantCopyStreaming}
-+            alwaysVisible
-           />
-         ) : null}
-       </div>
-@@ -2985,6 +2988,9 @@ function AssistantMessageMeta({
+ 
+ export function AssistantTimelineRow({ row }: { row: Extract<TimelineRow, { kind: "message" }> }) {
+   const ctx = use(TimelineRowCtx);
+@@ -178,6 +181,9 @@ function AssistantMessageMeta({
        {projectedItem?.item.type === "assistant_message" ? (
          <AssistantForkButton projectedItem={projectedItem} />
        ) : null}
@@ -417,7 +452,7 @@ index 3ac4952e..6f398d56 100644
        {!message.streaming && (
          <Tooltip>
            <TooltipTrigger render={<p className="text-muted-foreground text-xs tabular-nums" />}>
-@@ -2999,6 +3005,28 @@ function AssistantMessageMeta({
+@@ -192,6 +198,26 @@ function AssistantMessageMeta({
    );
  }
  
@@ -427,10 +462,8 @@ index 3ac4952e..6f398d56 100644
 +  readonly projectedItem: NonNullable<Extract<TimelineRow, { kind: "message" }>["projectedItem"]>;
 +}) {
 +  const ctx = use(TimelineRowCtx);
-+  const source = useAtomValue(
-+    environmentThreadDetails.threadAtom(
-+      scopeThreadRef(ctx.activeThreadEnvironmentId, projectedItem.sourceThreadId),
-+    ),
++  const source = useThreadProjection(
++    scopeThreadRef(ctx.activeThreadEnvironmentId, projectedItem.sourceThreadId),
 +  );
 +  const data =
 +    source && projectedItem.item.providerTurnId
@@ -2120,10 +2153,10 @@ index 00000000..54af6a9f
 +export const useModelsDevPricing = (): ModelsDevPricingState =>
 +  useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 diff --git a/packages/provider-cursor/src/server/adapter.test.ts b/packages/provider-cursor/src/server/adapter.test.ts
-index 01adb995..3269e56c 100644
+index a297af46..be9d35a5 100644
 --- a/packages/provider-cursor/src/server/adapter.test.ts
 +++ b/packages/provider-cursor/src/server/adapter.test.ts
-@@ -40,14 +40,15 @@ const decodeCursorSettings = Schema.decodeEffect(CursorSettings);
+@@ -41,14 +41,15 @@ const decodeCursorSettings = Schema.decodeEffect(CursorSettings);
  
  describe("CursorAdapterV2", () => {
    it.effect.each([
@@ -2146,7 +2179,7 @@ index 01adb995..3269e56c 100644
        Effect.gen(function* () {
          const fileSystem = yield* FileSystem.FileSystem;
          const workspace = yield* fileSystem.makeTempDirectoryScoped({
-@@ -122,6 +123,20 @@ describe("CursorAdapterV2", () => {
+@@ -123,6 +124,20 @@ describe("CursorAdapterV2", () => {
                          },
                        }).pipe(Effect.orDie);
                      }
@@ -2167,7 +2200,7 @@ index 01adb995..3269e56c 100644
                      return {
                        agentId: "native-cursor-lifecycle",
                        runId: "native-cursor-run",
-@@ -131,6 +146,18 @@ describe("CursorAdapterV2", () => {
+@@ -132,6 +147,18 @@ describe("CursorAdapterV2", () => {
                          status,
                          model: { id: "composer-2.5" },
                          durationMs: 1,
@@ -2211,18 +2244,18 @@ index 01adb995..3269e56c 100644
          Effect.scoped,
          Effect.provide(
 diff --git a/packages/provider-cursor/src/server/adapter.ts b/packages/provider-cursor/src/server/adapter.ts
-index b77ec70d..09cfe23e 100644
+index 9ff5ba75..43396c5a 100644
 --- a/packages/provider-cursor/src/server/adapter.ts
 +++ b/packages/provider-cursor/src/server/adapter.ts
-@@ -47,6 +47,7 @@ import * as McpProviderSessions from "@t3tools/provider-core/server/McpProviderS
+@@ -48,6 +48,7 @@ import * as McpProviderSessions from "@t3tools/provider-core/server/McpProviderS
  import * as McpProviderSession from "@t3tools/provider-core/server/mcpSession";
  import { CursorTransportFailure } from "./transportFailure.ts";
- import { cursorSdkModelSelection } from "./sdkModel.ts";
+ import { cursorContextWindowTokens, cursorSdkModelSelection } from "./sdkModel.ts";
 +import { cursorTurnTokenUsage } from "./turn-usage.ts";
  import {
    discoverCursorSkills,
    hasCursorSkillMention,
-@@ -834,6 +835,7 @@ interface ActiveCursorTurn {
+@@ -870,6 +871,7 @@ interface ActiveCursorTurn {
    readonly assistantReply: CursorTransportFailure;
    readonly reasoning: ActiveCursorTextStream;
    interrupted: boolean;
@@ -2230,7 +2263,7 @@ index b77ec70d..09cfe23e 100644
    finalized: boolean;
  }
  
-@@ -1910,8 +1912,12 @@ export const makeCursorAdapterV2 = Effect.fn("makeCursorAdapterV2")(function* (
+@@ -1946,8 +1948,12 @@ export const makeCursorAdapterV2 = Effect.fn("makeCursorAdapterV2")(function* (
                yield* completeReasoning(context);
                yield* handleToolUpdate(context, update);
                return;
@@ -2244,7 +2277,7 @@ index b77ec70d..09cfe23e 100644
                yield* completeAssistant(context);
                yield* completeReasoning(context);
                return;
-@@ -1935,6 +1941,7 @@ export const makeCursorAdapterV2 = Effect.fn("makeCursorAdapterV2")(function* (
+@@ -1987,6 +1993,7 @@ export const makeCursorAdapterV2 = Effect.fn("makeCursorAdapterV2")(function* (
            readonly context: ActiveCursorTurn;
            readonly status: OrchestrationV2ProviderTurn["status"];
            readonly completedAt: DateTime.Utc | null;
@@ -2252,7 +2285,7 @@ index b77ec70d..09cfe23e 100644
          }): OrchestrationV2ProviderTurn => ({
            id: input.context.providerTurnId,
            providerThreadId: input.context.input.providerThread.id,
-@@ -1949,6 +1956,16 @@ export const makeCursorAdapterV2 = Effect.fn("makeCursorAdapterV2")(function* (
+@@ -2001,6 +2008,16 @@ export const makeCursorAdapterV2 = Effect.fn("makeCursorAdapterV2")(function* (
            status: input.status,
            startedAt: input.context.startedAt,
            completedAt: input.completedAt,
@@ -2269,7 +2302,7 @@ index b77ec70d..09cfe23e 100644
          });
  
          const finalizeTurn = Effect.fnUntraced(function* (input: {
-@@ -1959,6 +1976,7 @@ export const makeCursorAdapterV2 = Effect.fn("makeCursorAdapterV2")(function* (
+@@ -2011,6 +2028,7 @@ export const makeCursorAdapterV2 = Effect.fn("makeCursorAdapterV2")(function* (
            >;
            readonly failure?: OrchestrationV2ProviderFailure;
            readonly threadDisposition?: "reusable" | "broken";
@@ -2277,7 +2310,7 @@ index b77ec70d..09cfe23e 100644
          }) {
            if (input.context.finalized) {
              return;
-@@ -1997,6 +2015,7 @@ export const makeCursorAdapterV2 = Effect.fn("makeCursorAdapterV2")(function* (
+@@ -2044,6 +2062,7 @@ export const makeCursorAdapterV2 = Effect.fn("makeCursorAdapterV2")(function* (
                context: input.context,
                status: input.status,
                completedAt,
@@ -2285,7 +2318,7 @@ index b77ec70d..09cfe23e 100644
              }),
            });
            yield* emitProviderEvent({
-@@ -2247,6 +2266,7 @@ export const makeCursorAdapterV2 = Effect.fn("makeCursorAdapterV2")(function* (
+@@ -2313,6 +2332,7 @@ export const makeCursorAdapterV2 = Effect.fn("makeCursorAdapterV2")(function* (
                  nextSegment: 0,
                },
                interrupted: false,
@@ -2293,14 +2326,14 @@ index b77ec70d..09cfe23e 100644
                finalized: false,
              };
              yield* Ref.set(activeTurn, context);
-@@ -2297,6 +2317,7 @@ export const makeCursorAdapterV2 = Effect.fn("makeCursorAdapterV2")(function* (
+@@ -2363,6 +2383,7 @@ export const makeCursorAdapterV2 = Effect.fn("makeCursorAdapterV2")(function* (
                      yield* finalizeTurn({
                        context,
                        status,
 +                      usage: result.usage,
                        ...(status === "failed"
                          ? {
-                             failure: makeProviderFailure({
+                             failure:
 diff --git a/packages/provider-cursor/src/server/turn-usage.test.ts b/packages/provider-cursor/src/server/turn-usage.test.ts
 new file mode 100644
 index 00000000..e0f597d2

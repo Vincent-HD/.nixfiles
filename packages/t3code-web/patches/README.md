@@ -10,17 +10,23 @@ these contracts throughout upstream source.
 | `composer-usage.patch` | [Usage statistics](composer-usage.md) | Web renderer and server | `custom.t3code.enableUsagePatch` |
 | `jj-panel.patch` | [Jujutsu panel](jj-panel.md) | Web renderer and server | `custom.t3code.enableJjPanel` |
 
-Current patch base: upstream tag `v0.0.46-nightly.20261015.3158`, commit
-`e6bbfdb9ffe8334bed1c9b992f828f04d30db7ea`. This records the base actually reviewed
+Current patch base: upstream tag `v0.1.2-nightly.20261022.3541`, commit
+`044f07257c9684ae4543bd1e1ebf9c394e9e3830`. This records the base actually reviewed
 for these patches; a package pin bump alone does not establish a new reviewed base.
 Update this record after adapting the patches to a new source version.
 
-At this base, preserve the composer's project-scoped model picker and upstream's
-stable callback wrappers. JJ diff selection must bypass the single Git preview query;
-do not restore the removed environment-cwd fallback. Effect's crypto UUID generator
-is now a method, and forge provider kinds use upstream's branded constructors.
-Honor the forge provider's `headBranchProbe` selectors and lookup limits while
-retaining the JJ publication destination checks.
+At this base, keep `useUsageLimitsPanel` and add composer accounts beside it; do not
+restore the inlined limits panel. The response usage chip lives in
+`TimelineAssistantRows.tsx`. Cursor account usage still goes through
+`cursorTurnTokenUsage`, alongside upstream `cursorContextWindowTokens`. Mount the
+Jujutsu panel from `RightPanelSurfaceContent` and keep open/diff actions in
+`useRightPanelActions`. A selected JJ revision must bypass the Git preview query.
+Right-panel shortcut coverage is `surfaceShortcutActionForKey`; the old keyboard
+component test is gone. Effect's crypto UUID generator is a method, and forge
+provider kinds use upstream's branded constructors. Honor `headBranchProbe`
+selectors and lookup limits while retaining the JJ publication destination checks.
+Bare-repository assertions go through `git --git-dir`, because `VcsProcess` sets
+`safe.bareRepository=explicit`.
 
 ## Repair workflow
 

@@ -10,22 +10,22 @@ let
   sources = {
     "aarch64-darwin" = {
       suffix = "darwin-arm64";
-      hash = "sha256-gWi4arXZS+j2cJkt/k/hRFAWUYqGS0i9oQXmQULny/k=";
+      hash = "sha256-augCpBEw5J0FFdhdspa8Fw3kMUtFYMpEa2xRCREXt7g=";
     };
     "x86_64-darwin" = {
       suffix = "darwin-x64";
-      hash = "sha256-eHy0DghqGI0LsT/ympmgsjgK/zql6GALj4ExoLmMppw=";
+      hash = "sha256-yFHy6vGptCVnxTtOKHtir7/6jP71/y1+PlGzbbUeOtc=";
     };
     "x86_64-linux" = {
       suffix = "linux-x64";
-      hash = "sha256-pUt2UZLbd0Zm8FE/qLVFoph1O28p5zvN9KHnjxjnwOE=";
+      hash = "sha256-D2jnTnkr99CBTFjuS4bbys/TmXwngFzRLC0V4Mo4Y44=";
     };
   };
   source = sources.${stdenvNoCC.hostPlatform.system};
 in
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "agent-browser";
-  version = "0.38.2";
+  version = "0.39.2";
 
   src = fetchurl {
     url = "https://github.com/vercel-labs/agent-browser/releases/download/v${finalAttrs.version}/agent-browser-${source.suffix}";

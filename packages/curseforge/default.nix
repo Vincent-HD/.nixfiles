@@ -8,14 +8,14 @@
 let
   finalAttrs = {
     pname = "curseforge";
-    version = "1.322.0";
+    version = "1.324.0";
 
     # Upstream AppImage filenames include a separate build number.
-    build = "40357";
+    build = "41180";
 
     src = fetchurl {
       url = "https://curseforge.overwolf.com/electron/linux/CurseForge-${finalAttrs.version}-${finalAttrs.build}.AppImage";
-      hash = "sha256-8EPXYdjSVg/UMywIeTxeyyZh8Smm9fiBiRHb9zbmamE=";
+      hash = "sha256-co4Exw7Nm57m9m1oyFQ9hypnulZVFHfO6iopp3pWPD8=";
     };
 
     passthru = rec {

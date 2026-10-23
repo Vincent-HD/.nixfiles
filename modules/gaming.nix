@@ -5,6 +5,8 @@
     let
       cpuidFaultEmulation = pkgs.callPackage ../packages/cpuid-fault-emulation {
         kernel = config.boot.kernelPackages.kernel;
+        # Use the selected kernel's toolchain and module-signing rules in every specialization.
+        kernelModuleMakeFlags = config.boot.kernelPackages.kernelModuleMakeFlags;
       };
       cpuidHypervisorStart = pkgs.writeShellApplication {
         name = "cpuid-hypervisor-start";

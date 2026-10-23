@@ -1,14 +1,7 @@
 { inputs, ... }:
 let
-  dmsShellPackage =
-    pkgs:
-    inputs.dms.packages.${pkgs.stdenv.hostPlatform.system}.dms-shell.overrideAttrs (previousAttrs: {
-      postInstall = (previousAttrs.postInstall or "") + ''
-        chmod u+w "$out/share/quickshell/dms/Modules/Settings" \
-          "$out/share/quickshell/dms/Modules/Settings/WidgetsTabSection.qml"
-        patch -d "$out" -p0 < "${./assets/dms-plugin-settings-menu.patch}"
-      '';
-    });
+  # Upstream now opens each plugin's settings directly from the widget row.
+  dmsShellPackage = pkgs: inputs.dms.packages.${pkgs.stdenv.hostPlatform.system}.dms-shell;
 in
 {
   # NixOS: install the DMS integration and the services used by its session,
@@ -24,6 +17,16 @@ in
     in
     {
       imports = [ inputs.dms.nixosModules.dank-material-shell ];
+
+      # The pinned Sphinx hook reads a structured list as its first item only.
+      # Keep both documentation builders for DMS's khal dependency.
+      nixpkgs.overlays = [
+        (_final: previous: {
+          khal = previous.khal.overridePythonAttrs (_previousAttrs: {
+            sphinxBuilders = "html man";
+          });
+        })
+      ];
 
       programs.dank-material-shell = {
         enable = true;
@@ -235,7 +238,7 @@ in
 
       # Merge defaults into the writable settings file without resetting values
       # entered in the GitHub widget, including its alternate approval token.
-      xdg.configFile."DankMaterialShell/plugin_settings.json".enable = lib.mkForce false;
+      xdg.configFile."dms/plugin_settings.json".enable = lib.mkForce false;
       home.activation.dmsPluginSettings = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
         PATH=${
           lib.makeBinPath [
@@ -244,7 +247,8 @@ in
           ]
         } \
           ${pkgs.bash}/bin/bash ${./assets/merge-plugin-settings} \
-          ${config.xdg.configFile."DankMaterialShell/plugin_settings.json".source} \
+          ${config.xdg.configFile."dms/plugin_settings.json".source} \
+          "${config.xdg.configHome}/dms/plugin_settings.json" \
           "${config.xdg.configHome}/DankMaterialShell/plugin_settings.json"
       '';
 

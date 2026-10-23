@@ -8,7 +8,29 @@
 
       # Use the pinned overlay so the CachyOS kernel package set is exposed without replacing the
       # repository's normal nixpkgs package set.
-      nixpkgs.overlays = [ inputs.nix-cachyos-kernel.overlays.pinned ];
+      nixpkgs.overlays = [
+        inputs.nix-cachyos-kernel.overlays.pinned
+        (_final: previous: {
+          # The pinned CachyOS package set predates nixpkgs' module certificates.
+          # Merge certificates only when the kernel supplies them; the stock
+          # kernel retains its certificate checks for every external module.
+          aggregateModules =
+            modules:
+            (previous.aggregateModules modules).overrideAttrs (previousAttrs: {
+              postBuild =
+                builtins.replaceStrings
+                  [
+                    "cp --no-preserve=mode,ownership --remove-destination"
+                    "cat >> modules.cer"
+                  ]
+                  [
+                    "if test -f modules.cer; then\n    cp --no-preserve=mode,ownership --remove-destination"
+                    "cat >> modules.cer\n    fi"
+                  ]
+                  previousAttrs.postBuild;
+            });
+        })
+      ];
 
       # Enable the four SteamOS platform sysctls provided by nix-gaming.
       programs.steam.platformOptimizations.enable = true;

@@ -41,7 +41,9 @@ it does not add mobile UI.
 ## Integration and verification
 
 In upstream source, inspect `ChatView.tsx`, `chat/ChatComposer.tsx`,
-`chat/ComposerUsageFooter.tsx` and `chat/MessagesTimeline.tsx` under `apps/web/src/components/`.
+`chat/ComposerUsageFooter.tsx` and `chat/TimelineAssistantRows.tsx` under
+`apps/web/src/components/`. The completed-response chip is rendered with the
+assistant meta row, which no longer lives in `MessagesTimeline.tsx`.
 Turn association is in `turn-usage.logic.ts`; counts/timing in `composer-usage.logic.ts`;
 pricing in `models-dev-pricing.ts`, `usage-pricing.ts` and `use-models-dev-pricing.ts`.
 Cursor mapping is in `packages/provider-cursor/src/server/turn-usage.ts` and `adapter.ts`.

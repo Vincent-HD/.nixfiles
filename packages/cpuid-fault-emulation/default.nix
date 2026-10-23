@@ -3,7 +3,7 @@
   linuxPackages,
   stdenv,
   kernel ? linuxPackages.kernel,
-  kernelModuleMakeFlags ? [ ],
+  kernelModuleMakeFlags ? linuxPackages.kernelModuleMakeFlags,
 }:
 
 let
@@ -33,8 +33,10 @@ stdenv.mkDerivation {
   installPhase = ''
     runHook preInstall
 
-    install -Dm444 cpuid_fault_emulation.ko \
-      "$out/lib/modules/${kernel.modDirVersion}/extra/cpuid_fault_emulation.ko"
+    # Kbuild installs the module and its certificate metadata; NixOS runs depmod
+    # after merging it with the kernel and the other external modules.
+    make -C ${kernelDirectory} ${lib.escapeShellArgs kernelModuleMakeFlags} \
+      M="$PWD" INSTALL_MOD_PATH="$out" INSTALL_MOD_DIR=extra DEPMOD=true modules_install
 
     runHook postInstall
   '';
