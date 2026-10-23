@@ -78,7 +78,6 @@
         ];
         # Binary caches for flake-backed packages that are not reliably covered by cache.nixos.org.
         extra-substituters = [
-          "https://codex-desktop-linux.cachix.org"
           "https://codex-cli.cachix.org"
           "https://ghostty.cachix.org"
           "https://hyprland.cachix.org"
@@ -90,7 +89,6 @@
           "https://niri.cachix.org"
         ];
         extra-trusted-public-keys = [
-          "codex-desktop-linux.cachix.org-1:nX/xy6AdK9hQE24A8ALGjkCKj2ObFmcnemiL5Cid4nk="
           "codex-cli.cachix.org-1:1Br3H1hHoRYG22n//cGKJOk3cQXgYobUel6O8DgSing="
           "ghostty.cachix.org-1:QB389yTa6gTyneehvqG58y0WnHjQOqgnA+wBnpWWxns="
           "hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="

@@ -24,8 +24,7 @@
         pkgs.slack
       ]
       ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
-        # ChatGPT for macOS ships arm64-only, and Scroll Reverser is macOS-only.
-        pkgs.chatgpt
+        # Scroll Reverser is macOS-only.
         scrollReverser
       ];
     };

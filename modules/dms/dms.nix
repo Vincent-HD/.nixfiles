@@ -49,7 +49,7 @@ in
     };
 
   # Home Manager: DMS shell, native clipboard history, annotated captures,
-  # video capture, and the first-party action widget used for EasyEffects.
+  # video capture, and the profile-aware EasyEffects widget.
   config.flake.modules.homeManager.dms =
     {
       config,
@@ -172,42 +172,12 @@ in
             };
           };
 
-          # Dank Actions supports declarative variants. Two mutually exclusive
-          # entries expose a dynamic hearing/hearing-disabled icon while
-          # preserving the same left/right click behavior.
-          # The 600-second polling interval handles external changes; resetting
-          # both widgets after an action refreshes their visibility immediately.
-          dankActions = {
-            src = "${inputs.dms-plugins}/DankActions";
+          # A single widget changes its icon with the active EasyEffects profile.
+          # Avoid visibility resets, which only reach one Dux widget instance.
+          easyEffects = {
+            src = ./plugins/easyeffects;
             settings = {
-              variants = [
-                {
-                  id = "musicDucking";
-                  name = "Music Ducking";
-                  icon = "hearing";
-                  clickCommand = ''if [ "$(easyeffects -a output 2>/dev/null)" = "Music Ducking" ]; then easyeffects -l "Without Music Ducking"; else easyeffects -l "Music Ducking"; fi; dms ipc call widget reset dankActions:musicDucking >/dev/null 2>&1; dms ipc call widget reset dankActions:musicNormal >/dev/null 2>&1'';
-                  middleClickCommand = ''easyeffects -l "Without Music Ducking"; dms ipc call widget reset dankActions:musicDucking >/dev/null 2>&1; dms ipc call widget reset dankActions:musicNormal >/dev/null 2>&1'';
-                  rightClickCommand = ''easyeffects -l "Without Music Ducking"; dms ipc call widget reset dankActions:musicDucking >/dev/null 2>&1; dms ipc call widget reset dankActions:musicNormal >/dev/null 2>&1'';
-                  visibilityCommand = ''test "$(easyeffects -a output 2>/dev/null)" = "Music Ducking"'';
-                  # Seconds between visibility checks; 600 = 10 minutes.
-                  visibilityInterval = 600;
-                  showIcon = true;
-                  showText = false;
-                }
-                {
-                  id = "musicNormal";
-                  name = "Music (normal)";
-                  icon = "hearing_disabled";
-                  clickCommand = ''if [ "$(easyeffects -a output 2>/dev/null)" = "Music Ducking" ]; then easyeffects -l "Without Music Ducking"; else easyeffects -l "Music Ducking"; fi; dms ipc call widget reset dankActions:musicDucking >/dev/null 2>&1; dms ipc call widget reset dankActions:musicNormal >/dev/null 2>&1'';
-                  middleClickCommand = ''easyeffects -l "Without Music Ducking"; dms ipc call widget reset dankActions:musicDucking >/dev/null 2>&1; dms ipc call widget reset dankActions:musicNormal >/dev/null 2>&1'';
-                  rightClickCommand = ''easyeffects -l "Without Music Ducking"; dms ipc call widget reset dankActions:musicDucking >/dev/null 2>&1; dms ipc call widget reset dankActions:musicNormal >/dev/null 2>&1'';
-                  visibilityCommand = ''test "$(easyeffects -a output 2>/dev/null)" != "Music Ducking"'';
-                  # Seconds between visibility checks; 600 = 10 minutes.
-                  visibilityInterval = 600;
-                  showIcon = true;
-                  showText = false;
-                }
-              ];
+              executablePath = "${pkgs.easyeffects}/bin/easyeffects";
             };
           };
 

@@ -61,8 +61,7 @@
       "name": "Main Bar",
       "position": 0,
       "rightWidgets": [
-        "dankActions:musicDucking",
-        "dankActions:musicNormal",
+        "easyEffects",
         "cpuUsage",
         {
           "enabled": true,

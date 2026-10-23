@@ -89,6 +89,20 @@ disables only the evaluation cache for that command.
 
 ## Core Flake / Input Discovery
 
+### Compare inherited CLI discovery with the activated user profile
+
+```bash
+type -a <command>
+readlink -f /etc/profiles/per-user/"$USER"/bin/<command>
+<command> --version
+/etc/profiles/per-user/"$USER"/bin/<command> --version
+```
+
+Purpose: detect older Nix store paths inherited by long-running applications
+after a rebuild. An application's saved absolute executable path can also
+override its PATH; inspect that setting separately. Restart the application
+after activating updated packages.
+
 ### Get an input source path from the current flake
 
 ```bash
@@ -755,6 +769,21 @@ noctalia-shell ipc call cb --help
 ```
 
 Purpose: inspect argument shape for a specific handler before trying to call it.
+
+## DMS / Dux Widget IPC
+
+```bash
+dms ipc call widget list
+dms ipc call widget visibility '<plugin-id>:<variant-id>'
+dms ipc call widget reset '<plugin-id>:<variant-id>'
+dms ipc call plugins reload '<plugin-id>'
+```
+
+Purpose: distinguish stale plugin visibility from duplicated bar entries. `visibility` reports
+the widget's effective visibility; `status` reports its popout state instead. `reset` clears a
+visibility override and reruns the condition for the selected widget instance. In Dux 2.0,
+widget IPC resolves an instance using the focused screen; it does not refresh every monitor.
+`reset` changes live visibility, and `plugins reload` recreates the plugin's widgets.
 
 ## Noctalia Settings Defaults
 
@@ -1676,20 +1705,6 @@ nix eval '.#nixosConfigurations.'"$HOST"'.config.home-manager.users.'"$USER"'.xd
 ```
 
 Purpose: useful when a config is split across includes and you need to validate them together.
-
-### Verify Nix-managed Codex Linux Computer Use
-
-```bash
-codex-computer-use-linux doctor
-codex-computer-use-linux setup
-codex-computer-use-linux windows
-codex-computer-use-linux screenshot
-```
-
-Purpose: inspect the active session's AT-SPI, portal, compositor, uinput, and
-fallback input readiness after the NixOS configuration has been activated.
-`setup` changes the current user's accessibility-session state; restart
-already-running target applications if their AT-SPI tree remains empty.
 
 ### Session-specific smoke tests with visible effects
 

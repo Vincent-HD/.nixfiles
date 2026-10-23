@@ -40,9 +40,8 @@ in
         # we indicate to HM to rename the old file to ".hm-backup" first, then install the managed one.
         home-manager.backupFileExtension = "hm-backup";
         home-manager.users.${username} = {
-          # Set false to exclude the composer usage footer from the next switch.
+          # Both T3 Code patches. `nrs --no-t3-usage` or `nrs --no-t3-jj` drops one for a switch.
           custom.t3code.enableUsagePatch = true;
-          # Independently exclude the Jujutsu panel on the next switch if needed.
           custom.t3code.enableJjPanel = true;
           imports = [
             #hm.plasma
@@ -52,7 +51,6 @@ in
             hm.dms
             hm.dankmail
             hm.tokitoki
-            hm.tokitokiDev
             hm.coding
             hm.agentCommon
             hm.agentSkills

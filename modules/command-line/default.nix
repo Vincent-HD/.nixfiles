@@ -80,6 +80,11 @@
         source = ./assets/cli-tools;
         executable = true;
       };
+      # `nrs` switches this machine and can retarget one rebuild without editing the host.
+      home.file."bin/nrs" = {
+        source = ./assets/nrs;
+        executable = true;
+      };
 
       # Put user-managed helper scripts and Darwin-only application CLIs on PATH.
       home.sessionPath = [

@@ -16,7 +16,9 @@ for these patches; a package pin bump alone does not establish a new reviewed ba
 Update this record after adapting the patches to a new source version.
 
 At this base, keep `useUsageLimitsPanel` and add composer accounts beside it; do not
-restore the inlined limits panel. The response usage chip lives in
+restore the inlined limits panel. Do not wrap those ChatView values in `useMemo` or
+`useCallback`: manual memoization bails the React Compiler out of `ChatView`, and its
+existing render-phase state adjustments then loop (minified React error 301). The response usage chip lives in
 `TimelineAssistantRows.tsx`. Cursor account usage still goes through
 `cursorTurnTokenUsage`, alongside upstream `cursorContextWindowTokens`. Mount the
 Jujutsu panel from `RightPanelSurfaceContent` and keep open/diff actions in

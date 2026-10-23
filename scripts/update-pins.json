@@ -174,24 +174,6 @@
       ]
     },
     {
-      "name": "opencodex",
-      "type": "nix-update",
-      "description": "OpenCodex npm release, lockfile, and per-platform Bun dependency closures",
-      "systems": [
-        "aarch64-darwin",
-        "x86_64-linux"
-      ],
-      "command": [
-        "nix",
-        "run",
-        "github:Mic92/nix-update",
-        "--",
-        "--flake",
-        "opencodex",
-        "--use-update-script"
-      ]
-    },
-    {
       "name": "opencodev2",
       "type": "nix-update",
       "description": "OpenCode V2 npm binaries for Linux and macOS",
@@ -417,17 +399,6 @@
         "--flake",
         "plannotator",
         "--use-update-script"
-      ]
-    },
-    {
-      "name": "codex-desktop-linux",
-      "type": "flake-input",
-      "description": "ChatGPT/Codex Desktop Linux flake input",
-      "command": [
-        "nix",
-        "flake",
-        "update",
-        "codex-desktop-linux"
       ]
     },
     {

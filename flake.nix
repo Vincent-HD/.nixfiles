@@ -10,8 +10,6 @@
 
     flake-parts.url = "github:hercules-ci/flake-parts";
 
-    flake-utils.url = "github:numtide/flake-utils";
-
     import-tree.url = "github:vic/import-tree";
 
     # Remote Agent Skills remain reproducible through flake.lock; agentSkills
@@ -35,12 +33,6 @@
     kitlangton-skills = {
       url = "github:kitlangton/skills";
       flake = false;
-    };
-
-    codex-desktop-linux = {
-      url = "github:ilysenko/codex-desktop-linux/main";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.flake-utils.follows = "flake-utils";
     };
 
     nix-darwin = {

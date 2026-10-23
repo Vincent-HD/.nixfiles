@@ -1,4 +1,4 @@
-{ inputs, config, ... }:
+{ inputs, ... }:
 let
   mkCodexSettings =
     { pkgs, lib }:
@@ -8,8 +8,6 @@ let
     in
     {
       model = "gpt-5.5";
-      # Route Codex's built-in OpenAI provider through the local OpenCodex proxy.
-      openai_base_url = "http://127.0.0.1:10100/v1";
       # Disable all interactive approval prompts, leaving Auto-review with nothing to process.
       approval_policy = "never";
       # Keep sandbox-boundary approval prompts with the user instead of the Auto-review agent.
@@ -17,19 +15,6 @@ let
       model_reasoning_effort = "high";
       model_reasoning_summary = "concise";
       model_verbosity = "low";
-      # Make Max available in the Codex desktop reasoning picker.
-      desktop = {
-        "enabled-reasoning-efforts" = [
-          "low"
-          "medium"
-          "high"
-          "xhigh"
-          "max"
-        ];
-        # Keep the ChatGPT/Codex desktop pet tucked away at startup.
-        "avatar-overlay-pet-visible" = false;
-        "pet-visibility" = "on-demand";
-      };
 
       # Enable parallel subagent execution with the requested default model and effort.
       agents = {
@@ -76,129 +61,36 @@ in
 {
   config.flake.modules.darwin.agentCodex =
     { pkgs, lib, ... }:
-    let
-      homeDirectory = "/Users/${config.flake.username}";
-      opencodexPackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.opencodex;
-      codexHome = "${homeDirectory}/.codex";
-      opencodexHome = "${homeDirectory}/.opencodex";
-    in
     {
       # Install the official Codex CLI; the codex-app cask is deprecated upstream.
       homebrew.casks = [
         "codex"
       ];
 
-      # System-level Codex defaults shared by the CLI, app, and IDE extension.
+      # System-level Codex defaults shared by the CLI and IDE extension.
       environment.etc."codex/config.toml".source = mkCodexConfig {
         pkgs = pkgs;
         lib = lib;
       };
 
-      # Match OpenCodex's native launchd label so its health checks recognize it.
-      launchd.user.agents.opencodex = {
-        command = "${pkgs.lib.getExe opencodexPackage} start --port 10100";
-        environment = {
-          OCX_SERVICE = "1";
-          CODEX_HOME = codexHome;
-          OPENCODEX_HOME = opencodexHome;
-          OCX_BUN_RUNTIME_SOURCE = "process";
-          OCX_BUN_RUNTIME_PATH = pkgs.lib.getExe pkgs.bun;
-        };
-        serviceConfig = {
-          Label = "com.opencodex.proxy";
-          KeepAlive = true;
-          RunAtLoad = true;
-          StandardOutPath = "${homeDirectory}/.opencodex/service.log";
-          StandardErrorPath = "${homeDirectory}/.opencodex/service.log";
-          WorkingDirectory = homeDirectory;
-        };
-      };
     };
 
   config.flake.modules.nixos.agentCodex =
     { pkgs, lib, ... }:
     {
-      # System-level Codex defaults shared by the CLI, app, and IDE extension.
+      # System-level Codex defaults shared by the CLI and IDE extension.
       environment.etc."codex/config.toml".source = mkCodexConfig {
         pkgs = pkgs;
         lib = lib;
       };
-
-      # Linux Computer Use uses AT-SPI for application trees and direct uinput
-      # access for pointer input; keyboard input needs the RemoteDesktop portal,
-      # xdotool on X11, or ydotool. X11/EWMH window control uses wmctrl/xprop.
-      # Keep the complete host-side runtime setup next to the Codex module so
-      # enabling the desktop client also makes its supported input paths usable.
-      assertions = [
-        {
-          assertion = lib.versionAtLeast pkgs.ydotool.version "1.0.3";
-          message = "Linux Computer Use requires ydotool 1.0.3 or newer.";
-        }
-      ];
-
-      services.gnome.at-spi2-core.enable = true;
-
-      hardware.uinput.enable = true;
-
-      programs.ydotool = {
-        enable = true;
-        group = "ydotool";
-      };
-
-      users.users.${config.flake.username}.extraGroups = [
-        "uinput"
-        "ydotool"
-      ];
-
-      # Keep the KDE portal available when this host is launched into Plasma;
-      # the Niri module supplies its GNOME/GTK portal implementations as well.
-      xdg.portal.enable = true;
-      xdg.portal.extraPortals = [ pkgs.kdePackages.xdg-desktop-portal-kde ];
-
-      # These are only fallback helpers for X11/EWMH windows and XTEST input.
-      environment.systemPackages = [
-        pkgs.wmctrl
-        pkgs.xdotool
-        pkgs.xprop
-      ];
     };
 
   config.flake.modules.homeManager.agentCodex =
-    {
-      pkgs,
-      lib,
-      config,
-      ...
-    }:
+    { pkgs, ... }:
     let
-      opencodexPackage = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.opencodex;
-      codexHome = "${config.home.homeDirectory}/.codex";
-      opencodexHome = "${config.home.homeDirectory}/.opencodex";
-      opencodexServiceState = {
-        version = 2;
-        codexHome = codexHome;
-        opencodexHome = opencodexHome;
-        bunPath = pkgs.lib.getExe pkgs.bun;
-        cliPath = "${opencodexPackage}/lib/opencodex/src/cli/index.ts";
-        backend = "scheduler";
-      };
-      # Kept out of home.file: 2.63+ realpaths this file and mkdir's a lock next
-      # to that path, which fails when the path is a Nix store symlink.
-      opencodexServiceStateFile = pkgs.writeText "opencodex-service-state.json" (
-        builtins.toJSON opencodexServiceState + "\n"
-      );
-      # Export the enabled OpenCodex catalog in VS Code's custom endpoint format.
-      opencodexModelsVscode = pkgs.writeShellApplication {
-        name = "opencodex-models-vscode";
-        runtimeInputs = [ pkgs.bun ];
-        text = ''
-          exec ${lib.getExe pkgs.bun} ${./assets/opencodex-models-vscode/opencodex-models-vscode.ts} "$@"
-        '';
-      };
       # On Linux, use the pinned package from packages/codex. On macOS, OpenAI
       # publishes the official binary via the Homebrew cask installed by
-      # darwin.agentCodex; reference that path directly so the wrapper below still
-      # applies the token bridge without introducing a second codex binary.
+      # darwin.agentCodex; reference it directly to avoid a second CLI installation.
       codexExec =
         if pkgs.stdenv.hostPlatform.isLinux then
           pkgs.lib.getExe (pkgs.callPackage ../../packages/codex { })
@@ -216,167 +108,10 @@ in
 
     in
     {
-      imports = [
-        inputs.codex-desktop-linux.homeManagerModules.default
-      ];
+      config = {
+        home.packages = [ codex ];
 
-      config = lib.mkMerge [
-        {
-          home.packages = [
-            codex
-            opencodexPackage
-            opencodexModelsVscode
-          ];
-
-          home.file.".codex/.keep".text = "";
-          home.file.".opencodex/.keep".text = "";
-          # Nix owns the service, so keep OpenCodex's ownership manifest in sync
-          # rather than asking its imperative installer to rewrite the unit.
-          home.activation.opencodexServiceState = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
-            state_directory="${opencodexHome}"
-            state_path="$state_directory/service-state.json"
-            ${pkgs.coreutils}/bin/mkdir -p "$state_directory"
-            if [ -L "$state_path" ] || [ ! -f "$state_path" ] || ! ${lib.getExe' pkgs.diffutils "cmp"} -s ${opencodexServiceStateFile} "$state_path"; then
-              ${pkgs.coreutils}/bin/rm -f "$state_path"
-              ${pkgs.coreutils}/bin/install -m 600 ${opencodexServiceStateFile} "$state_path"
-            fi
-          '';
-
-          # Opt into Cursor's native tools only after OpenCodex owns the provider setup.
-          home.activation.opencodexCursorNativeExec = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-            config_directory="${config.home.homeDirectory}/.opencodex"
-            config_path="$config_directory/config.json"
-
-            if [ -f "$config_path" ] && ${lib.getExe pkgs.jq} -e '.providers.cursor? | type == "object"' "$config_path" > /dev/null; then
-              if ! ${lib.getExe pkgs.jq} -e '.providers.cursor.nativeLocalExec == "on"' "$config_path" > /dev/null; then
-                config_tmp="$(${pkgs.coreutils}/bin/mktemp "$config_directory/config.json.XXXXXX")"
-                trap 'rm -f "$config_tmp"' EXIT
-                if ${lib.getExe pkgs.jq} '.providers.cursor.nativeLocalExec = "on"' "$config_path" > "$config_tmp"; then
-                  mv "$config_tmp" "$config_path"
-                else
-                  exit 1
-                fi
-                trap - EXIT
-              fi
-            fi
-          '';
-        }
-
-        (lib.mkIf pkgs.stdenv.hostPlatform.isLinux (
-          let
-            codexDesktopComputerUsePackage =
-              inputs.codex-desktop-linux.packages.${pkgs.stdenv.hostPlatform.system}.codex-desktop-computer-use-ui;
-            # The backend binary ships inside upstream's bundled plugin; its
-            # directory is the plugin id (renamed to unified-computer-use).
-            codexComputerUseLinux = pkgs.writeShellScriptBin "codex-computer-use-linux" ''
-              exec ${codexDesktopComputerUsePackage}/opt/codex-desktop/resources/plugins/openai-bundled/plugins/unified-computer-use/bin/codex-computer-use-linux "$@"
-            '';
-
-            # Computer Use injects keyboard input through ydotool, which emits
-            # QWERTY scancodes that the compositor re-maps through the active XKB
-            # layout. ydotool has no keymap option and Niri cannot scope a layout
-            # to a single device, so an AZERTY session receives the wrong
-            # characters (a -> q, w -> z, m -> comma). Switch the active layout to
-            # the US entry for keyboard injection and restore the previous entry
-            # afterwards; pointer subcommands pass straight through.
-            ydotoolLayoutSwitching = pkgs.writeShellScriptBin "ydotool" ''
-              set -eu
-
-              real=${pkgs.ydotool}/bin/ydotool
-
-              case "''${1:-}" in
-                type | key) ;;
-                *)
-                  exec "$real" "$@"
-                  ;;
-              esac
-
-              socket="''${NIRI_SOCKET:-}"
-              if [ -z "$socket" ]; then
-                for candidate in "''${XDG_RUNTIME_DIR:-/run/user/$UID}"/niri.*.sock; do
-                  if [ -S "$candidate" ]; then
-                    socket="$candidate"
-                  fi
-                done
-              fi
-
-              us_index=""
-              previous_index=""
-              if [ -n "$socket" ] && command -v niri >/dev/null 2>&1; then
-                layouts="$(NIRI_SOCKET="$socket" niri msg keyboard-layouts 2>/dev/null || true)"
-                us_index="$(printf '%s\n' "$layouts" \
-                  | sed 's/^[[:space:]]*\*[[:space:]]*//' \
-                  | awk '/English \(US\)/ { print $1; exit }')"
-                previous_index="$(printf '%s\n' "$layouts" \
-                  | awk '/\*/ { sub(/^[[:space:]]*\*[[:space:]]*/, ""); print $1; exit }')"
-              fi
-
-              switched=0
-              if [ -n "$us_index" ] && [ -n "$previous_index" ] && [ "$us_index" != "$previous_index" ]; then
-                if NIRI_SOCKET="$socket" niri msg action switch-layout "$us_index" >/dev/null 2>&1; then
-                  switched=1
-                fi
-              fi
-
-              restore_layout() {
-                if [ "$switched" = 1 ]; then
-                  NIRI_SOCKET="$socket" niri msg action switch-layout "$previous_index" >/dev/null 2>&1 || true
-                fi
-              }
-              trap restore_layout EXIT INT TERM HUP
-
-              "$real" "$@"
-            '';
-          in
-          {
-            # OpenAI does not publish a Linux Codex app yet; use the community
-            # module and point it at the local CLI wrapper for graphical launches.
-            programs.codexDesktopLinux = {
-              enable = true;
-              computerUseUi.enable = true;
-              cliPackage = codex;
-            };
-
-            # Keep the AT-SPI fallback used by the backend's setup command
-            # enabled declaratively for GTK applications in every new session.
-            dconf.settings."org/gnome/desktop/interface".toolkit-accessibility = true;
-
-            # Keep the bundled doctor/setup/apps/windows/screenshot commands
-            # available without exposing the app's internal Nix store layout.
-            home.packages = [
-              codexComputerUseLinux
-              ydotoolLayoutSwitching
-            ];
-
-            # Match OpenCodex's native unit name so its health checks recognize it.
-            systemd.user.services."opencodex-proxy" = {
-              Unit = {
-                Description = "OpenCodex provider proxy";
-                After = [ "network-online.target" ];
-                Wants = [ "network-online.target" ];
-              };
-              Service = {
-                Type = "simple";
-                ExecStart = "${pkgs.lib.getExe opencodexPackage} start --port 10100";
-                Environment = [
-                  "OCX_SERVICE=1"
-                  "CODEX_HOME=${codexHome}"
-                  "OPENCODEX_HOME=${opencodexHome}"
-                  "OCX_BUN_RUNTIME_SOURCE=process"
-                  "OCX_BUN_RUNTIME_PATH=${pkgs.lib.getExe pkgs.bun}"
-                  "PATH=/run/wrappers/bin:${config.home.profileDirectory}/bin:/run/current-system/sw/bin"
-                ];
-                Restart = "on-failure";
-                RestartSec = "5";
-                WorkingDirectory = config.home.homeDirectory;
-                StandardOutput = "append:${opencodexHome}/service.log";
-                StandardError = "append:${opencodexHome}/service.log";
-              };
-              Install.WantedBy = [ "default.target" ];
-            };
-          }
-        ))
-
-      ];
+        home.file.".codex/.keep".text = "";
+      };
     };
 }

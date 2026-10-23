@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+
+# Switch this machine from the nixfiles flake.
+# Plain `nrs` keeps the pinned inputs and the T3 Code patches selected in the host.
+# Patch flags apply to this switch only; they do not edit the configuration.
+
+set -euo pipefail
+
+usage() {
+  cat <<'EOF'
+Usage: nrs [options] [nh options]
+
+Switch this machine. With no options, uses the pinned flake inputs and the
+T3 Code patches selected in the host configuration.
+
+Tokitoki:
+  --tokitoki [path]   Use a local checkout instead of the pinned input.
+                      Default path: ~/lab/tokitoki.
+
+T3 Code patches (Linux, this switch only):
+  --no-t3             Upstream T3 Code, neither patch
+  --no-t3-usage       Drop the composer usage patch
+  --no-t3-jj          Drop the Jujutsu panel
+
+Other arguments are passed to nh, for example --dry or --ask.
+EOF
+}
+
+tokitoki=""
+usage_flag=""
+jj_flag=""
+nh_args=()
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -h | --help)
+      usage
+      exit 0
+      ;;
+    --tokitoki)
+      shift
+      tokitoki="$HOME/lab/tokitoki"
+      if [[ $# -gt 0 && "$1" != -* ]]; then
+        tokitoki="$1"
+        shift
+      fi
+      ;;
+    --no-t3)
+      usage_flag=0
+      jj_flag=0
+      shift
+      ;;
+    --no-t3-usage)
+      usage_flag=0
+      shift
+      ;;
+    --no-t3-jj)
+      jj_flag=0
+      shift
+      ;;
+    --)
+      shift
+      nh_args+=("$@")
+      break
+      ;;
+    *)
+      nh_args+=("$1")
+      shift
+      ;;
+  esac
+done
+
+if [[ -n "$usage_flag" || -n "$jj_flag" ]]; then
+  if [[ "$(uname -s)" != Linux ]]; then
+    echo "nrs: T3 Code patch switches are Linux-only" >&2
+    exit 1
+  fi
+  [[ -n "$usage_flag" ]] && export NRS_T3_USAGE="$usage_flag"
+  [[ -n "$jj_flag" ]] && export NRS_T3_JJ="$jj_flag"
+  nh_args+=(--impure)
+fi
+
+if [[ -n "$tokitoki" ]]; then
+  if [[ ! -e "$tokitoki" ]]; then
+    echo "nrs: Tokitoki checkout not found: $tokitoki" >&2
+    exit 1
+  fi
+  nh_args+=(--override-input tokitoki "path:$tokitoki")
+fi
+
+notes=()
+[[ -n "$tokitoki" ]] && notes+=("tokitoki $tokitoki")
+[[ "$usage_flag" == 0 ]] && notes+=("usage off")
+[[ "$jj_flag" == 0 ]] && notes+=("jj off")
+if [[ ${#notes[@]} -gt 0 ]]; then
+  printf 'nrs:'
+  printf ' %s' "${notes[@]}"
+  printf '\n'
+fi
+
+if [[ "$(uname -s)" == Darwin ]]; then
+  exec nh darwin switch "${nh_args[@]}"
+else
+  exec nh os switch "${nh_args[@]}"
+fi

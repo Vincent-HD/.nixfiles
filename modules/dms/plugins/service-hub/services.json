@@ -13,14 +13,6 @@
           "icon": "https://executor.sh/favicon-192.png",
           "port": 4789,
           "url": "http://localhost:4789"
-        },
-        {
-          "id": "opencodex",
-          "name": "OpenCodex",
-          "description": "Local Codex provider dashboard",
-          "icon": "https://raw.githubusercontent.com/lidge-jun/opencodex/main/gui/public/favicon.png",
-          "port": 10100,
-          "url": "http://localhost:10100"
         }
       ]
     },

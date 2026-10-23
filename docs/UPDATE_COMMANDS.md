@@ -22,7 +22,7 @@ Useful variants:
 ```bash
 nix run .#update-pins -- --dry-run
 nix run .#update-pins -- --only codex,curseforge
-nix run .#update-pins -- --skip codex-desktop-linux
+nix run .#update-pins -- --skip dankmail
 nix run .#update-pins -- --validate fast
 nix run .#update-pins -- --list
 ```
@@ -93,17 +93,6 @@ nix run github:Mic92/nix-update -- --flake codex --use-github-releases --github-
 
 ```bash
 nix run github:Mic92/nix-update -- --flake lightjj --use-update-script
-```
-
-### opencodex
-
-- **File**: `packages/opencodex/default.nix`
-- **Pattern**: npm release tarball + tagged Bun lockfile + fixed-output Bun dependency closure
-- **Flake output**: `.#opencodex`
-- **Note**: The package runs with Nix's Bun runtime and discards OpenCodex's unused bundled npm Bun binary. Its updater refreshes the tarball and lockfile plus separate Linux/macOS dependency hashes, using Bun's target OS/CPU options. It calculates hashes from a temporary package expression, validates the exact Nix derivation mismatch, and atomically updates the real file only after both targets succeed. It realizes only the dependency closures, not the final package or host.
-
-```bash
-nix run github:Mic92/nix-update -- --flake opencodex --use-update-script
 ```
 
 ### opencodev2
@@ -256,6 +245,44 @@ nix run github:Mic92/nix-update -- --flake cursor-agent --use-update-script
 - **Note**: This tracks GitHub nightly prereleases, not stable tags. The update script refreshes Linux and both macOS artifacts, then uses nix-update to refresh `packages/t3code-web/default.nix` (shared renderer/server source and Linux dependency closure). It does not build the app. The Linux custom package variants share these pins, owned by the existing `t3code` registry entry.
 - **Configuration**: `modules/agents/t3code.nix` uses Home Manager mutable settings and the existing Codex home. The desktop wrapper disables upstream auto-updates; this command and the subsequent rebuild own nightly upgrades. Close T3 and back up `~/.t3` before upgrading persistent state; restore that backup along with the old package when rolling back.
 
+Provider CLIs are managed separately from the T3 application. The Home Manager
+module pins the Codex, Claude, Cursor, and OpenCode executable paths explicitly;
+both Linux Codex accounts use the same package. Rebuild and fully restart T3
+after updating them. Existing sessions can keep their already-running CLI.
+T3's **Update all** cannot update immutable Nix store packages: use the Codex,
+Cursor Agent, and OpenCode commands in this document. Claude Code follows
+`nixpkgs`; update that input when its packaged version advances.
+
+Investigation on 2026-10-23 found Perso configured for Codex 0.163.0 while Evvi
+inherited 0.162.1 through executable discovery. Cursor was pinned to
+2026.10.22-27dcf5f in this repo but the running environment still resolved
+2026.10.14-941492e. Codex was refreshed to 0.164.0 and OpenCode to 2.1.4.
+Claude's upstream npm release was 2.1.309, while both the locked nixpkgs and
+the current `nixos-unstable` manifest still provided 2.1.303. Updating nixpkgs
+alone would therefore not close that gap yet; prefer waiting for its package
+update over adding another installation method.
+
+Perso uses `~/.codex`; Evvi uses `~/.codex-evvi`, which had no user
+`config.toml`. These are independent state directories, including authentication,
+plugins, and user settings. OpenCodex has been removed. T3 still passes explicit
+launch arguments that set `model_provider` to `openai` and `openai_base_url` to
+`https://chatgpt.com/backend-api/codex` for both accounts, so a leftover local
+proxy setting cannot redirect subscription traffic. Standalone Codex uses the
+same direct ChatGPT endpoint. T3 forwards these configuration arguments to both
+app-server and auxiliary exec launches. Leave `T3CODE_CODEX_LAUNCH_ARGS` unset:
+T3 gives that environment variable precedence over per-account launch arguments.
+The grey `~/.codex-t3/personal` text in the settings form is a placeholder, not
+an active shadow home.
+
+Keep separate homes to preserve the current account separation. If shared
+settings are desired, preserve the T3 direct-connection overrides.
+For a few shared preferences, manage just those preferences in each home's
+config. For shared state as well, T3 supports a common `homePath` and a distinct
+`shadowHomePath` per account, with separate `auth.json` files. Migrate with T3
+closed and backups of both homes: Evvi already contains real state directories
+that conflict with the symlinks T3 creates for a shadow home. Do not simply
+point its shadow home at the existing directory or copy Perso's credentials.
+
 ```bash
 nix run github:Mic92/nix-update -- --flake t3code --use-update-script
 ```
@@ -404,16 +431,6 @@ nix eval --raw '.#nixosConfigurations.pc-fixe.config.boot.kernelPackages.kernel.
 nix eval --raw '.#nixosConfigurations.pc-fixe.config.specialisation.stock.configuration.boot.kernelPackages.kernel.name'
 ```
 
-### codex-desktop-linux
-
-- **File**: `flake.nix`
-- **Why**: It is a flake input that follows upstream `main`; `flake.lock` carries the reproducible revision.
-- **How**: Refresh only this input in `flake.lock`.
-
-```bash
-nix flake update codex-desktop-linux
-```
-
 ### noctalia
 
 - **File**: `flake.nix`
@@ -441,15 +458,20 @@ nix flake update dms
 nix flake update tokitoki
 ```
 
-To run the widget against the local checkout instead of the pinned revision, set
-`TOKITOKI_DEV` before rebuilding. `modules/dms/tokitoki-dev.nix` defines `nrs`,
-which forwards the override without touching `flake.lock`:
+`nrs` (`modules/command-line/assets/nrs`, installed at `~/bin/nrs`) is the
+switch command. It leaves `flake.lock` untouched. Point one rebuild at a local
+Tokitoki checkout, or change the T3 Code patches for that switch only:
 
 ```bash
-TOKITOKI_DEV=1 nrs
+nrs                              # pinned inputs, host patch selection
+nrs --tokitoki                   # ~/lab/tokitoki
+nrs --tokitoki ~/src/tokitoki    # another checkout
+nrs --no-t3                      # upstream T3 Code, neither patch
+nrs --no-t3-usage                # drop the composer usage patch
+nrs --no-t3-jj                   # drop the Jujutsu panel
 ```
 
-The same rebuild spelled out, with no helper:
+The same Tokitoki rebuild without the helper:
 
 ```bash
 nh os switch --override-input tokitoki "path:$HOME/lab/tokitoki"

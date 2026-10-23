@@ -19,20 +19,6 @@ in
           touch "$out"
         '';
 
-        opencodex-model-tests =
-          pkgs.runCommand "opencodex-model-tests"
-            {
-              nativeBuildInputs = [ pkgs.bun ];
-            }
-            ''
-              cp ${../modules/agents/assets/opencodex-models-vscode/opencodex-models-vscode.ts} \
-                opencodex-models-vscode.ts
-              cp ${../modules/agents/assets/opencodex-models-vscode/opencodex-models-vscode.unit.test.ts} \
-                opencodex-models-vscode.unit.test.ts
-              bun test opencodex-models-vscode.unit.test.ts
-              touch "$out"
-            '';
-
         update-pins-tests =
           pkgs.runCommand "update-pins-tests"
             {

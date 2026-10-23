@@ -1,5 +1,5 @@
 diff --git a/apps/web/src/components/ChatView.tsx b/apps/web/src/components/ChatView.tsx
-index 92707af8..8df5ffcb 100644
+index 92707af8..7cc851c9 100644
 --- a/apps/web/src/components/ChatView.tsx
 +++ b/apps/web/src/components/ChatView.tsx
 @@ -43,6 +43,7 @@ import {
@@ -10,15 +10,6 @@ index 92707af8..8df5ffcb 100644
  import { useUsageLimitsPanel } from "./chat/useUsageLimitsPanel";
  import { useWorktreeSetup } from "./chat/useWorktreeSetup";
  import { useChatShortcuts } from "./chat/useChatShortcuts";
-@@ -104,7 +105,7 @@ import { sourceControlRepositorySelector } from "@t3tools/shared/sourceControl";
- import { resolveThreadReferenceCopyTarget } from "@t3tools/shared/threadReference";
- import { resolveTerminalSessionLabel } from "@t3tools/shared/terminalLabels";
- import { useAtomValue } from "@effect/atom-react";
--import { type SetStateAction, useEffect, useLayoutEffect, useRef, useState } from "react";
-+import { type SetStateAction, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
- import { useLocation, useNavigate } from "@tanstack/react-router";
- import { assistantCitationFromLocation } from "../lib/assistantCitationNavigation";
- import type { AssistantCitationSourceAnchor } from "~/lib/assistantTextSelection";
 @@ -244,6 +245,9 @@ import {
    useThreadCheckpointSummaries,
  } from "../state/entities";
@@ -33,37 +24,39 @@ index 92707af8..8df5ffcb 100644
            activeThread?.latestRun?.runId ?? "",
            activePendingApproval?.requestId ?? activePendingUserInput?.requestId ?? "",
          ].join(":");
-+const usageLimitSources = serverConfig?.usageLimitSources ?? EMPTY_USAGE_LIMIT_SOURCES;
++  const usageLimitSources = serverConfig?.usageLimitSources ?? EMPTY_USAGE_LIMIT_SOURCES;
    const {
      banner: usageLimitsBanner,
      offered: usageLimitsOffered,
-@@ -1349,8 +1354,20 @@ export default function ChatView(props: ChatViewProps) {
+@@ -1349,8 +1354,22 @@ export default function ChatView(props: ChatViewProps) {
      providerInstanceId: activeProviderInstanceId,
      providerDriver: activeProviderStatus?.driver ?? null,
      providers: providerStatuses,
 -    sources: serverConfig?.usageLimitSources ?? EMPTY_USAGE_LIMIT_SOURCES,
 +    sources: usageLimitSources,
    });
-+  const composerUsageAccounts = useMemo(() => {
-+    if (activeProviderInstanceId === null || activeProviderStatus === null) return [];
-+    return selectComposerUsageAccounts(
-+      collectProviderUsageLimits(
-+        activeProviderInstanceId,
-+        providerStatuses,
-+        usageLimitSources,
-+        Date.parse(activeProviderStatus.checkedAt),
-+      )?.accounts ?? [],
-+      activeProviderInstanceId,
-+    );
-+  }, [activeProviderInstanceId, activeProviderStatus, providerStatuses, usageLimitSources]);
++  // Leave this unmemoized. A manual useMemo here bails the React Compiler out of
++  // ChatView, and the uncompiled render-phase state adjustments then loop.
++  const composerUsageAccounts =
++    activeProviderInstanceId === null || activeProviderStatus === null
++      ? []
++      : selectComposerUsageAccounts(
++          collectProviderUsageLimits(
++            activeProviderInstanceId,
++            providerStatuses,
++            usageLimitSources,
++            Date.parse(activeProviderStatus.checkedAt),
++          )?.accounts ?? [],
++          activeProviderInstanceId,
++        );
    const {
      beginLocalDispatch,
      resetLocalDispatch,
-@@ -1411,6 +1428,29 @@ export default function ChatView(props: ChatViewProps) {
+@@ -1411,6 +1430,29 @@ export default function ChatView(props: ChatViewProps) {
      activeThreadLiveTokenUsage,
      activeProviderThread,
    );
-+const composerUsageSession = useMemo(() => {
++  const composerUsageSession = (() => {
 +    const turns =
 +      serverProjection?.providerTurns.filter(
 +        (turn) => turn.providerThreadId === serverProjection.thread.activeProviderThreadId,
@@ -85,11 +78,11 @@ index 92707af8..8df5ffcb 100644
 +        })
 +      : [];
 +    return { turns, toolCalls, usageTurns };
-+  }, [serverProjection]);
++  })();
    const pendingBackgroundTasks = deriveThreadPendingBackgroundTasks(serverProjection);
    const activeWorkStartedAt =
      deriveActiveWorkStartedAt(activeActivityRun, activeRuntime, localDispatchStartedAt) ??
-@@ -3566,6 +3606,24 @@ export default function ChatView(props: ChatViewProps) {
+@@ -3566,6 +3608,24 @@ export default function ChatView(props: ChatViewProps) {
                                }
                                activeThreadModelSelection={activeThread?.modelSelection}
                                activeProjectId={activeProject?.id ?? null}

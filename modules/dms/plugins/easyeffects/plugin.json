@@ -1,0 +1,17 @@
+{
+  "id": "easyEffects",
+  "name": "EasyEffects",
+  "description": "Toggle Music Ducking with a single profile-aware button",
+  "version": "1.0.0",
+  "author": "vincent",
+  "icon": "hearing",
+  "component": "./EasyEffectsWidget.qml",
+  "permissions": [
+    "settings_read"
+  ],
+  "type": "widget",
+  "capabilities": [
+    "dankbar-widget"
+  ],
+  "requires_dms": ">=2.0.0"
+}

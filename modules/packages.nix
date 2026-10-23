@@ -75,9 +75,6 @@
         lightjj = pkgs.callPackage ../packages/lightjj {
           updateScriptZod = updateScriptZod;
         };
-        opencodex = pkgs.callPackage ../packages/opencodex {
-          updateScriptZod = updateScriptZod;
-        };
         opencodev2 = pkgs.callPackage ../packages/opencodev2 {
           updateScriptZod = updateScriptZod;
         };
