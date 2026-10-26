@@ -167,7 +167,7 @@
   "cornerRadius": 8,
   "currentThemeCategory": "registry",
   "currentThemeName": "custom",
-  "customThemeFile": "~/.config/DankMaterialShell/themes/crimsonVoltage/theme.json",
+  "customThemeFile": "~/.config/dms/themes/crimsonVoltage/theme.json",
   "groupWorkspaceApps": false,
   "maxWorkspaceIcons": 6,
   "niriLayoutBorderSize": 2,
