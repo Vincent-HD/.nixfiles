@@ -146,6 +146,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.home-manager.follows = "home-manager";
     };
+
+    # Keep Z Code on the exact reviewed fork commit; its Nix package reuses this flake's pkgs.
+    z-code = {
+      url = "github:Vincent-HD/zcode/f2f155c8c7e0574575c8a3632f4fcafd32a6f89d";
+      flake = false;
+    };
   };
 
   outputs =

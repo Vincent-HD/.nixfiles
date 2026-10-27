@@ -382,6 +382,18 @@
       ]
     },
     {
+      "name": "z-code",
+      "type": "flake-input",
+      "description": "Reviewed commit-pinned Z Code fork source; update only after reviewing the selected commit",
+      "enabled": false,
+      "command": [
+        "nix",
+        "flake",
+        "update",
+        "z-code"
+      ]
+    },
+    {
       "name": "plannotator",
       "type": "nix-update",
       "description": "Plannotator release binaries for all supported platforms and shared Agent Skills",

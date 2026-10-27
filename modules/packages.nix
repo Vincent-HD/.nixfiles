@@ -19,6 +19,23 @@
       };
       updateScriptZod = pkgs.callPackage ../packages/update-script-zod { };
 
+      # Reuse the exact GitHub snapshot for both the source output and Linux package.
+      zCodeSource = inputs.z-code;
+      zCodeSourcePackage =
+        pkgs.runCommand "z-code-source"
+          {
+            passthru.sourcePath = zCodeSource;
+          }
+          ''
+            mkdir -p "$out"
+            cp -R ${zCodeSource}/. "$out/"
+          '';
+      # Reuse the fork's package definition for both flake consumers and Home Manager.
+      zCodePackage = import "${zCodeSource}/nix/default.nix" {
+        pkgs = pkgs;
+        self = zCodeSource;
+      };
+
       mkBunRunner =
         name: script:
         pkgs.writeTextFile {
@@ -100,6 +117,14 @@
           enableUsagePatch = false;
           enableJjPanel = true;
         };
+        t3code-web-temporary = pkgs.callPackage ../packages/t3code-web {
+          enableUsagePatch = false;
+          enableTemporaryThreads = true;
+        };
+        t3code-web-all = pkgs.callPackage ../packages/t3code-web {
+          enableJjPanel = true;
+          enableTemporaryThreads = true;
+        };
         t3code-patched = pkgs.callPackage ../packages/t3code-patched {
           t3code = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.t3code;
           t3code-web = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.t3code-web-jj;
@@ -115,6 +140,16 @@
           enableUsagePatch = false;
           enableJjPanel = true;
         };
+        t3code-temporary = pkgs.callPackage ../packages/t3code-patched {
+          t3code = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.t3code;
+          t3code-web = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.t3code-web-temporary;
+          enableUsagePatch = false;
+        };
+        t3code-all = pkgs.callPackage ../packages/t3code-patched {
+          t3code = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.t3code;
+          t3code-web = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.t3code-web-all;
+          enableJjPanel = true;
+        };
         codex = pkgs.callPackage ../packages/codex { };
         cpuid-fault-emulation = pkgs.callPackage ../packages/cpuid-fault-emulation { };
         curseforge = unfreePkgs.callPackage ../packages/curseforge { };
@@ -126,6 +161,11 @@
         lsfg-vk = unfreePkgs.callPackage ../packages/lsfg-vk { };
         persist-dms = mkBunRunner "persist-dms" ../scripts/persist-dms.ts;
         gpu-burn = cudaPkgs.gpu-burn;
+      }
+      # The fork package targets x86_64 Linux; Darwin keeps upstream T3 Code.
+      // lib.optionalAttrs (pkgs.stdenv.hostPlatform.system == "x86_64-linux") {
+        z-code-source = zCodeSourcePackage;
+        z-code = zCodePackage;
       };
 
       # Keep local CLI builds on the same Bun and package-manager versions as Nix rebuilds.

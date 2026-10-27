@@ -9,6 +9,7 @@ these contracts throughout upstream source.
 | --- | --- | --- | --- |
 | `composer-usage.patch` | [Usage statistics](composer-usage.md) | Web renderer and server | `custom.t3code.enableUsagePatch` |
 | `jj-panel.patch` | [Jujutsu panel](jj-panel.md) | Web renderer and server | `custom.t3code.enableJjPanel` |
+| `temporary-threads.patch` | [Temporary conversations](temporary-threads.md) | Web renderer | `custom.t3code.enableTemporaryThreads` |
 
 Current patch base: upstream tag `v0.1.2-nightly.20261022.3541`, commit
 `044f07257c9684ae4543bd1e1ebf9c394e9e3830`. This records the base actually reviewed
@@ -36,8 +37,8 @@ Bare-repository assertions go through `git --git-dir`, because `VcsProcess` sets
    Diagnose whether the failure is patch context drift, a renamed API, missing provider
    data, or a behavioral regression. Preserve intent rather than forcing old code back in.
 2. Use a clean temporary checkout at that pin. Preserve any existing dirty authoring
-   checkout. Both patches must apply independently; the combined build applies usage
-   first, then JJ. Both touch `ChatView.tsx`, so inspect that integration explicitly.
+   checkout. The patches must apply independently; the combined build applies usage,
+   then JJ, then temporary conversations. Inspect their shared integration points.
 3. Adapt the feature, regenerate its source patch, and retain `--fuzz=0`. Exact context
    can move within a file; zero fuzz forbids ignoring context lines, not line offsets.
    A clean application alone does not prove behavioral correctness.
@@ -45,7 +46,8 @@ Bare-repository assertions go through `git --git-dir`, because `VcsProcess` sets
    lint/typecheck commands from upstream's `AGENTS.md`. Test commands run in the patched
    upstream source checkout, not this Nix repository. Report what actually ran.
 5. Build the affected package when packaging or compilation changed. Available outputs
-   are `t3code-usage`, `t3code-jj`, and `t3code-patched` (both). Keep testing/building an
+   include `t3code-usage`, `t3code-jj`, `t3code-temporary`, `t3code-patched` (usage and JJ),
+   and `t3code-all`. Keep testing/building an
    explicit maintenance step; no automatic candidate gate is installed. UI acceptance
    still needs a manual check in the installed app or an authorized isolated dev app.
 

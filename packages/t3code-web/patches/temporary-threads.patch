@@ -1,0 +1,1771 @@
+diff --git a/apps/web/src/components/ChatView.tsx b/apps/web/src/components/ChatView.tsx
+index a6b2c04..c51962a 100644
+--- a/apps/web/src/components/ChatView.tsx
++++ b/apps/web/src/components/ChatView.tsx
+@@ -2878,6 +2878,7 @@ export default function ChatView(props: ChatViewProps) {
+   const { onResume, isResuming } = useComposerResume({
+     environmentId,
+     routeThreadKey,
++    draftId,
+     currentRouteThreadKeyRef,
+     activeThread,
+     resumableRunId,
+@@ -3262,6 +3263,10 @@ export default function ChatView(props: ChatViewProps) {
+             onOpenThread={onOpenRelatedThreadStable}
+             rightPanelOpen={inlineRightPanelOwnsTitleBar}
+             onNewThreadInProject={handleNewThreadInActiveProjectStable}
++            temporaryConversationKeys={[
++              routeThreadKey,
++              ...(draftThread?.promotedTo ? [scopedThreadKey(draftThread.promotedTo)] : []),
++            ]}
+             {...(activeDraftLogicalProjectKey
+               ? { onOpenProjectSettings: handleOpenDraftProjectSettingsStable }
+               : {})}
+diff --git a/apps/web/src/components/ConfirmDialogHost.tsx b/apps/web/src/components/ConfirmDialogHost.tsx
+index 9247780..09838a1 100644
+--- a/apps/web/src/components/ConfirmDialogHost.tsx
++++ b/apps/web/src/components/ConfirmDialogHost.tsx
+@@ -62,6 +62,8 @@ export function ConfirmDialogHost() {
+ 
+   const copy = resolveConfirmDialogCopy(state.status === "idle" ? "" : state.message);
+   const confirmVariant = state.status === "idle" ? "default" : state.variant;
++  const cancelLabel = state.status === "idle" ? "Cancel" : state.cancelLabel;
++  const confirmLabel = state.status === "idle" ? "Confirm" : state.confirmLabel;
+   const onCancel = () => respondToConfirmDialog(false);
+   const onConfirm = () => respondToConfirmDialog(true);
+ 
+@@ -85,9 +87,9 @@ export function ConfirmDialogHost() {
+           ) : null}
+         </AlertDialogHeader>
+         <AlertDialogFooter>
+-          <AlertDialogClose render={<Button variant="outline" />}>Cancel</AlertDialogClose>
++          <AlertDialogClose render={<Button variant="outline" />}>{cancelLabel}</AlertDialogClose>
+           <Button variant={confirmVariant} onClick={onConfirm}>
+-            Confirm
++            {confirmLabel}
+           </Button>
+         </AlertDialogFooter>
+       </AlertDialogPopup>
+diff --git a/apps/web/src/components/Sidebar.tsx b/apps/web/src/components/Sidebar.tsx
+index 7f03b6c..648d211 100644
+--- a/apps/web/src/components/Sidebar.tsx
++++ b/apps/web/src/components/Sidebar.tsx
+@@ -185,6 +185,7 @@ import {
+   type SidebarRouteReveal,
+ } from "./sidebar/routeReveal";
+ import { stackedThreadToast, toastManager } from "./ui/toast";
++import { hasPendingDraftSend } from "./chat/chatViewSend";
+ import { Button } from "./ui/button";
+ import {
+   Combobox,
+@@ -2333,6 +2334,7 @@ export default function Sidebar({ routeReveal }: { routeReveal: SidebarRouteReve
+               isSnoozed,
+               canSnoozeNow: canSnooze(thread, { now: new Date().toISOString() }),
+               isRegeneratingTitle,
++              isTemporary: useUiStateStore.getState().temporaryThreadKeys.includes(threadKey),
+               isRunning: !threadRuntimeCanArchive(thread.runtime),
+               supports: {
+                 settlement: supportsSettlement,
+@@ -2451,6 +2453,21 @@ export default function Sidebar({ routeReveal }: { routeReveal: SidebarRouteReve
+           case "mark-unread":
+             markThreadUnread(threadRef);
+             return;
++          case "make-temporary":
++            if (hasPendingDraftSend(threadKey)) {
++              toastManager.add({
++                type: "warning",
++                title: "Wait for the message to finish sending",
++              });
++              return;
++            }
++            useUiStateStore.getState().setTemporaryThread(threadKey, true);
++            toastManager.add({ type: "success", title: "Conversation marked temporary" });
++            return;
++          case "keep-permanent":
++            useUiStateStore.getState().setTemporaryThread(threadKey, false);
++            toastManager.add({ type: "success", title: "Conversation will be kept" });
++            return;
+           case "copy-path":
+             if (!threadWorkspacePath) {
+               toastManager.add(
+diff --git a/apps/web/src/components/TemporaryConversationCoordinator.tsx b/apps/web/src/components/TemporaryConversationCoordinator.tsx
+new file mode 100644
+index 0000000..3cf896c
+--- /dev/null
++++ b/apps/web/src/components/TemporaryConversationCoordinator.tsx
+@@ -0,0 +1,187 @@
++import { scopeThreadRef, scopedThreadKey } from "@t3tools/client-runtime/environment";
++import {
++  isAtomCommandInterrupted,
++  squashAtomCommandFailure,
++} from "@t3tools/client-runtime/state/runtime";
++import { useBlocker, type ShouldBlockFn } from "@tanstack/react-router";
++import { useEffect, useState } from "react";
++
++import { requestConfirmDialog } from "../confirmDialog";
++import { useComposerDraftStore } from "../composerDraftStore";
++import { releaseComposerDraftUploads } from "../lib/composerDraftUploads";
++import { stackedThreadToast, toastManager } from "./ui/toast";
++import { resolveThreadRouteTarget, type ThreadRouteTarget } from "../threadRoutes";
++import { readThreadShell } from "../state/entities";
++import { useThreadRouteTarget } from "../hooks/useThreadRouteTarget";
++import { useThreadActions } from "../hooks/useThreadActions";
++import { useStableCallback } from "../hooks/useStableCallback";
++import { useUiStateStore } from "../uiStateStore";
++import { hasPendingDraftSend } from "./chat/chatViewSend";
++import {
++  createTemporaryConversationNavigationBlocker,
++  setTemporaryConversationDiscarding,
++  temporaryConversationRouteKey,
++  type TemporaryConversationIdentity,
++} from "../temporaryConversationNavigation";
++
++type TemporaryRouteIdentity = TemporaryConversationIdentity<ThreadRouteTarget>;
++type TemporaryRouteLocation = {
++  readonly params: Partial<Record<string, string | undefined>>;
++};
++type TemporaryRouteBlocker = (input: {
++  readonly current: TemporaryRouteLocation;
++  readonly next: TemporaryRouteLocation;
++}) => Promise<boolean>;
++
++function resolveTemporaryRouteIdentity(
++  params: Partial<Record<string, string | undefined>>,
++): TemporaryRouteIdentity | null {
++  const target = resolveThreadRouteTarget(params);
++  if (!target) return null;
++  if (target.kind === "server") {
++    return { key: scopedThreadKey(target.threadRef), target };
++  }
++  const session = useComposerDraftStore.getState().getDraftSession(target.draftId);
++  if (!session) return null;
++  const threadKey = scopedThreadKey(scopeThreadRef(session.environmentId, session.threadId));
++  const promotedThreadKey = session.promotedTo ? scopedThreadKey(session.promotedTo) : null;
++  return {
++    key: threadKey,
++    ...(promotedThreadKey && promotedThreadKey !== threadKey
++      ? { aliases: [promotedThreadKey] }
++      : {}),
++    target,
++  };
++}
++
++function temporaryThreadRefForTarget(target: ThreadRouteTarget) {
++  if (target.kind === "server") return target.threadRef;
++  const session = useComposerDraftStore.getState().getDraftSession(target.draftId);
++  if (!session) return null;
++  return session.promotedTo ?? scopeThreadRef(session.environmentId, session.threadId);
++}
++
++export function TemporaryConversationCoordinator() {
++  const routeTarget = useThreadRouteTarget();
++  const { deleteThread } = useThreadActions();
++  const stableDeleteThread = useStableCallback(deleteThread);
++  const [navigationBlocker] = useState<TemporaryRouteBlocker>(() =>
++    createTemporaryConversationNavigationBlocker({
++      resolveIdentity: (location) => resolveTemporaryRouteIdentity(location.params),
++      isTemporary: (key) => useUiStateStore.getState().temporaryThreadKeys.includes(key),
++      confirmLeave: async () => {
++        const confirmation = requestConfirmDialog(
++          [
++            "Leave this temporary conversation?",
++            "T3 will remove this conversation from your history and clean its linked files. Some T3 and provider data may remain.",
++          ].join("\n"),
++          {
++            variant: "destructive",
++            cancelLabel: "Stay",
++            confirmLabel: "Leave and discard",
++          },
++        );
++        return confirmation ? await confirmation : false;
++      },
++      discard: async (identity) => {
++        if ([identity.key, ...(identity.aliases ?? [])].some(hasPendingDraftSend)) {
++          toastManager.add({ type: "warning", title: "Wait for the message to finish sending" });
++          return false;
++        }
++        const threadRef = temporaryThreadRefForTarget(identity.target);
++        if (!threadRef) return false;
++        const discardKey = temporaryConversationRouteKey(identity.target);
++        setTemporaryConversationDiscarding(discardKey, true);
++        try {
++          const draftSession =
++            identity.target.kind === "draft"
++              ? useComposerDraftStore.getState().getDraftSession(identity.target.draftId)
++              : null;
++
++          if (
++            identity.target.kind === "draft" &&
++            !draftSession?.promotedTo &&
++            readThreadShell(threadRef) === null
++          ) {
++            releaseComposerDraftUploads(identity.target.draftId);
++            useComposerDraftStore.getState().clearDraftThread(identity.target.draftId);
++            for (const key of [identity.key, ...(identity.aliases ?? [])]) {
++              useUiStateStore.getState().setTemporaryThread(key, false);
++            }
++            return true;
++          }
++
++          const result = await stableDeleteThread(threadRef, {
++            navigateToFallback: false,
++            deleteWorktree: false,
++          });
++          if (result._tag === "Failure") {
++            setTemporaryConversationDiscarding(discardKey, false);
++            if (!isAtomCommandInterrupted(result)) {
++              const error = squashAtomCommandFailure(result);
++              toastManager.add(
++                stackedThreadToast({
++                  type: "error",
++                  title: "Failed to discard temporary conversation",
++                  description: error instanceof Error ? error.message : "An error occurred.",
++                }),
++              );
++            }
++            return false;
++          }
++
++          if (identity.target.kind === "draft") {
++            releaseComposerDraftUploads(identity.target.draftId);
++            useComposerDraftStore.getState().clearDraftThread(identity.target.draftId);
++          }
++          for (const key of [
++            identity.key,
++            ...(identity.aliases ?? []),
++            scopedThreadKey(threadRef),
++          ]) {
++            useUiStateStore.getState().setTemporaryThread(key, false);
++          }
++          return true;
++        } catch (error) {
++          setTemporaryConversationDiscarding(discardKey, false);
++          throw error;
++        }
++      },
++      onError: (error) => {
++        toastManager.add(
++          stackedThreadToast({
++            type: "error",
++            title: "Failed to discard temporary conversation",
++            description: error instanceof Error ? error.message : "An error occurred.",
++          }),
++        );
++      },
++    }),
++  );
++
++  const shouldBlockFn: ShouldBlockFn = useStableCallback((input: Parameters<ShouldBlockFn>[0]) =>
++    navigationBlocker(input),
++  );
++  useBlocker({ shouldBlockFn, enableBeforeUnload: false });
++
++  const routeKey = temporaryConversationRouteKey(routeTarget);
++  useEffect(() => () => setTemporaryConversationDiscarding(routeKey, false), [routeKey]);
++
++  const threadRef = routeTarget ? temporaryThreadRefForTarget(routeTarget) : null;
++  const threadKey = threadRef ? scopedThreadKey(threadRef) : null;
++  const isTemporary = useUiStateStore((state) =>
++    threadKey === null ? false : state.temporaryThreadKeys.includes(threadKey),
++  );
++
++  useEffect(() => {
++    if (!isTemporary) return;
++    const warnBeforeUnload = (event: BeforeUnloadEvent) => {
++      event.preventDefault();
++      event.returnValue = "";
++    };
++    window.addEventListener("beforeunload", warnBeforeUnload);
++    return () => window.removeEventListener("beforeunload", warnBeforeUnload);
++  }, [isTemporary]);
++
++  return null;
++}
+diff --git a/apps/web/src/components/ThreadRouteView.tsx b/apps/web/src/components/ThreadRouteView.tsx
+index df6e5b4..45c407b 100644
+--- a/apps/web/src/components/ThreadRouteView.tsx
++++ b/apps/web/src/components/ThreadRouteView.tsx
+@@ -1,4 +1,4 @@
+-import { scopedThreadKey } from "@t3tools/client-runtime/environment";
++import { scopeThreadRef, scopedThreadKey } from "@t3tools/client-runtime/environment";
+ import type { ScopedThreadRef } from "@t3tools/contracts";
+ import { useNavigate } from "@tanstack/react-router";
+ import { useEffect, useState } from "react";
+@@ -17,6 +17,8 @@ import { useSidebarPendingFileDropStore } from "../sidebarPendingFileDropStore";
+ import { useEnvironmentThreadRefs, useThreadRefs, useQuietThreadShell } from "../state/entities";
+ import { useEnvironmentShellStatus } from "../state/shell";
+ import { useEnvironmentThread } from "../state/threads";
++import { useUiStateStore } from "../uiStateStore";
++import { isTemporaryConversationDiscarding } from "../temporaryConversationNavigation";
+ import {
+   buildThreadRouteParams,
+   isThreadRouteSnapshotAuthoritative,
+@@ -116,6 +118,25 @@ export function ThreadRouteView({ target }: { target: ThreadRouteTarget }) {
+     markPromotedDraftThreadByRef(inferredThreadRef);
+   }, [draftSession?.promotedTo, inferredThreadRef]);
+ 
++  const reservedDraftThreadKey = draftSession
++    ? scopedThreadKey(scopeThreadRef(draftSession.environmentId, draftSession.threadId))
++    : null;
++  const promotedDraftThreadKey = draftSession?.promotedTo
++    ? scopedThreadKey(draftSession.promotedTo)
++    : null;
++  useEffect(() => {
++    if (
++      reservedDraftThreadKey === null ||
++      promotedDraftThreadKey === null ||
++      reservedDraftThreadKey === promotedDraftThreadKey
++    ) {
++      return;
++    }
++    useUiStateStore
++      .getState()
++      .transferTemporaryThread(reservedDraftThreadKey, promotedDraftThreadKey);
++  }, [promotedDraftThreadKey, reservedDraftThreadKey]);
++
+   useEffect(() => {
+     if (!canonicalThreadRef) {
+       return;
+@@ -137,14 +158,23 @@ export function ThreadRouteView({ target }: { target: ThreadRouteTarget }) {
+   }, [canonicalThreadRef, navigate]);
+ 
+   useEffect(() => {
+-    if (target.kind !== "draft" || draftSession || canonicalThreadRef) {
++    if (
++      target.kind !== "draft" ||
++      draftSession ||
++      canonicalThreadRef ||
++      isTemporaryConversationDiscarding(target)
++    ) {
+       return;
+     }
+     void navigate({ to: "/", replace: true });
+-  }, [canonicalThreadRef, draftSession, navigate, target.kind]);
++  }, [canonicalThreadRef, draftSession, navigate, target]);
+ 
+   useEffect(() => {
+-    if (target.kind !== "server" || !bootstrapComplete) {
++    if (
++      target.kind !== "server" ||
++      !bootstrapComplete ||
++      isTemporaryConversationDiscarding(target)
++    ) {
+       return;
+     }
+     if (renderState === "missing") {
+diff --git a/apps/web/src/components/chat/ChatHeader.tsx b/apps/web/src/components/chat/ChatHeader.tsx
+index 56861a5..17f1e55 100644
+--- a/apps/web/src/components/chat/ChatHeader.tsx
++++ b/apps/web/src/components/chat/ChatHeader.tsx
+@@ -3,7 +3,7 @@ import {
+   type EnvironmentId,
+   type ThreadId,
+ } from "@t3tools/contracts";
+-import { scopeThreadRef } from "@t3tools/client-runtime/environment";
++import { scopeThreadRef, scopedThreadKey } from "@t3tools/client-runtime/environment";
+ import type { EnvironmentProject } from "@t3tools/client-runtime/state/shell";
+ import {
+   isAtomCommandInterrupted,
+@@ -37,6 +37,8 @@ import { observeResize } from "~/lib/observeResize";
+ import { cn } from "~/lib/utils";
+ import { textDirection } from "~/textDirection";
+ import { useClientSettings } from "../../hooks/useSettings";
++import { useUiStateStore } from "../../uiStateStore";
++import { hasPendingDraftSend } from "./chatViewSend";
+ 
+ interface ChatHeaderProps {
+   activeThreadEnvironmentId: EnvironmentId;
+@@ -49,6 +51,7 @@ interface ChatHeaderProps {
+   rightPanelOpen: boolean;
+   onNewThreadInProject: () => void;
+   onOpenProjectSettings?: (() => void) | undefined;
++  temporaryConversationKeys?: ReadonlyArray<string>;
+ }
+ 
+ function resolveRenameCommit(input: {
+@@ -77,6 +80,7 @@ export const ChatHeader = memo(function ChatHeader({
+   rightPanelOpen,
+   onNewThreadInProject,
+   onOpenProjectSettings,
++  temporaryConversationKeys,
+ }: ChatHeaderProps) {
+   const activeProjectName = activeProject?.isScratch ? "No project" : activeProject?.title;
+   const activeProjectCwd = activeProject?.workspaceRoot ?? null;
+@@ -84,6 +88,11 @@ export const ChatHeader = memo(function ChatHeader({
+   const breadcrumbContainerRef = useRef<HTMLDivElement>(null);
+   const [collapseParentTitle, setCollapseParentTitle] = useState(false);
+   const activeThreadRef = scopeThreadRef(activeThreadEnvironmentId, activeThreadId);
++  const activeThreadKey = scopedThreadKey(activeThreadRef);
++  const markerKeys = temporaryConversationKeys ?? [activeThreadKey];
++  const isTemporary = useUiStateStore((state) =>
++    markerKeys.some((key) => state.temporaryThreadKeys.includes(key)),
++  );
+   const canOperateThread = useEnvironmentScope(
+     activeThreadEnvironmentId,
+     AuthOrchestrationOperateScope,
+@@ -192,6 +201,47 @@ export const ChatHeader = memo(function ChatHeader({
+     projectCwd: activeProjectCwd,
+     onStartRename: startRename,
+   });
++  const openConversationMenuAt = (position: { x: number; y: number }) => {
++    if (isServerThread) {
++      openMenu(position);
++      return;
++    }
++    const api = readLocalApi();
++    if (!api) return;
++    void api.contextMenu
++      .show(
++        [
++          {
++            id: isTemporary ? "keep-permanent" : "make-temporary",
++            label: isTemporary ? "Keep permanently" : "Make temporary",
++            icon: isTemporary ? "circle-check" : "timer",
++          },
++          ...(onOpenProjectSettings === undefined
++            ? []
++            : [{ id: "project-settings", label: "Project settings", icon: "settings" }]),
++        ],
++        position,
++      )
++      .then((action) => {
++        if (action === "make-temporary") {
++          if (markerKeys.some(hasPendingDraftSend)) {
++            toastManager.add({ type: "warning", title: "Wait for the message to finish sending" });
++            return;
++          }
++          for (const key of markerKeys) {
++            useUiStateStore.getState().setTemporaryThread(key, true);
++          }
++          toastManager.add({ type: "success", title: "Conversation marked temporary" });
++        } else if (action === "keep-permanent") {
++          for (const key of markerKeys) {
++            useUiStateStore.getState().setTemporaryThread(key, false);
++          }
++          toastManager.add({ type: "success", title: "Conversation will be kept" });
++        } else if (action === "project-settings") {
++          onOpenProjectSettings?.();
++        }
++      });
++  };
+   const titleButtonRef = useRef<HTMLButtonElement | null>(null);
+   const titleMenuTimerRef = useRef<number | null>(null);
+   const cancelPendingTitleMenu = () => {
+@@ -212,7 +262,7 @@ export const ChatHeader = memo(function ChatHeader({
+     cancelPendingTitleMenu();
+     const rect = titleButtonRef.current?.getBoundingClientRect();
+     if (!rect) return;
+-    openMenu({ x: rect.left, y: rect.bottom + 4 });
++    openConversationMenuAt({ x: rect.left, y: rect.bottom + 4 });
+   };
+   const openMenuFromTitle = (event: ReactMouseEvent<HTMLButtonElement>) => {
+     if (isTrailingDoubleClick(event.detail)) return;
+@@ -237,23 +287,9 @@ export const ChatHeader = memo(function ChatHeader({
+   };
+   const handleHeaderContextMenu = (event: ReactMouseEvent) => {
+     if (renamingTitle !== null) return;
+-    if (!isServerThread && onOpenProjectSettings === undefined) return;
+     cancelPendingTitleMenu();
+     event.preventDefault();
+-    if (!isServerThread) {
+-      const api = readLocalApi();
+-      if (!api) return;
+-      void api.contextMenu
+-        .show([{ id: "project-settings", label: "Project settings", icon: "settings" }], {
+-          x: event.clientX,
+-          y: event.clientY,
+-        })
+-        .then((action) => {
+-          if (action === "project-settings") onOpenProjectSettings?.();
+-        });
+-      return;
+-    }
+-    openMenu({ x: event.clientX, y: event.clientY });
++    openConversationMenuAt({ x: event.clientX, y: event.clientY });
+   };
+   const handleRenameKeyDown = (event: ReactKeyboardEvent<HTMLInputElement>) => {
+     if (event.nativeEvent.isComposing || event.keyCode === 229) return;
+@@ -361,24 +397,38 @@ export const ChatHeader = memo(function ChatHeader({
+               onFocus={(event) => event.currentTarget.select()}
+               onKeyDown={handleRenameKeyDown}
+             />
+-          ) : isServerThread ? (
++          ) : (
+             <Tooltip>
+               <TooltipTrigger
+                 render={
+                   <button
+                     ref={titleButtonRef}
+                     type="button"
+-                    aria-label={`Thread actions for ${activeThreadTitle}`}
++                    aria-label={`${isServerThread ? "Thread" : "Draft conversation"} actions for ${activeThreadTitle}`}
+                     aria-haspopup="menu"
+-                    onClick={openMenuFromTitle}
+-                    onDoubleClick={canOperateThread ? handleTitleDoubleClick : undefined}
++                    onClick={isServerThread ? openMenuFromTitle : openTitleMenuNow}
++                    onDoubleClick={
++                      isServerThread && canOperateThread ? handleTitleDoubleClick : undefined
++                    }
+                     onBlur={cancelPendingTitleMenu}
+                     className="group/thread-title inline-flex min-w-0 max-w-full cursor-pointer items-center gap-1 rounded-sm text-left focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+                   />
+                 }
+               >
+-                <h2 className="min-w-0" dir={textDirection(activeThreadTitle)}>
++                <h2
++                  className="flex min-w-0 items-center gap-2"
++                  dir={textDirection(activeThreadTitle)}
++                >
+                   <WorkspaceBreadcrumbText>{activeThreadTitle}</WorkspaceBreadcrumbText>
++                  {isTemporary ? (
++                    <span
++                      aria-label="Temporary conversation"
++                      data-testid="temporary-conversation-indicator"
++                      className="shrink-0 rounded-sm bg-muted px-1.5 py-0.5 text-3xs font-medium text-muted-foreground"
++                    >
++                      Temporary
++                    </span>
++                  ) : null}
+                 </h2>
+                 <ChevronDownIcon
+                   aria-hidden
+@@ -388,21 +438,6 @@ export const ChatHeader = memo(function ChatHeader({
+               </TooltipTrigger>
+               <TooltipPopup side="top">{activeThreadTitle}</TooltipPopup>
+             </Tooltip>
+-          ) : (
+-            <Tooltip>
+-              <TooltipTrigger
+-                render={
+-                  <h2
+-                    aria-label={activeThreadTitle}
+-                    className="min-w-0 flex-1"
+-                    dir={textDirection(activeThreadTitle)}
+-                  />
+-                }
+-              >
+-                <WorkspaceBreadcrumbText>{activeThreadTitle}</WorkspaceBreadcrumbText>
+-              </TooltipTrigger>
+-              <TooltipPopup side="top">{activeThreadTitle}</TooltipPopup>
+-            </Tooltip>
+           )}
+         </WorkspaceBreadcrumbItem>
+       </WorkspaceBreadcrumb>
+diff --git a/apps/web/src/components/chat/chatViewSend.temporary.test.ts b/apps/web/src/components/chat/chatViewSend.temporary.test.ts
+new file mode 100644
+index 0000000..4f9ec0e
+--- /dev/null
++++ b/apps/web/src/components/chat/chatViewSend.temporary.test.ts
+@@ -0,0 +1,19 @@
++import { describe, expect, it } from "vite-plus/test";
++import { beginFanoutSend, draftSendState, hasPendingDraftSend } from "./chatViewSend";
++
++describe("overlapping multiple-model sends", () => {
++  it("keeps the route busy until every fanout finishes, even out of order", () => {
++    const routeKey = "temporary-overlapping-fanout";
++    const finishFirst = beginFanoutSend(routeKey);
++    const finishSecond = beginFanoutSend(routeKey);
++    expect(draftSendState(routeKey).fanoutInFlight.current).toBe(2);
++    expect(hasPendingDraftSend(routeKey)).toBe(true);
++    finishFirst();
++    finishFirst();
++    expect(draftSendState(routeKey).fanoutInFlight.current).toBe(1);
++    expect(hasPendingDraftSend(routeKey)).toBe(true);
++    finishSecond();
++    expect(draftSendState(routeKey).fanoutInFlight.current).toBe(0);
++    expect(hasPendingDraftSend(routeKey)).toBe(false);
++  });
++});
+diff --git a/apps/web/src/components/chat/chatViewSend.ts b/apps/web/src/components/chat/chatViewSend.ts
+index 9755311..ce53b57 100644
+--- a/apps/web/src/components/chat/chatViewSend.ts
++++ b/apps/web/src/components/chat/chatViewSend.ts
+@@ -55,18 +55,39 @@ const draftSendStateByRouteKey = new Map<
+   string,
+   {
+     readonly sendInFlight: { current: boolean };
++    readonly fanoutInFlight: { current: number };
+     readonly uncertainSubmissions: { current: Map<string, ThreadId> };
+   }
+ >();
+ export function draftSendState(routeKey: string) {
+   let state = draftSendStateByRouteKey.get(routeKey);
+   if (!state) {
+-    state = { sendInFlight: { current: false }, uncertainSubmissions: { current: new Map() } };
++    state = {
++      sendInFlight: { current: false },
++      fanoutInFlight: { current: 0 },
++      uncertainSubmissions: { current: new Map() },
++    };
+     draftSendStateByRouteKey.set(routeKey, state);
+   }
+   return state;
+ }
+ 
++export function beginFanoutSend(routeKey: string): () => void {
++  const state = draftSendState(routeKey);
++  state.fanoutInFlight.current += 1;
++  let finished = false;
++  return () => {
++    if (finished) return;
++    finished = true;
++    state.fanoutInFlight.current -= 1;
++  };
++}
++
++export function hasPendingDraftSend(routeKey: string): boolean {
++  const state = draftSendState(routeKey);
++  return state.sendInFlight.current || state.fanoutInFlight.current > 0;
++}
++
+ /**
+  * Starts one thread of a multiple-model send. A request that may have
+  * reached the server before failing is remembered by `retryKey`, so sending
+diff --git a/apps/web/src/components/chat/useComposerResume.ts b/apps/web/src/components/chat/useComposerResume.ts
+index ff7f6a1..d059751 100644
+--- a/apps/web/src/components/chat/useComposerResume.ts
++++ b/apps/web/src/components/chat/useComposerResume.ts
+@@ -17,12 +17,14 @@ import { threadEnvironment } from "../../state/threads";
+ import { useOrchestrationCommand } from "../../state/use-orchestration-command";
+ import type { makeThreadErrorSetter } from "../ChatView.logic";
+ import { draftSendState } from "./chatViewSend";
++import { isTemporaryConversationSendBlocked } from "../../temporaryConversationNavigation";
+ import type { useTimelineFollow } from "./useTimelineFollow";
+ import type { useUsageLimitsPanel } from "./useUsageLimitsPanel";
+ 
+ interface ComposerResumeInput {
+   readonly environmentId: EnvironmentId;
+   readonly routeThreadKey: string;
++  readonly draftId: string | null;
+   readonly currentRouteThreadKeyRef: { readonly current: string | null };
+   readonly activeThread: EnvironmentThreadShell | undefined;
+   readonly resumableRunId: RunId | null;
+@@ -56,6 +58,7 @@ export function useComposerResume(input: ComposerResumeInput) {
+   const {
+     environmentId,
+     routeThreadKey,
++    draftId,
+     currentRouteThreadKeyRef,
+     activeThread,
+     resumableRunId,
+@@ -96,6 +99,7 @@ export function useComposerResume(input: ComposerResumeInput) {
+       isRevertingCheckpoint ||
+       threadDetailLoading ||
+       activeEnvironmentUnavailable ||
++      isTemporaryConversationSendBlocked({ draftId, threadKey: routeThreadKey }) ||
+       sendInFlightRef.current
+     ) {
+       return;
+diff --git a/apps/web/src/components/chat/useComposerSend.ts b/apps/web/src/components/chat/useComposerSend.ts
+index d3bcbdf..234fcc3 100644
+--- a/apps/web/src/components/chat/useComposerSend.ts
++++ b/apps/web/src/components/chat/useComposerSend.ts
+@@ -57,6 +57,8 @@ import {
+ import { resolvePlanFollowUpSubmission } from "../../proposedPlan";
+ import { type ChatMessage } from "../../types";
+ import { stackedThreadToast, toastManager } from "../ui/toast";
++import { useUiStateStore } from "../../uiStateStore";
++import { isTemporaryConversationSendBlocked } from "../../temporaryConversationNavigation";
+ import { newMessageId, newThreadId } from "~/lib/utils";
+ import { useNewThreadHandler } from "../../hooks/useHandleNewThread";
+ import { buildThreadRouteParams } from "../../threadRoutes";
+@@ -110,6 +112,7 @@ import {
+   threadContextsOutsideEnvironment,
+ } from "@t3tools/shared/composerContextReferences";
+ import {
++  beginFanoutSend,
+   draftSendState,
+   type MultipleModelTarget,
+   resolveMultipleModelTargets,
+@@ -390,6 +393,13 @@ export function useComposerSend(input: ComposerSendInput) {
+     },
+   ) => {
+     e?.preventDefault();
++    if (isTemporaryConversationSendBlocked({ draftId, threadKey: routeThreadKey })) {
++      toastManager.add({
++        type: "warning",
++        title: "This temporary conversation is being discarded",
++      });
++      return;
++    }
+     // What the user pressed send on; uploads below can take a while, and a redirect must not
+     // decline approvals for a draft that changed meanwhile.
+     const promptAtSend = promptRef.current;
+@@ -854,6 +864,23 @@ export function useComposerSend(input: ComposerSendInput) {
+       multipleTargets.push(resolved);
+     }
+ 
++    if (isTemporaryConversationSendBlocked({ draftId, threadKey: routeThreadKey })) {
++      toastManager.add({
++        type: "warning",
++        title: "This temporary conversation is being discarded",
++      });
++      return;
++    }
++    if (
++      multipleModelSelections !== null &&
++      useUiStateStore.getState().temporaryThreadKeys.includes(routeThreadKey)
++    ) {
++      toastManager.add({
++        type: "warning",
++        title: "Multiple-model sends are unavailable for temporary conversations",
++      });
++      return;
++    }
+     sendInFlightRef.current = true;
+     const sendGeneration = ++composerSendGenerationRef.current;
+     const attachmentCapabilitiesBeforeUpload = readLiveAttachmentCapabilities();
+@@ -1046,20 +1073,25 @@ export function useComposerSend(input: ComposerSendInput) {
+       usesAttachmentUploads: turnUsesAttachmentUploads,
+     });
+     if (multipleModelSelections !== null) {
+-      await sendToMultipleModels({
+-        threadId: threadIdForSend,
+-        project: activeProject,
+-        branch: activeThreadBranch!,
+-        selections: multipleModelSelections,
+-        targets: multipleTargets,
+-        sendSnapshot,
+-        createdAt: messageCreatedAt,
+-        attachmentsPromise: turnAttachmentsPromise,
+-        usesAttachmentUploads: turnUsesAttachmentUploads,
+-        readFileBlockReason: () => readLiveAttachmentCapabilities().fileBlockReason,
+-        buildOutgoingMessageContext,
+-        isCurrentSend: () => composerSendGenerationRef.current === sendGeneration,
+-      });
++      const finishFanout = beginFanoutSend(routeThreadKey);
++      try {
++        await sendToMultipleModels({
++          threadId: threadIdForSend,
++          project: activeProject,
++          branch: activeThreadBranch!,
++          selections: multipleModelSelections,
++          targets: multipleTargets,
++          sendSnapshot,
++          createdAt: messageCreatedAt,
++          attachmentsPromise: turnAttachmentsPromise,
++          usesAttachmentUploads: turnUsesAttachmentUploads,
++          readFileBlockReason: () => readLiveAttachmentCapabilities().fileBlockReason,
++          buildOutgoingMessageContext,
++          isCurrentSend: () => composerSendGenerationRef.current === sendGeneration,
++        });
++      } finally {
++        finishFanout();
++      }
+       return;
+     }
+     const optimisticAttachments = optimisticMessageAttachments(composerAttachmentsSnapshot);
+diff --git a/apps/web/src/components/threadActionMenu.logic.test.ts b/apps/web/src/components/threadActionMenu.logic.test.ts
+index 039c684..89faae2 100644
+--- a/apps/web/src/components/threadActionMenu.logic.test.ts
++++ b/apps/web/src/components/threadActionMenu.logic.test.ts
+@@ -12,6 +12,7 @@ const baseState: ThreadActionMenuState = {
+   isSnoozed: false,
+   canSnoozeNow: true,
+   isRegeneratingTitle: false,
++  isTemporary: false,
+   isRunning: false,
+   supports: {
+     settlement: true,
+@@ -71,4 +72,19 @@ describe("buildThreadActionMenuItems", () => {
+     );
+     expect(archiveItem?.disabled).toBe(true);
+   });
++
++  it("shows the reversible temporary conversation action without server permission", () => {
++    const makeTemporaryItems = buildThreadActionMenuItems({
++      ...baseState,
++      canOperate: false,
++    });
++    const keepPermanentItems = buildThreadActionMenuItems({
++      ...baseState,
++      canOperate: false,
++      isTemporary: true,
++    });
++
++    expect(makeTemporaryItems.find((item) => item.id === "make-temporary")?.disabled).toBeFalsy();
++    expect(keepPermanentItems.find((item) => item.id === "keep-permanent")?.disabled).toBeFalsy();
++  });
+ });
+diff --git a/apps/web/src/components/threadActionMenu.logic.ts b/apps/web/src/components/threadActionMenu.logic.ts
+index cca7bcf..829b6b1 100644
+--- a/apps/web/src/components/threadActionMenu.logic.ts
++++ b/apps/web/src/components/threadActionMenu.logic.ts
+@@ -18,6 +18,8 @@ export type ThreadActionMenuId =
+   | "rename"
+   | "regenerate-title"
+   | "mark-unread"
++  | "make-temporary"
++  | "keep-permanent"
+   | "copy"
+   | "copy-path"
+   | "copy-branch"
+@@ -76,6 +78,7 @@ export interface ThreadActionMenuState {
+   readonly isSnoozed: boolean;
+   readonly canSnoozeNow: boolean;
+   readonly isRegeneratingTitle: boolean;
++  readonly isTemporary: boolean;
+   /** Archive rejects a thread with an attached provider, so disable it here rather than let the action fail. */
+   readonly isRunning: boolean;
+   readonly supports: {
+@@ -94,6 +97,8 @@ export function threadActionRequiresOperate(action: ThreadActionMenuId): boolean
+     "new-thread-on-branch",
+     "project-settings",
+     "mark-unread",
++    "make-temporary",
++    "keep-permanent",
+     "copy",
+     "copy-path",
+     "copy-branch",
+@@ -159,6 +164,9 @@ export function buildThreadActionMenuItems(
+         ]
+       : []),
+     { id: "mark-unread", label: "Mark unread", icon: "mail-open" },
++    state.isTemporary
++      ? { id: "keep-permanent", label: "Keep permanently", icon: "circle-check" }
++      : { id: "make-temporary", label: "Make temporary", icon: "timer", separatorBefore: true },
+     ...(state.projectFilter
+       ? [
+           {
+diff --git a/apps/web/src/confirmDialog.test.ts b/apps/web/src/confirmDialog.test.ts
+index 7242953..92d4309 100644
+--- a/apps/web/src/confirmDialog.test.ts
++++ b/apps/web/src/confirmDialog.test.ts
+@@ -32,6 +32,8 @@ describe("confirm dialog coordinator", () => {
+       status: "closing",
+       message: "Delete the project?",
+       variant: "default",
++      cancelLabel: "Cancel",
++      confirmLabel: "Confirm",
+     });
+ 
+     completeConfirmDialogClose();
+@@ -39,6 +41,8 @@ describe("confirm dialog coordinator", () => {
+       status: "confirming",
+       message: "Delete the worktree too?",
+       variant: "default",
++      cancelLabel: "Cancel",
++      confirmLabel: "Confirm",
+     });
+ 
+     respondToConfirmDialog(true);
+@@ -71,4 +75,25 @@ describe("confirm dialog coordinator", () => {
+     unregister();
+     return expect(confirmation).resolves.toBe(true);
+   });
++
++  it("uses action-specific button labels when requested", async () => {
++    const unregister = registerConfirmDialogHost();
++    const confirmation = requireConfirmation(
++      requestConfirmDialog("Leave this temporary conversation?", {
++        cancelLabel: "Stay",
++        confirmLabel: "Leave and discard",
++      }),
++    );
++
++    expect(readConfirmDialogState()).toEqual({
++      status: "confirming",
++      message: "Leave this temporary conversation?",
++      variant: "default",
++      cancelLabel: "Stay",
++      confirmLabel: "Leave and discard",
++    });
++    respondToConfirmDialog(false);
++    await expect(confirmation).resolves.toBe(false);
++    unregister();
++  });
+ });
+diff --git a/apps/web/src/confirmDialog.ts b/apps/web/src/confirmDialog.ts
+index 136d208..38c7dee 100644
+--- a/apps/web/src/confirmDialog.ts
++++ b/apps/web/src/confirmDialog.ts
+@@ -6,16 +6,27 @@ export type ConfirmDialogState =
+       readonly status: "confirming";
+       readonly message: string;
+       readonly variant: ConfirmDialogVariant;
++      readonly cancelLabel: string;
++      readonly confirmLabel: string;
+     }
+   | {
+       readonly status: "closing";
+       readonly message: string;
+       readonly variant: ConfirmDialogVariant;
++      readonly cancelLabel: string;
++      readonly confirmLabel: string;
+     };
+ 
++export type ConfirmDialogRequestOptions = ConfirmDialogOptions & {
++  readonly cancelLabel?: string;
++  readonly confirmLabel?: string;
++};
++
+ type PendingConfirmation = {
+   readonly message: string;
+   readonly variant: ConfirmDialogVariant;
++  readonly cancelLabel: string;
++  readonly confirmLabel: string;
+   readonly resolve: (confirmed: boolean) => void;
+ };
+ 
+@@ -74,7 +85,7 @@ export function registerConfirmDialogHost(): () => void {
+  */
+ export function requestConfirmDialog(
+   message: string,
+-  options?: ConfirmDialogOptions,
++  options?: ConfirmDialogRequestOptions,
+ ): Promise<boolean> | undefined {
+   if (registeredHostCount === 0) return undefined;
+ 
+@@ -82,6 +93,8 @@ export function requestConfirmDialog(
+     const pending = {
+       message,
+       variant: options?.variant ?? "default",
++      cancelLabel: options?.cancelLabel ?? "Cancel",
++      confirmLabel: options?.confirmLabel ?? "Confirm",
+       resolve,
+     } satisfies PendingConfirmation;
+     if (activeConfirmation || state.status === "closing") {
+@@ -90,7 +103,13 @@ export function requestConfirmDialog(
+     }
+ 
+     activeConfirmation = pending;
+-    publish({ status: "confirming", message, variant: pending.variant });
++    publish({
++      status: "confirming",
++      message,
++      variant: pending.variant,
++      cancelLabel: pending.cancelLabel,
++      confirmLabel: pending.confirmLabel,
++    });
+   });
+ 
+   return confirmation;
+@@ -106,7 +125,13 @@ export function respondToConfirmDialog(confirmed: boolean): void {
+   const confirmation = activeConfirmation;
+   activeConfirmation = null;
+   confirmation.resolve(confirmed);
+-  publish({ status: "closing", message: state.message, variant: state.variant });
++  publish({
++    status: "closing",
++    message: state.message,
++    variant: state.variant,
++    cancelLabel: state.cancelLabel,
++    confirmLabel: state.confirmLabel,
++  });
+ }
+ 
+ export function completeConfirmDialogClose(): void {
+@@ -119,7 +144,13 @@ export function completeConfirmDialogClose(): void {
+   }
+ 
+   activeConfirmation = next;
+-  publish({ status: "confirming", message: next.message, variant: next.variant });
++  publish({
++    status: "confirming",
++    message: next.message,
++    variant: next.variant,
++    cancelLabel: next.cancelLabel,
++    confirmLabel: next.confirmLabel,
++  });
+ }
+ 
+ export function resetConfirmDialogForTests(): void {
+diff --git a/apps/web/src/hooks/useThreadActionMenu.ts b/apps/web/src/hooks/useThreadActionMenu.ts
+index 08ed2b2..2eaa7b9 100644
+--- a/apps/web/src/hooks/useThreadActionMenu.ts
++++ b/apps/web/src/hooks/useThreadActionMenu.ts
+@@ -1,4 +1,4 @@
+-import { scopeProjectRef } from "@t3tools/client-runtime/environment";
++import { scopeProjectRef, scopedThreadKey } from "@t3tools/client-runtime/environment";
+ import { requestCustomSnooze } from "../components/CustomSnoozeDialog";
+ import {
+   type AtomCommandResult,
+@@ -21,6 +21,7 @@ import {
+   type ThreadActionMenuId,
+ } from "../components/threadActionMenu.logic";
+ import { stackedThreadToast, toastManager } from "../components/ui/toast";
++import { hasPendingDraftSend } from "../components/chat/chatViewSend";
+ import { threadEnvironment } from "../state/threads";
+ import { useOrchestrationCommand } from "../state/use-orchestration-command";
+ import { readEnvironmentScope } from "../state/session";
+@@ -46,6 +47,7 @@ import { useCopyToClipboard } from "./useCopyToClipboard";
+ import { useNewThreadHandler } from "./useHandleNewThread";
+ import { useClientSettings } from "./useSettings";
+ import { useThreadActions } from "./useThreadActions";
++import { useUiStateStore } from "../uiStateStore";
+ 
+ function failureToast(title: string, error: unknown) {
+   toastManager.add(
+@@ -91,6 +93,9 @@ export function useThreadActionMenu(input: {
+   const confirmThreadDelete = useClientSettings((s) => s.confirmThreadDelete);
+   const confirmThreadArchive = useClientSettings((s) => s.confirmThreadArchive);
+   const timestampFormat = useClientSettings((s) => s.timestampFormat);
++  const isTemporary = useUiStateStore(
++    (state) => threadRef !== null && state.temporaryThreadKeys.includes(scopedThreadKey(threadRef)),
++  );
+   const { copyToClipboard: copyPathToClipboard } = useCopyToClipboard<{ path: string }>({
+     onCopy: ({ path }) => {
+       toastManager.add({ type: "success", title: "Path copied", description: path });
+@@ -138,6 +143,7 @@ export function useThreadActionMenu(input: {
+         isSnoozed: supports.snooze && effectiveSnoozed(thread, { now: now.toISOString() }),
+         canSnoozeNow: canSnooze(thread, { now: now.toISOString() }),
+         isRegeneratingTitle,
++        isTemporary,
+         isRunning: !threadRuntimeCanArchive(thread.runtime),
+         supports,
+         snoozePresets,
+@@ -243,6 +249,18 @@ export function useThreadActionMenu(input: {
+         case "mark-unread":
+           markThreadUnread(threadRef);
+           return;
++        case "make-temporary":
++          if (hasPendingDraftSend(scopedThreadKey(threadRef))) {
++            toastManager.add({ type: "warning", title: "Wait for the message to finish sending" });
++            return;
++          }
++          useUiStateStore.getState().setTemporaryThread(scopedThreadKey(threadRef), true);
++          toastManager.add({ type: "success", title: "Conversation marked temporary" });
++          return;
++        case "keep-permanent":
++          useUiStateStore.getState().setTemporaryThread(scopedThreadKey(threadRef), false);
++          toastManager.add({ type: "success", title: "Conversation will be kept" });
++          return;
+         case "copy-path": {
+           const workspacePath = thread.worktreePath ?? projectCwd;
+           if (!workspacePath) {
+diff --git a/apps/web/src/hooks/useThreadActions.permissions.test.ts b/apps/web/src/hooks/useThreadActions.permissions.test.ts
+index a1b39cd..708445e 100644
+--- a/apps/web/src/hooks/useThreadActions.permissions.test.ts
++++ b/apps/web/src/hooks/useThreadActions.permissions.test.ts
+@@ -33,6 +33,8 @@ const state = vi.hoisted(() => ({
+   localEffects: [] as string[],
+   confirm: vi.fn<(message: string) => Promise<boolean>>(),
+   toasts: [] as string[],
++  currentRoute: null as { environmentId: string; threadId: string } | null,
++  navigationCalls: [] as unknown[],
+   afterRequest: undefined as ((action: string) => void) | undefined,
+   sessionLookupFails: false,
+ }));
+@@ -43,7 +45,10 @@ vi.mock("react", () => ({
+   useRef: (current: unknown) => ({ current }),
+ }));
+ vi.mock("@tanstack/react-router", () => ({
+-  useRouter: () => ({ state: { matches: [] }, navigate: async () => {} }),
++  useRouter: () => ({
++    state: { matches: state.currentRoute ? [{ params: state.currentRoute }] : [] },
++    navigate: async (...args: unknown[]) => state.navigationCalls.push(args),
++  }),
+ }));
+ vi.mock("../state/session", () => ({
+   environmentSession: { sessionStateAtom: "session" },
+@@ -131,6 +136,8 @@ vi.mock("../uiStateStore", () => ({
+   useUiStateStore: (select: (store: unknown) => unknown) =>
+     select({
+       markThreadVisited: () => state.localEffects.push("mark-visited"),
++      setTemporaryThread: (threadKey: string, temporary: boolean) =>
++        state.localEffects.push(`temporary:${threadKey}:${temporary}`),
+     }),
+ }));
+ vi.mock("../lib/archivedThreadsState", () => ({
+@@ -143,7 +150,7 @@ vi.mock("../localApi", () => ({
+   readLocalApi: () => ({ dialogs: { confirm: state.confirm } }),
+ }));
+ vi.mock("../threadRoutes", () => ({
+-  resolveThreadRouteRef: () => null,
++  resolveThreadRouteRef: () => state.currentRoute,
+   buildThreadRouteParams: (ref: ScopedThreadRef) => ref,
+ }));
+ vi.mock("../components/ui/toast", () => ({
+@@ -227,6 +234,8 @@ beforeEach(() => {
+   state.localEffects = [];
+   state.confirm.mockReset().mockResolvedValue(true);
+   state.toasts = [];
++  state.currentRoute = null;
++  state.navigationCalls = [];
+   state.afterRequest = undefined;
+   state.sessionLookupFails = false;
+ });
+@@ -295,6 +304,13 @@ describe("thread action permissions", () => {
+     expect(state.requests).toEqual([
+       expect.objectContaining({ action: "delete", environmentId: secondary }),
+     ]);
++    expect(state.localEffects).toEqual([
++      "refresh-archive",
++      "release-uploads",
++      "clear-draft",
++      "clear-terminal-ui",
++      `temporary:${secondary}:${target.threadId}:false`,
++    ]);
+   });
+ 
+   it("stops before delete and local cleanup when permission is revoked during session stop", async () => {
+@@ -317,6 +333,27 @@ describe("thread action permissions", () => {
+     expect(state.confirm).not.toHaveBeenCalled();
+     expect(state.requests.map((request) => request.action)).toEqual(["stopSession", "delete"]);
+     expect(state.localEffects).toContain("clear-terminal-ui");
++    expect(state.localEffects).toContain(`temporary:${secondary}:${target.threadId}:false`);
++  });
++
++  it("deletes a temporary thread without navigating to a fallback or removing its worktree", async () => {
++    state.scopes
++      .get(secondary)!
++      .add(AuthOrchestrationOperateScope)
++      .add(AuthSourceControlWriteScope);
++    state.threads[0]!.worktreePath = "/worktrees/thread";
++    state.currentRoute = target;
++
++    const result = await useThreadActions().deleteThread(target, {
++      navigateToFallback: false,
++      deleteWorktree: false,
++    });
++
++    expect(result._tag).toBe("Success");
++    expect(state.confirm).not.toHaveBeenCalled();
++    expect(state.requests.map((request) => request.action)).toEqual(["stopSession", "delete"]);
++    expect(state.navigationCalls).toEqual([]);
++    expect(state.localEffects).toContain(`temporary:${secondary}:${target.threadId}:false`);
+   });
+ 
+   it("does not request worktree removal after its grant is revoked during delete", async () => {
+diff --git a/apps/web/src/hooks/useThreadActions.ts b/apps/web/src/hooks/useThreadActions.ts
+index 26adcfc..a7f38bd 100644
+--- a/apps/web/src/hooks/useThreadActions.ts
++++ b/apps/web/src/hooks/useThreadActions.ts
+@@ -302,6 +302,7 @@ export function useThreadActions() {
+   );
+   const clearTerminalUiState = useTerminalUiStateStore((state) => state.clearTerminalUiState);
+   const markThreadVisited = useUiStateStore((state) => state.markThreadVisited);
++  const setTemporaryThread = useUiStateStore((state) => state.setTemporaryThread);
+   const router = useRouter();
+   const handleNewThread = useNewThreadHandler();
+ 
+@@ -397,7 +398,11 @@ export function useThreadActions() {
+ 
+   const deleteThread = async (
+     target: ScopedThreadRef,
+-    opts: { deletedThreadKeys?: ReadonlySet<string> } = {},
++    opts: {
++      deletedThreadKeys?: ReadonlySet<string>;
++      navigateToFallback?: boolean;
++      deleteWorktree?: boolean;
++    } = {},
+   ) => {
+     const permissionFailure = threadOperationFailure(target);
+     if (permissionFailure) return permissionFailure;
+@@ -409,7 +414,11 @@ export function useThreadActions() {
+       });
+       if (result._tag === "Success") {
+         refreshArchivedThreadsForEnvironment(target.environmentId);
++        releaseComposerDraftUploads(target);
++        clearComposerDraftForThread(target);
++        clearTerminalUiState(target);
+         clearThreadPreviewState(target);
++        setTemporaryThread(scopedThreadKey(target), false);
+       }
+       return result;
+     }
+@@ -448,6 +457,7 @@ export function useThreadActions() {
+     const localApi = readLocalApi();
+     let canDeleteWorktree = false;
+     if (
++      opts.deleteWorktree !== false &&
+       orphanedWorktreePath !== null &&
+       threadProject !== null &&
+       !isScratchProject(threadProject, environmentConfig?.scratchWorkspaceRoot) &&
+@@ -462,9 +472,12 @@ export function useThreadActions() {
+     }
+     let shouldDeleteWorktree = false;
+     const environmentSettings = environmentConfig?.settings;
+-    const automaticWorktreeCleanup = environmentSettings
+-      ? resolveWorktreeCleanup(environmentSettings, thread.projectId).worktreeOnDelete
+-      : false;
++    const automaticWorktreeCleanup =
++      opts.deleteWorktree === false
++        ? false
++        : environmentSettings
++          ? resolveWorktreeCleanup(environmentSettings, thread.projectId).worktreeOnDelete
++          : false;
+     if (canDeleteWorktree && localApi && !automaticWorktreeCleanup) {
+       const confirmationResult = await settlePromise(() =>
+         localApi.dialogs.confirm(
+@@ -493,6 +506,7 @@ export function useThreadActions() {
+     const deletedThreadIds = deletedIds ?? new Set<ThreadId>();
+     const currentRouteThreadRef = getCurrentRouteThreadRef();
+     const shouldNavigateToFallback =
++      opts.navigateToFallback !== false &&
+       currentRouteThreadRef?.threadId === threadRef.threadId &&
+       currentRouteThreadRef.environmentId === threadRef.environmentId;
+     const fallbackThreadId = getFallbackThreadIdAfterDelete({
+@@ -517,6 +531,7 @@ export function useThreadActions() {
+     );
+     clearTerminalUiState(threadRef);
+     clearThreadPreviewState(threadRef);
++    setTemporaryThread(scopedThreadKey(threadRef), false);
+ 
+     if (shouldNavigateToFallback) {
+       const fallbackThread = fallbackThreadId
+diff --git a/apps/web/src/routes/__root.tsx b/apps/web/src/routes/__root.tsx
+index 3d73c01..bf42395 100644
+--- a/apps/web/src/routes/__root.tsx
++++ b/apps/web/src/routes/__root.tsx
+@@ -21,6 +21,7 @@ import { CommandPalette } from "../components/CommandPalette";
+ import { CustomSnoozeDialogHost } from "../components/CustomSnoozeDialog";
+ import { AddProjectToMachineDialogHost } from "../components/AddProjectToMachineDialog";
+ import { ConfirmDialogHost } from "../components/ConfirmDialogHost";
++import { TemporaryConversationCoordinator } from "../components/TemporaryConversationCoordinator";
+ import { KeybindingsConfigWarning } from "../components/KeybindingsConfigWarning";
+ import { FirstRunGate } from "../components/onboarding/FirstRunGate";
+ import { ConnectOnboardingDialog } from "../components/cloud/ConnectOnboardingDialog";
+@@ -241,6 +242,7 @@ function RootRouteView() {
+           <ThreadNotificationCoordinator />
+           <ReopenClosedViewShortcut />
+           <ConfirmDialogHost />
++          {primaryEnvironmentAuthenticated ? <TemporaryConversationCoordinator /> : null}
+           <CustomSnoozeDialogHost />
+           <SlowRpcRequestToastCoordinator />
+           <HostFreezeToastCoordinator />
+diff --git a/apps/web/src/temporaryConversationNavigation.test.ts b/apps/web/src/temporaryConversationNavigation.test.ts
+new file mode 100644
+index 0000000..95ab4a0
+--- /dev/null
++++ b/apps/web/src/temporaryConversationNavigation.test.ts
+@@ -0,0 +1,195 @@
++import { describe, expect, it, vi } from "vite-plus/test";
++
++import {
++  createTemporaryConversationNavigationBlocker,
++  isTemporaryConversationDiscarding,
++  isTemporaryConversationSendBlocked,
++  setTemporaryConversationDiscarding,
++  temporaryConversationRouteKey,
++} from "./temporaryConversationNavigation";
++import { resolveThreadRouteTarget } from "./threadRoutes";
++
++describe("temporary conversation discard navigation", () => {
++  it("keeps the original route marked while deletion is in progress", () => {
++    const draft = resolveThreadRouteTarget({ draftId: "draft-1" });
++    const thread = resolveThreadRouteTarget({ environmentId: "environment", threadId: "thread-1" });
++    expect(draft).not.toBeNull();
++    expect(thread).not.toBeNull();
++    if (draft === null || thread === null) return;
++    const key = temporaryConversationRouteKey(draft);
++    setTemporaryConversationDiscarding(key, true);
++    expect(isTemporaryConversationDiscarding(draft)).toBe(true);
++    expect(isTemporaryConversationDiscarding(thread)).toBe(false);
++    expect(isTemporaryConversationSendBlocked({ draftId: "draft-1", threadKey: "unrelated" })).toBe(
++      true,
++    );
++    expect(isTemporaryConversationSendBlocked({ draftId: "draft-2", threadKey: "unrelated" })).toBe(
++      false,
++    );
++    setTemporaryConversationDiscarding(key, false);
++    expect(isTemporaryConversationDiscarding(draft)).toBe(false);
++    expect(isTemporaryConversationSendBlocked({ draftId: "draft-1", threadKey: "unrelated" })).toBe(
++      false,
++    );
++    const serverKey = temporaryConversationRouteKey(thread);
++    if (serverKey === null) throw new Error("Expected a server route key");
++    setTemporaryConversationDiscarding(serverKey, true);
++    const threadKey = serverKey.slice("thread:".length);
++    expect(isTemporaryConversationSendBlocked({ draftId: null, threadKey })).toBe(true);
++    setTemporaryConversationDiscarding(serverKey, false);
++    expect(isTemporaryConversationSendBlocked({ draftId: null, threadKey })).toBe(false);
++  });
++});
++
++type Location = {
++  readonly params: {
++    readonly environmentId?: string;
++    readonly threadId?: string;
++    readonly draftId?: string;
++  };
++};
++
++type Target = {
++  readonly kind: "draft" | "server";
++  readonly threadKey: string;
++};
++
++function createBlocker(input: {
++  readonly confirmLeave: () => Promise<boolean>;
++  readonly discard: (target: Target) => Promise<boolean>;
++  readonly isTemporary?: (key: string) => boolean;
++}) {
++  return createTemporaryConversationNavigationBlocker<Location, Target>({
++    resolveIdentity: (location) => {
++      if (location.params.environmentId && location.params.threadId) {
++        const threadKey = `${location.params.environmentId}:${location.params.threadId}`;
++        return { key: threadKey, target: { kind: "server", threadKey } };
++      }
++      if (location.params.draftId) {
++        const threadKey = `environment:${location.params.draftId}`;
++        return { key: threadKey, target: { kind: "draft", threadKey } };
++      }
++      return null;
++    },
++    isTemporary: input.isTemporary ?? (() => true),
++    confirmLeave: input.confirmLeave,
++    discard: (identity) => input.discard(identity.target),
++  });
++}
++
++const draftLocation: Location = { params: { draftId: "thread-1" } };
++const promotedThreadLocation: Location = {
++  params: { environmentId: "environment", threadId: "thread-1" },
++};
++const destination: Location = { params: {} };
++
++describe("temporary conversation navigation blocker", () => {
++  it("keeps the draft-to-thread promotion route in the same conversation", async () => {
++    const confirmLeave = vi.fn(async () => true);
++    const discard = vi.fn(async (_target: Target) => true);
++    const shouldBlock = createBlocker({ confirmLeave, discard });
++
++    await expect(
++      shouldBlock({ current: draftLocation, next: promotedThreadLocation }),
++    ).resolves.toBe(false);
++    expect(confirmLeave).not.toHaveBeenCalled();
++    expect(discard).not.toHaveBeenCalled();
++  });
++
++  it("keeps a promoted draft together when the server assigns a different scoped thread ref", async () => {
++    const confirmLeave = vi.fn(async () => true);
++    const discard = vi.fn(async (_target: Target) => true);
++    const shouldBlock = createTemporaryConversationNavigationBlocker<Location, Target>({
++      resolveIdentity: (location) => {
++        if (location.params.draftId) {
++          return {
++            key: "environment:reserved-thread",
++            aliases: ["remote:server-thread"],
++            target: { kind: "draft", threadKey: "environment:reserved-thread" },
++          };
++        }
++        if (location.params.environmentId && location.params.threadId) {
++          const threadKey = `${location.params.environmentId}:${location.params.threadId}`;
++          return { key: threadKey, target: { kind: "server", threadKey } };
++        }
++        return null;
++      },
++      isTemporary: (key) => key === "remote:server-thread",
++      confirmLeave,
++      discard: (identity) => discard(identity.target),
++    });
++
++    await expect(
++      shouldBlock({
++        current: { params: { draftId: "draft-1" } },
++        next: { params: { environmentId: "remote", threadId: "server-thread" } },
++      }),
++    ).resolves.toBe(false);
++    expect(confirmLeave).not.toHaveBeenCalled();
++    expect(discard).not.toHaveBeenCalled();
++  });
++
++  it("stays on the conversation when the user chooses Stay", async () => {
++    const discard = vi.fn(async () => true);
++    const shouldBlock = createBlocker({
++      confirmLeave: async () => false,
++      discard,
++    });
++
++    await expect(shouldBlock({ current: draftLocation, next: destination })).resolves.toBe(true);
++    expect(discard).not.toHaveBeenCalled();
++  });
++
++  it("allows the requested destination only after deletion succeeds", async () => {
++    const order: string[] = [];
++    const shouldBlock = createBlocker({
++      confirmLeave: async () => {
++        order.push("confirm");
++        return true;
++      },
++      discard: async (target) => {
++        order.push(`delete:${target.kind}:${target.threadKey}`);
++        return true;
++      },
++    });
++
++    const blocked = await shouldBlock({ current: draftLocation, next: destination });
++
++    expect(blocked).toBe(false);
++    expect(order).toEqual(["confirm", "delete:draft:environment:thread-1"]);
++  });
++
++  it("keeps the current route when deletion fails", async () => {
++    const shouldBlock = createBlocker({
++      confirmLeave: async () => true,
++      discard: async () => false,
++    });
++
++    await expect(shouldBlock({ current: promotedThreadLocation, next: destination })).resolves.toBe(
++      true,
++    );
++  });
++
++  it("blocks overlapping route attempts while a leave decision is pending", async () => {
++    let resolveConfirmation!: (confirmed: boolean) => void;
++    const confirmation = new Promise<boolean>((resolve) => {
++      resolveConfirmation = resolve;
++    });
++    const discard = vi.fn(async () => true);
++    const shouldBlock = createBlocker({
++      confirmLeave: () => confirmation,
++      discard,
++    });
++    const firstAttempt = shouldBlock({ current: draftLocation, next: destination });
++
++    await expect(
++      shouldBlock({
++        current: draftLocation,
++        next: { params: { environmentId: "environment", threadId: "thread-2" } },
++      }),
++    ).resolves.toBe(true);
++    resolveConfirmation(true);
++    await expect(firstAttempt).resolves.toBe(false);
++    expect(discard).toHaveBeenCalledOnce();
++  });
++});
+diff --git a/apps/web/src/temporaryConversationNavigation.ts b/apps/web/src/temporaryConversationNavigation.ts
+new file mode 100644
+index 0000000..7728ab1
+--- /dev/null
++++ b/apps/web/src/temporaryConversationNavigation.ts
+@@ -0,0 +1,87 @@
++import { scopedThreadKey } from "@t3tools/client-runtime/environment";
++import type { ThreadRouteTarget } from "./threadRoutes";
++
++const discardingRoutes = new Set<string>();
++
++export function temporaryConversationRouteKey(target: ThreadRouteTarget | null): string | null {
++  if (target === null) return null;
++  return target.kind === "draft"
++    ? `draft:${target.draftId}`
++    : `thread:${scopedThreadKey(target.threadRef)}`;
++}
++
++export function setTemporaryConversationDiscarding(key: string | null, discarding: boolean): void {
++  if (key === null) return;
++  if (discarding) discardingRoutes.add(key);
++  else discardingRoutes.delete(key);
++}
++
++export function isTemporaryConversationDiscarding(target: ThreadRouteTarget): boolean {
++  const key = temporaryConversationRouteKey(target);
++  return key !== null && discardingRoutes.has(key);
++}
++
++export function isTemporaryConversationSendBlocked(input: {
++  readonly draftId: string | null;
++  readonly threadKey: string;
++}): boolean {
++  return (
++    discardingRoutes.has(`thread:${input.threadKey}`) ||
++    (input.draftId !== null && discardingRoutes.has(`draft:${input.draftId}`))
++  );
++}
++
++export interface TemporaryConversationRouteLocation {
++  readonly params: Partial<Record<string, string | undefined>>;
++}
++
++export interface TemporaryConversationIdentity<TTarget = unknown> {
++  readonly key: string;
++  readonly aliases?: readonly string[];
++  readonly target: TTarget;
++}
++
++function temporaryConversationIdentityKeys<TTarget>(
++  identity: TemporaryConversationIdentity<TTarget>,
++): ReadonlyArray<string> {
++  return [...new Set([identity.key, ...(identity.aliases ?? [])])];
++}
++
++export function createTemporaryConversationNavigationBlocker<
++  TLocation extends TemporaryConversationRouteLocation,
++  TTarget,
++>(options: {
++  readonly resolveIdentity: (location: TLocation) => TemporaryConversationIdentity<TTarget> | null;
++  readonly isTemporary: (key: string) => boolean;
++  readonly confirmLeave: (identity: TemporaryConversationIdentity<TTarget>) => Promise<boolean>;
++  readonly discard: (identity: TemporaryConversationIdentity<TTarget>) => Promise<boolean>;
++  readonly onError?: (error: unknown) => void;
++}) {
++  let pending = false;
++
++  return async (input: { current: TLocation; next: TLocation }): Promise<boolean> => {
++    if (pending) return true;
++    const current = options.resolveIdentity(input.current);
++    const next = options.resolveIdentity(input.next);
++    const currentKeys = current === null ? [] : temporaryConversationIdentityKeys(current);
++    const nextKeys = new Set(next === null ? [] : temporaryConversationIdentityKeys(next));
++    if (
++      current === null ||
++      currentKeys.some((key) => nextKeys.has(key)) ||
++      !currentKeys.some(options.isTemporary)
++    ) {
++      return false;
++    }
++
++    pending = true;
++    try {
++      if (!(await options.confirmLeave(current))) return true;
++      return !(await options.discard(current));
++    } catch (error) {
++      options.onError?.(error);
++      return true;
++    } finally {
++      pending = false;
++    }
++  };
++}
+diff --git a/apps/web/src/uiStateStore.test.ts b/apps/web/src/uiStateStore.test.ts
+index 7875661..82703c9 100644
+--- a/apps/web/src/uiStateStore.test.ts
++++ b/apps/web/src/uiStateStore.test.ts
+@@ -1,8 +1,10 @@
+-import { ThreadId } from "@t3tools/contracts";
++import { EnvironmentId, ThreadId } from "@t3tools/contracts";
++import { scopeThreadRef, scopedThreadKey } from "@t3tools/client-runtime/environment";
+ import { afterEach, beforeEach, describe, expect, it, vi } from "vite-plus/test";
+ 
+ import {
+   legacyProjectCwdPreferenceKey,
++  isTemporaryThread,
+   markThreadUnread,
+   markThreadVisited,
+   parsePersistedState,
+@@ -12,6 +14,8 @@ import {
+   reorderProjects,
+   resolveProjectExpanded,
+   setProjectExpanded,
++  setTemporaryThread,
++  transferTemporaryThread,
+   type UiState,
+ } from "./uiStateStore";
+ 
+@@ -23,6 +27,7 @@ function makeUiState(overrides: Partial<UiState> = {}): UiState {
+     threadLastVisitedAtById: {},
+     threadChangedFilesExpandedById: {},
+     defaultAdvertisedEndpointKey: null,
++    temporaryThreadKeys: [],
+     pullRequestMergeMethod: "merge",
+     ...overrides,
+   };
+@@ -81,6 +86,32 @@ describe("uiStateStore pure functions", () => {
+     expect(setProjectExpanded(next, keys, false)).toBe(next);
+   });
+ 
++  it("keeps the temporary marker on the scoped thread key across promotion routes", () => {
++    const threadKey = scopedThreadKey(
++      scopeThreadRef(EnvironmentId.make("environment-1"), ThreadId.make("thread-1")),
++    );
++    const initialState = makeUiState();
++    const temporaryState = setTemporaryThread(initialState, threadKey, true);
++
++    expect(isTemporaryThread(temporaryState, threadKey)).toBe(true);
++    expect(setTemporaryThread(temporaryState, threadKey, true)).toBe(temporaryState);
++    expect(setTemporaryThread(temporaryState, threadKey, false).temporaryThreadKeys).toEqual([]);
++  });
++
++  it("moves a temporary marker when promotion changes its scoped thread ref", () => {
++    const initialState = makeUiState({
++      temporaryThreadKeys: ["environment-1:reserved-thread"],
++    });
++
++    const promotedState = transferTemporaryThread(
++      initialState,
++      "environment-1:reserved-thread",
++      "environment-2:server-thread",
++    );
++
++    expect(promotedState.temporaryThreadKeys).toEqual(["environment-2:server-thread"]);
++  });
++
+   it("moves grouped project members together", () => {
+     const keyALocal = "env-local:proj-a";
+     const keyARemote = "env-remote:proj-a";
+@@ -114,6 +145,7 @@ describe("parsePersistedState", () => {
+           "turn-2": true,
+         },
+       },
++      temporaryThreadKeys: ["environment-1:thread-1", "invalid"],
+     });
+ 
+     expect(parsed).toEqual({
+@@ -133,6 +165,7 @@ describe("parsePersistedState", () => {
+           "turn-2": true,
+         },
+       },
++      temporaryThreadKeys: ["environment-1:thread-1"],
+     });
+   });
+ 
+@@ -144,6 +177,7 @@ describe("parsePersistedState", () => {
+           "turn-1": false,
+         },
+       },
++      temporaryThreadKeys: ["environment-1:thread-1"],
+     });
+ 
+     expect(parsed.threadChangedFilesExpandedById).toEqual({});
+@@ -213,6 +247,7 @@ describe("uiStateStore persistence", () => {
+           "turn-2": true,
+         },
+       },
++      temporaryThreadKeys: ["environment:thread-1"],
+       defaultAdvertisedEndpointKey: "desktop-core:lan:http",
+     });
+ 
+@@ -238,6 +273,7 @@ describe("uiStateStore persistence", () => {
+           "turn-2": true,
+         },
+       },
++      temporaryThreadKeys: ["environment:thread-1"],
+       pullRequestMergeMethod: "merge",
+     });
+     expect(parsePersistedState(persisted)).toEqual({
+diff --git a/apps/web/src/uiStateStore.ts b/apps/web/src/uiStateStore.ts
+index fe62eb7..bf942e5 100644
+--- a/apps/web/src/uiStateStore.ts
++++ b/apps/web/src/uiStateStore.ts
+@@ -1,4 +1,5 @@
+ import { Debouncer } from "@tanstack/react-pacer";
++import { parseScopedThreadKey } from "@t3tools/client-runtime/environment";
+ import type { PullRequestMergeMethod } from "@t3tools/contracts";
+ import { create } from "zustand";
+ import { normalizeProjectPathForComparison } from "./lib/projectPaths";
+@@ -29,6 +30,7 @@ export interface PersistedUiState {
+   sidebarProjectScopeKey?: string | null;
+   threadChangedFilesExpansionVersion?: number;
+   threadChangedFilesExpandedById?: Record<string, Record<string, boolean>>;
++  temporaryThreadKeys?: string[];
+   pullRequestMergeMethod?: string;
+ }
+ 
+@@ -52,7 +54,9 @@ export interface UiPullRequestState {
+ }
+ 
+ export interface UiState
+-  extends UiProjectState, UiThreadState, UiEndpointState, UiPullRequestState {}
++  extends UiProjectState, UiThreadState, UiEndpointState, UiPullRequestState {
++  temporaryThreadKeys: string[];
++}
+ 
+ const initialState: UiState = {
+   projectExpandedById: {},
+@@ -61,6 +65,7 @@ const initialState: UiState = {
+   threadLastVisitedAtById: {},
+   threadChangedFilesExpandedById: {},
+   defaultAdvertisedEndpointKey: null,
++  temporaryThreadKeys: [],
+   pullRequestMergeMethod: "merge",
+ };
+ 
+@@ -151,6 +156,9 @@ export function parsePersistedState(parsed: PersistedUiState): UiState {
+         : {},
+     defaultAdvertisedEndpointKey: sanitizeOptionalKey(parsed.defaultAdvertisedEndpointKey),
+     sidebarProjectScopeKey: sanitizeOptionalKey(parsed.sidebarProjectScopeKey),
++    temporaryThreadKeys: sanitizeStringArray(parsed.temporaryThreadKeys).filter(
++      (threadKey) => parseScopedThreadKey(threadKey) !== null,
++    ),
+     pullRequestMergeMethod: isPullRequestMergeMethod(parsed.pullRequestMergeMethod)
+       ? parsed.pullRequestMergeMethod
+       : initialState.pullRequestMergeMethod,
+@@ -227,6 +235,7 @@ export function persistState(state: UiState): void {
+         sidebarProjectScopeKey: state.sidebarProjectScopeKey,
+         threadChangedFilesExpansionVersion: THREAD_CHANGED_FILES_EXPANSION_VERSION,
+         threadChangedFilesExpandedById: state.threadChangedFilesExpandedById,
++        temporaryThreadKeys: state.temporaryThreadKeys,
+         pullRequestMergeMethod: state.pullRequestMergeMethod,
+       } satisfies PersistedUiState),
+     );
+@@ -340,6 +349,32 @@ function setPullRequestMergeMethod(state: UiState, method: PullRequestMergeMetho
+     : { ...state, pullRequestMergeMethod: method };
+ }
+ 
++export function setTemporaryThread(state: UiState, threadKey: string, temporary: boolean): UiState {
++  const keys = new Set(state.temporaryThreadKeys);
++  const hadKey = keys.has(threadKey);
++  if (temporary === hadKey) return state;
++  if (temporary) keys.add(threadKey);
++  else keys.delete(threadKey);
++  return { ...state, temporaryThreadKeys: [...keys] };
++}
++
++export function isTemporaryThread(state: UiState, threadKey: string): boolean {
++  return state.temporaryThreadKeys.includes(threadKey);
++}
++
++export function transferTemporaryThread(state: UiState, fromKey: string, toKey: string): UiState {
++  if (fromKey === toKey || !state.temporaryThreadKeys.includes(fromKey)) return state;
++  return {
++    ...state,
++    temporaryThreadKeys: [
++      ...state.temporaryThreadKeys.filter(
++        (threadKey) => threadKey !== fromKey && threadKey !== toKey,
++      ),
++      toKey,
++    ],
++  };
++}
++
+ export function resolveProjectExpanded(
+   projectExpandedById: Readonly<Record<string, boolean>>,
+   preferenceKeys: readonly string[],
+@@ -424,6 +459,8 @@ interface UiStateStore extends UiState {
+   setDefaultAdvertisedEndpointKey: (key: string | null) => void;
+   setSidebarProjectScopeKey: (projectKey: string | null) => void;
+   setPullRequestMergeMethod: (method: PullRequestMergeMethod) => void;
++  setTemporaryThread: (threadKey: string, temporary: boolean) => void;
++  transferTemporaryThread: (fromKey: string, toKey: string) => void;
+   setProjectExpanded: (projectIds: string | readonly string[], expanded: boolean) => void;
+   reorderProjects: (
+     currentProjectOrder: readonly string[],
+@@ -445,6 +482,18 @@ export const useUiStateStore = create<UiStateStore>((set) => ({
+   setSidebarProjectScopeKey: (projectKey) =>
+     set((state) => setSidebarProjectScopeKey(state, projectKey)),
+   setPullRequestMergeMethod: (method) => set((state) => setPullRequestMergeMethod(state, method)),
++  setTemporaryThread: (threadKey, temporary) =>
++    set((state) => {
++      const nextState = setTemporaryThread(state, threadKey, temporary);
++      if (nextState !== state) persistState(nextState);
++      return nextState;
++    }),
++  transferTemporaryThread: (fromKey, toKey) =>
++    set((state) => {
++      const nextState = transferTemporaryThread(state, fromKey, toKey);
++      if (nextState !== state) persistState(nextState);
++      return nextState;
++    }),
+   setProjectExpanded: (projectIds, expanded) =>
+     set((state) => setProjectExpanded(state, projectIds, expanded)),
+   reorderProjects: (currentProjectOrder, draggedProjectIds, targetProjectIds) =>
+@@ -453,7 +502,27 @@ export const useUiStateStore = create<UiStateStore>((set) => ({
+     ),
+ }));
+ 
+-useUiStateStore.subscribe((state) => debouncedPersistState.maybeExecute(state));
++let syncingTemporaryThreads = false;
++useUiStateStore.subscribe((state) => {
++  if (!syncingTemporaryThreads) debouncedPersistState.maybeExecute(state);
++});
++
++if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
++  window.addEventListener("storage", (event) => {
++    if (event.key !== PERSISTED_STATE_KEY) return;
++    try {
++      const state = event.newValue
++        ? parsePersistedState(JSON.parse(event.newValue) as PersistedUiState)
++        : initialState;
++      syncingTemporaryThreads = true;
++      useUiStateStore.setState({ temporaryThreadKeys: state.temporaryThreadKeys });
++    } catch {
++      useUiStateStore.setState({ temporaryThreadKeys: [] });
++    } finally {
++      syncingTemporaryThreads = false;
++    }
++  });
++}
+ 
+ if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
+   window.addEventListener("beforeunload", () => {

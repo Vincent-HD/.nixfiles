@@ -287,9 +287,42 @@ point its shadow home at the existing directory or copy Perso's credentials.
 nix run github:Mic92/nix-update -- --flake t3code --use-update-script
 ```
 
-The Linux host enables `custom.t3code.enableUsagePatch` and `custom.t3code.enableJjPanel` in
-`hosts/pc-fixe/default.nix`. The next `nixos-rebuild switch --flake .#pc-fixe`
-builds and installs the selected patches under `packages/t3code-web/patches/`.
+### z-code
+
+- **File**: `flake.nix` (`z-code` input) and `flake.lock`
+- **Pattern**: GitHub source pinned to a reviewed full commit revision; the package uses nixfiles' existing `pkgs`
+- **Flake packages**: `.#z-code-source` (pinned source snapshot) and `.#z-code` (buildable fork package, x86_64 Linux only)
+- **Source**: [Vincent-HD/zcode](https://github.com/Vincent-HD/zcode), branch `z-code`
+- **Update**: Choose and review an exact commit from the fork before changing the pin. Inspect the source diff and Nix packaging, then update only this input:
+
+  ```bash
+  # Edit the z-code URL in flake.nix to github:Vincent-HD/zcode/<reviewed-commit>.
+  nix flake update z-code
+  ```
+
+  The command is registered in `scripts/update-pins.json` as a disabled flake-input update, so routine bulk updates cannot move the fork. After editing the URL, verify the resulting lock revision is exactly the reviewed commit and build `.#z-code` before accepting the update. Do not use a moving branch or tag for this input.
+
+The Z Code integration targets x86_64 Linux and is pinned to reviewed fork commit
+`f2f155c8c7e0574575c8a3632f4fcafd32a6f89d`. The Linux host enables
+`custom.t3code.enableZCode`; build the exposed fork package with
+`nix build .#z-code --no-link`. The Home Manager module selects that same package output,
+which uses nixfiles' pinned package set. The `z-code-source` and `z-code` outputs resolve from
+the locked GitHub input and do not depend on a local checkout. Linux host evaluation does not
+instantiate the fork package when Z Code is disabled, so `nrs --no-z-code` selects the upstream
+T3 Code fallback.
+
+The Home Manager wrapper routes all three executable names (`t3code`, `zcode`, and `z-code`)
+through the same managed launcher, including its provider `PATH` and the
+`T3CODE_DISABLE_AUTO_UPDATE=true` setting. The desktop icon comes from the selected package's
+extracted AppImage. The desktop entry remains `t3code` and keeps the `t3code` URL schemes and
+window class to preserve the existing T3 profile and session identity. macOS continues using the
+signed upstream bundle.
+
+The Linux host selects Z Code by default. Its upstream T3 Code fallback uses the local
+patch settings `custom.t3code.enableUsagePatch`, `custom.t3code.enableJjPanel`, and
+`custom.t3code.enableTemporaryThreads` in `hosts/pc-fixe/default.nix`. Selecting the
+fallback with `nrs --no-z-code` builds and installs those patches under
+`packages/t3code-web/patches/`.
 Patch application uses `--fuzz=0`: context drift fails the build rather than dropping
 context lines. See the [patch repair guide and feature contracts](../packages/t3code-web/patches/README.md)
 for intended behavior, integration points, focused tests and manual acceptance checks.
@@ -321,18 +354,24 @@ editors open on demand, with squash into an ancestor and undo of the panel's own
 most recent action. It uses the thread workspace and never initializes a repository
 automatically.
 
-To exclude either patch, set its host option to `false` and switch again.
-Set both options to `false` to select the original upstream AppImage without
-evaluating or building custom app sources. To isolate a panel failure while
-keeping the footer, set only `custom.t3code.enableJjPanel = false;`.
+Patch options apply to the upstream T3 Code fallback. For a one-switch fallback that
+keeps the host's patch settings, run `nrs --no-z-code`. To isolate a Jujutsu panel
+failure while keeping the footer, run `nrs --no-t3-jj`; it disables Z Code and the
+Jujutsu patch for that rebuild. For a persistent fallback configuration, also set
+`custom.t3code.enableZCode = false;` in the host, then set the patch option you want
+to disable (for example, `custom.t3code.enableJjPanel = false;`) and switch again.
+`nrs --no-t3` disables every local patch and selects the untouched upstream AppImage
+without selecting the fork package.
 macOS keeps the original signed bundle. The desktop and renderer versions must
 match; an upstream release that changes the patched source may require rebasing
 the patch before re-enabling it.
 
 ```bash
-nix build .#t3code-patched --no-link # both patches
+nix build .#t3code-all --no-link     # all three patches
+nix build .#t3code-patched --no-link # footer and Jujutsu
 nix build .#t3code-usage --no-link   # footer only
 nix build .#t3code-jj --no-link      # Jujutsu only
+nix build .#t3code-temporary --no-link # temporary conversations only
 ```
 
 ### plannotator
@@ -460,16 +499,20 @@ nix flake update tokitoki
 
 `nrs` (`modules/command-line/assets/nrs`, installed at `~/bin/nrs`) is the
 switch command. It leaves `flake.lock` untouched. Point one rebuild at a local
-Tokitoki checkout, or change the T3 Code patches for that switch only:
+Tokitoki checkout, or override the T3 Code selection for that switch only:
 
 ```bash
 nrs                              # pinned inputs, host patch selection
 nrs --tokitoki                   # ~/lab/tokitoki
 nrs --tokitoki ~/src/tokitoki    # another checkout
-nrs --no-t3                      # upstream T3 Code, neither patch
-nrs --no-t3-usage                # drop the composer usage patch
-nrs --no-t3-jj                   # drop the Jujutsu panel
+nrs --no-z-code                  # upstream T3 Code with host-selected local patches
+nrs --no-t3                      # untouched upstream T3 Code, no local patches or Z Code
+nrs --no-t3-usage                # upstream fallback without the composer usage patch
+nrs --no-t3-jj                   # upstream fallback without the Jujutsu panel
+nrs --no-t3-temporary            # upstream fallback without temporary conversations
 ```
+
+Each `--no-t3-*` switch disables Z Code and the corresponding upstream patch for that rebuild.
 
 The same Tokitoki rebuild without the helper:
 

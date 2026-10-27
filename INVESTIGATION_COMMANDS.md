@@ -127,11 +127,13 @@ nix eval --impure --expr '(builtins.getFlake "path:/home/vincent/.nixfiles").inp
 ```bash
 cd "$REPO" && nix flake metadata --json 2>/dev/null \
 | jq -r ".locks.nodes.\"<input>\".locked.rev"
+cd "$REPO" && jq -r '.nodes["<input>"].locked.rev' flake.lock
 curl -sS "https://api.github.com/repos/<owner>/<repo>/commits/<branch>" \
 | jq -r '.sha[0:12] + " " + .commit.committer.date'
 ```
 
-Purpose: compare a locked flake input revision against upstream HEAD before deciding to bump it.
+Purpose: inspect the lockfile's exact revision and compare it against upstream HEAD before deciding
+to bump a pinned flake input.
 
 Use when:
 - a pinned upstream tool changed its configuration surface, module options, or docs you depend on

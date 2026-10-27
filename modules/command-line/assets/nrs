@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 # Switch this machine from the nixfiles flake.
-# Plain `nrs` keeps the pinned inputs and the T3 Code patches selected in the host.
-# Patch flags apply to this switch only; they do not edit the configuration.
+# Plain `nrs` keeps the pinned inputs and the T3 Code selection in the host.
+# T3 Code flags apply to this switch only; they do not edit the configuration.
 
 set -euo pipefail
 
@@ -17,18 +17,22 @@ Tokitoki:
   --tokitoki [path]   Use a local checkout instead of the pinned input.
                       Default path: ~/lab/tokitoki.
 
-T3 Code patches (Linux, this switch only):
-  --no-t3             Upstream T3 Code, neither patch
-  --no-t3-usage       Drop the composer usage patch
-  --no-t3-jj          Drop the Jujutsu panel
+T3 Code overrides (Linux, this switch only):
+  --no-z-code         Use upstream T3 Code with the host-selected local patches
+  --no-t3             Use untouched upstream T3 Code without local patches or Z Code
+  --no-t3-usage       Use upstream fallback and drop the composer usage patch
+  --no-t3-jj          Use upstream fallback and drop the Jujutsu panel
+  --no-t3-temporary   Use upstream fallback and drop temporary conversations
 
 Other arguments are passed to nh, for example --dry or --ask.
 EOF
 }
 
 tokitoki=""
+z_code_flag=""
 usage_flag=""
 jj_flag=""
+temporary_flag=""
 nh_args=()
 
 while [[ $# -gt 0 ]]; do
@@ -45,17 +49,30 @@ while [[ $# -gt 0 ]]; do
         shift
       fi
       ;;
+    --no-z-code)
+      z_code_flag=0
+      shift
+      ;;
     --no-t3)
+      z_code_flag=0
       usage_flag=0
       jj_flag=0
+      temporary_flag=0
       shift
       ;;
     --no-t3-usage)
+      z_code_flag=0
       usage_flag=0
       shift
       ;;
     --no-t3-jj)
+      z_code_flag=0
       jj_flag=0
+      shift
+      ;;
+    --no-t3-temporary)
+      z_code_flag=0
+      temporary_flag=0
       shift
       ;;
     --)
@@ -70,13 +87,15 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ -n "$usage_flag" || -n "$jj_flag" ]]; then
+if [[ -n "$z_code_flag" || -n "$usage_flag" || -n "$jj_flag" || -n "$temporary_flag" ]]; then
   if [[ "$(uname -s)" != Linux ]]; then
-    echo "nrs: T3 Code patch switches are Linux-only" >&2
+    echo "nrs: T3 Code override switches are Linux-only" >&2
     exit 1
   fi
+  [[ -n "$z_code_flag" ]] && export NRS_Z_CODE="$z_code_flag"
   [[ -n "$usage_flag" ]] && export NRS_T3_USAGE="$usage_flag"
   [[ -n "$jj_flag" ]] && export NRS_T3_JJ="$jj_flag"
+  [[ -n "$temporary_flag" ]] && export NRS_T3_TEMPORARY="$temporary_flag"
   nh_args+=(--impure)
 fi
 
@@ -90,8 +109,10 @@ fi
 
 notes=()
 [[ -n "$tokitoki" ]] && notes+=("tokitoki $tokitoki")
+[[ "$z_code_flag" == 0 ]] && notes+=("Z Code off")
 [[ "$usage_flag" == 0 ]] && notes+=("usage off")
 [[ "$jj_flag" == 0 ]] && notes+=("jj off")
+[[ "$temporary_flag" == 0 ]] && notes+=("temporary off")
 if [[ ${#notes[@]} -gt 0 ]]; then
   printf 'nrs:'
   printf ' %s' "${notes[@]}"

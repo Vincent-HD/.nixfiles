@@ -9,6 +9,7 @@
   writableTmpDirAsHomeHook,
   enableUsagePatch ? true,
   enableJjPanel ? false,
+  enableTemporaryThreads ? false,
 }:
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "t3code-web";
@@ -27,7 +28,8 @@ stdenvNoCC.mkDerivation (finalAttrs: {
   ];
   patches =
     lib.optional enableUsagePatch ./patches/composer-usage.patch
-    ++ lib.optional enableJjPanel ./patches/jj-panel.patch;
+    ++ lib.optional enableJjPanel ./patches/jj-panel.patch
+    ++ lib.optional enableTemporaryThreads ./patches/temporary-threads.patch;
   # The unchanged dependency graph already has notices in the pinned desktop artifact.
   postPatch = ''
     substituteInPlace apps/web/vite.config.ts \
