@@ -880,11 +880,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1792398308,
-        "narHash": "sha256-y/utvNlNR+TthLodp9/H18e7MUXftsHs5WaqxYIcpP0=",
+        "lastModified": 1793291729,
+        "narHash": "sha256-hSfBhPY/mboJaEkKX2sIe+y213gajFWBWPNB4HvIpPk=",
         "owner": "astahmer",
         "repo": "tokitoki",
-        "rev": "a980c480556fad6b92056f050afc5e34bdbbe22f",
+        "rev": "db74adf0345f280a6e7d3fc531488b11b2a51a38",
         "type": "github"
       },
       "original": {
