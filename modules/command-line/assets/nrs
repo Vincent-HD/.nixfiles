@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Switch this machine from the nixfiles flake.
+# Switch this machine from the nixfiles flake, or explicitly manage its pinned inputs.
 # Plain `nrs` keeps the pinned inputs and the T3 Code selection in the host.
 # T3 Code flags apply to this switch only; they do not edit the configuration.
 
@@ -8,10 +8,21 @@ set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: nrs [options] [nh options]
+Usage:
+  nrs [switch options] [nh options]
+  nrs --list-updates
+  nrs --update [--inputs <all|name>] [--pins <all|name>] [--dry-run] [--include-denylisted]
 
-Switch this machine. With no options, uses the pinned flake inputs and the
-T3 Code patches selected in the host configuration.
+With no update option, switch this machine. With no switch options, uses the
+pinned flake inputs and the T3 Code patches selected in the host configuration.
+
+Pin updates (target the local flake named by NH_FLAKE, or ~/.nixfiles):
+  --list-updates      List direct Nix flake inputs and update-pins entries.
+  --update            Select an update operation instead of switching the system.
+  --inputs <all|name> Update every eligible direct flake input or one named input.
+  --pins <all|name>   Run every eligible update-pins entry or one named entry.
+  --dry-run           Print Nix input commands and ask update-pins to preview its commands.
+  --include-denylisted Explicitly allow denylisted inputs and registry entries.
 
 Tokitoki:
   --tokitoki [path]   Use a local checkout instead of the pinned input.
@@ -34,12 +45,58 @@ usage_flag=""
 jj_flag=""
 temporary_flag=""
 nh_args=()
+update_mode=0
+list_updates=0
+input_selector=""
+input_selector_set=0
+pin_selector=""
+pin_selector_set=0
+dry_run=0
+include_denylisted=0
+nh_separator_seen=0
+
+fail() {
+  printf 'nrs: %s\n' "$1" >&2
+  exit 2
+}
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -h | --help)
       usage
       exit 0
+      ;;
+    --list-updates)
+      list_updates=1
+      shift
+      ;;
+    --update)
+      [[ "$update_mode" == 0 ]] || fail "--update may only be used once"
+      update_mode=1
+      shift
+      ;;
+    --inputs)
+      [[ "$input_selector_set" == 0 ]] || fail "--inputs may only be used once"
+      [[ $# -ge 2 && -n "$2" && "$2" != -- && "$2" != -* ]] || fail "--inputs requires all or one input name"
+      input_selector="$2"
+      input_selector_set=1
+      shift 2
+      ;;
+    --pins)
+      [[ "$pin_selector_set" == 0 ]] || fail "--pins may only be used once"
+      [[ $# -ge 2 && -n "$2" && "$2" != -- && "$2" != -* ]] || fail "--pins requires all or one registry entry name"
+      pin_selector="$2"
+      pin_selector_set=1
+      shift 2
+      ;;
+    --include-denylisted)
+      include_denylisted=1
+      shift
+      ;;
+    --dry-run)
+      dry_run=1
+      nh_args+=(--dry-run)
+      shift
       ;;
     --tokitoki)
       shift
@@ -76,6 +133,7 @@ while [[ $# -gt 0 ]]; do
       shift
       ;;
     --)
+      nh_separator_seen=1
       shift
       nh_args+=("$@")
       break
@@ -86,6 +144,324 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+flake_root=""
+registry_file=""
+declare -a flake_inputs=()
+declare -a registry_input_updates=()
+declare -a direct_input_updates=()
+declare -a selected_registry_updates=()
+declare -a registry_names=()
+declare -a registry_types=()
+declare -a registry_disabled=()
+declare -a registry_denylist_names=()
+registry_lookup_index=""
+
+resolve_flake_root() {
+  local flake_ref="${NH_FLAKE:-$HOME/.nixfiles}"
+  case "$flake_ref" in
+    path:*) flake_ref="${flake_ref#path:}" ;;
+    *://* | github:* | git+* | flake:*) fail "NH_FLAKE must name a local flake directory for nrs update commands" ;;
+  esac
+  [[ "$flake_ref" != *\?* && "$flake_ref" != *\#* ]] || fail "NH_FLAKE must be a plain local directory path"
+  [[ -d "$flake_ref" ]] || fail "flake directory not found: $flake_ref"
+  flake_root="$(cd "$flake_ref" && pwd -P)" || fail "cannot resolve flake directory: $flake_ref"
+  registry_file="$flake_root/scripts/update-pins.json"
+  [[ -f "$registry_file" ]] || fail "update registry not found: $registry_file"
+  jq -e '
+    def string_array: type == "array" and all(.[]; type == "string");
+    def valid_command_entry:
+      type == "object"
+      and (.name | type == "string" and length > 0)
+      and (.command | string_array and length > 0)
+      and ((has("systems") | not) or (.systems | string_array));
+    def valid_update:
+      valid_command_entry
+      and (.type | type == "string" and length > 0)
+      and ((has("description") | not) or (.description | type == "string"))
+      and ((has("enabled") | not) or (.enabled | type == "boolean"));
+    def valid_registry:
+      type == "object"
+      and ((has("denylist") | not) or (.denylist | string_array))
+      and (.updates | type == "array" and all(.[]; valid_update))
+      and ([.updates[].name] as $names | ($names | unique | length) == ($names | length))
+      and ((has("validations") | not) or
+        (.validations | type == "object" and all(.[]; type == "array" and all(.[]; valid_command_entry))));
+    try valid_registry catch false
+  ' "$registry_file" >/dev/null \
+    || fail "invalid update registry: $registry_file (expected string denylist entries and valid update definitions)"
+}
+
+load_flake_inputs() {
+  local metadata
+  metadata="$(nix flake metadata --json --no-write-lock-file "$flake_root")" \
+    || fail "could not read Nix flake inputs from $flake_root"
+  jq -e '.locks.nodes.root.inputs | type == "object"' <<<"$metadata" >/dev/null \
+    || fail "Nix metadata did not contain direct flake inputs for $flake_root"
+  local input_name
+  while IFS= read -r input_name; do
+    flake_inputs+=("$input_name")
+  done < <(jq -r '.locks.nodes.root.inputs | keys[]' <<<"$metadata")
+}
+
+load_registry_policy() {
+  local name type disabled
+  while IFS=$'\t' read -r name type disabled; do
+    registry_names+=("$name")
+    registry_types+=("$type")
+    registry_disabled+=("$disabled")
+  done < <(
+    jq -r '
+      .updates[] as $entry |
+      [
+        $entry.name,
+        $entry.type,
+        (if $entry.enabled == false then "true" else "false" end)
+      ] | @tsv
+    ' "$registry_file"
+  )
+  while IFS= read -r name; do
+    registry_denylist_names+=("$name")
+  done < <(jq -r '.denylist[]?' "$registry_file")
+}
+
+registry_index() {
+  local wanted_name="$1"
+  local index
+  for (( index = 0; index < ${#registry_names[@]}; index += 1 )); do
+    if [[ "${registry_names[$index]}" == "$wanted_name" ]]; then
+      registry_lookup_index="$index"
+      return 0
+    fi
+  done
+  return 1
+}
+
+is_denylisted() {
+  local wanted_name="$1"
+  local denylisted_name
+  for denylisted_name in "${registry_denylist_names[@]}"; do
+    [[ "$denylisted_name" == "$wanted_name" ]] && return 0
+  done
+  return 1
+}
+
+has_flake_input() {
+  local input_name="$1"
+  local candidate
+  for candidate in "${flake_inputs[@]}"; do
+    [[ "$candidate" == "$input_name" ]] && return 0
+  done
+  return 1
+}
+
+add_unique() {
+  local array_name="$1"
+  local input_name="$2"
+  local candidate
+  case "$array_name" in
+    registry_input_updates)
+      for candidate in "${registry_input_updates[@]}"; do
+        [[ "$candidate" == "$input_name" ]] && return 0
+      done
+      registry_input_updates+=("$input_name")
+      ;;
+    direct_input_updates)
+      for candidate in "${direct_input_updates[@]}"; do
+        [[ "$candidate" == "$input_name" ]] && return 0
+      done
+      direct_input_updates+=("$input_name")
+      ;;
+    selected_registry_updates)
+      for candidate in "${selected_registry_updates[@]}"; do
+        [[ "$candidate" == "$input_name" ]] && return 0
+      done
+      selected_registry_updates+=("$input_name")
+      ;;
+    *)
+      fail "internal error: unknown update list $array_name"
+      ;;
+  esac
+}
+
+input_policy_reason() {
+  local input_name="$1"
+  local reason=""
+  if registry_index "$input_name"; then
+    local index="$registry_lookup_index"
+    if [[ "${registry_types[$index]}" == manual ]]; then
+      reason="manual"
+    elif [[ "${registry_disabled[$index]}" == true ]]; then
+      reason="disabled"
+    fi
+  fi
+  if is_denylisted "$input_name"; then
+    [[ -n "$reason" ]] && reason+=" and "
+    reason+="denylisted"
+  fi
+  printf '%s' "$reason"
+}
+
+classify_input() {
+  local input_name="$1"
+  local explicit="$2"
+  local reason=""
+  reason="$(input_policy_reason "$input_name")"
+  if [[ "$reason" == *denylisted* && "$include_denylisted" == 1 ]]; then
+    reason="${reason/denylisted/}"
+    reason="${reason% and }"
+    reason="${reason# and }"
+  fi
+  if [[ -n "$reason" ]]; then
+    if [[ "$explicit" == 1 ]]; then
+      fail "input '$input_name' is $reason in scripts/update-pins.json; review its manual policy before updating"
+    fi
+    printf 'nrs: skipped protected input %s (%s)\n' "$input_name" "$reason" >&2
+    return
+  fi
+  if registry_index "$input_name" && [[ "${registry_types[$registry_lookup_index]}" == flake-input ]]; then
+    add_unique registry_input_updates "$input_name"
+  else
+    add_unique direct_input_updates "$input_name"
+  fi
+}
+
+validate_selected_pin() {
+  local pin_name="$1"
+  local reason=""
+  registry_index "$pin_name" || fail "unknown update-pins entry: $pin_name"
+  local index="$registry_lookup_index"
+  if [[ "${registry_types[$index]}" == manual ]]; then
+    reason="manual"
+  elif [[ "${registry_disabled[$index]}" == true ]]; then
+    reason="disabled"
+  fi
+  if is_denylisted "$pin_name" && [[ "$include_denylisted" != 1 ]]; then
+    [[ -n "$reason" ]] && reason+=" and "
+    reason+="denylisted"
+  fi
+  [[ -z "$reason" ]] || fail "update-pins entry '$pin_name' is $reason and was not updated"
+}
+
+print_command() {
+  printf 'nrs: command'
+  printf ' %q' "$@"
+  printf '\n'
+}
+
+list_updates_for_flake() {
+  resolve_flake_root
+  load_flake_inputs
+  printf 'Nix flake inputs (%s):\n' "$flake_root"
+  local input_name
+  for input_name in "${flake_inputs[@]}"; do
+    printf -- '- %s\n' "$input_name"
+  done
+  printf '\nupdate-pins registry:\n'
+  UPDATE_PINS_REPO_ROOT="$flake_root" nix run --no-write-lock-file "$flake_root#update-pins" -- --list
+}
+
+run_updates() {
+  resolve_flake_root
+  load_registry_policy
+
+  local input_name
+  if [[ "$input_selector_set" == 1 ]]; then
+    load_flake_inputs
+    if [[ "$input_selector" == all ]]; then
+      for input_name in "${flake_inputs[@]}"; do
+        classify_input "$input_name" 0
+      done
+    else
+      has_flake_input "$input_selector" || fail "unknown Nix flake input: $input_selector"
+      classify_input "$input_selector" 1
+    fi
+  fi
+
+  local registry_all=0
+  if [[ "$pin_selector_set" == 1 ]]; then
+    if [[ "$pin_selector" == all ]]; then
+      registry_all=1
+    else
+      validate_selected_pin "$pin_selector"
+      add_unique selected_registry_updates "$pin_selector"
+    fi
+  fi
+
+  if [[ "$registry_all" == 0 ]]; then
+    for input_name in "${registry_input_updates[@]}"; do
+      add_unique selected_registry_updates "$input_name"
+    done
+  fi
+
+  if [[ ${#direct_input_updates[@]} -eq 0 && "$registry_all" == 0 && ${#selected_registry_updates[@]} -eq 0 ]]; then
+    fail "the selected scope contains no eligible updates"
+  fi
+
+  if [[ ${#direct_input_updates[@]} -gt 0 ]]; then
+    printf 'nrs: updating direct Nix inputs:'
+    printf ' %s' "${direct_input_updates[@]}"
+    printf '\n'
+    if [[ "$dry_run" == 1 ]]; then
+      print_command nix flake update "${direct_input_updates[@]}" --flake "$flake_root"
+    else
+      nix flake update "${direct_input_updates[@]}" --flake "$flake_root"
+    fi
+  fi
+
+  if [[ "$registry_all" == 1 || ${#selected_registry_updates[@]} -gt 0 ]]; then
+    local -a update_pins_args=()
+    if [[ "$registry_all" == 0 ]]; then
+      for input_name in "${selected_registry_updates[@]}"; do
+        update_pins_args+=(--only "$input_name")
+      done
+    fi
+    [[ "$include_denylisted" == 0 ]] || update_pins_args+=(--include-denylisted)
+    [[ "$dry_run" == 0 ]] || update_pins_args+=(--dry-run)
+    printf 'nrs: updating update-pins entries'
+    if [[ "$registry_all" == 1 ]]; then
+      printf ' (all eligible entries)'
+    else
+      printf ':'
+      printf ' %s' "${selected_registry_updates[@]}"
+    fi
+    printf '\n'
+    print_command env "UPDATE_PINS_REPO_ROOT=$flake_root" nix run --no-write-lock-file "$flake_root#update-pins" -- "${update_pins_args[@]}"
+    UPDATE_PINS_REPO_ROOT="$flake_root" nix run --no-write-lock-file "$flake_root#update-pins" -- "${update_pins_args[@]}"
+  fi
+}
+
+if [[ "$list_updates" == 1 && "$update_mode" == 1 ]]; then
+  fail "--list-updates and --update cannot be combined"
+fi
+
+if [[ "$list_updates" == 1 ]]; then
+  [[ "$input_selector_set" == 0 && "$pin_selector_set" == 0 && "$include_denylisted" == 0 && "$dry_run" == 0 ]] \
+    || fail "--list-updates cannot be combined with update options"
+  [[ ${#nh_args[@]} -eq 0 && -z "$tokitoki" && -z "$z_code_flag" && -z "$usage_flag" && -z "$jj_flag" && -z "$temporary_flag" ]] \
+    || fail "--list-updates cannot be combined with switch options"
+  list_updates_for_flake
+  exit $?
+fi
+
+if [[ "$update_mode" == 1 ]]; then
+  [[ "$input_selector_set" == 1 || "$pin_selector_set" == 1 ]] || fail "--update requires --inputs and/or --pins"
+  [[ "$input_selector_set" == 0 || "$input_selector" == all || "$input_selector" != *,* ]] \
+    || fail "--inputs accepts all or one input name, not a comma-separated list"
+  [[ "$pin_selector_set" == 0 || "$pin_selector" == all || "$pin_selector" != *,* ]] \
+    || fail "--pins accepts all or one registry entry name, not a comma-separated list"
+  [[ "$nh_separator_seen" == 0 ]] || fail "update options cannot be combined with switch or nh options"
+  for other_arg in "${nh_args[@]}"; do
+    [[ "$other_arg" == --dry-run ]] || fail "update options cannot be combined with switch or nh options"
+  done
+  [[ -z "$tokitoki" && -z "$z_code_flag" && -z "$usage_flag" && -z "$jj_flag" && -z "$temporary_flag" ]] \
+    || fail "update options cannot be combined with switch or nh options"
+  run_updates
+  exit $?
+fi
+
+[[ "$input_selector_set" == 0 && "$pin_selector_set" == 0 && "$include_denylisted" == 0 ]] \
+  || fail "--inputs, --pins and --include-denylisted require --update"
 
 if [[ -n "$z_code_flag" || -n "$usage_flag" || -n "$jj_flag" || -n "$temporary_flag" ]]; then
   if [[ "$(uname -s)" != Linux ]]; then

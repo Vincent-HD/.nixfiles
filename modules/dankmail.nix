@@ -24,6 +24,7 @@
           RestartSec = "2s";
           Slice = "app.slice";
           Environment = "PATH=${lib.makeBinPath [
+            pkgs.coreutils
             pkgs.libnotify
             pkgs.quickshell
             pkgs.systemd

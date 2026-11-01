@@ -225,6 +225,10 @@ in
       # Install dcal and keep its background daemon available to the DMS calendar backend.
       programs.dank-calendar = {
         enable = true;
+        # Correct the stale Go module hash in the locked upstream flake.
+        package = (inputs.dankcalendar.lib.mkDcal pkgs).overrideAttrs (_: {
+          vendorHash = "sha256-JT6mHK52mIJh4lzVWYVpqNY2S2oeinSWBIKaI3TiY34=";
+        });
         systemd.enable = true;
       };
 

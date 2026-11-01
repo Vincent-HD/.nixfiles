@@ -23,8 +23,10 @@ in
           pkgs.runCommand "update-pins-tests"
             {
               nativeBuildInputs = [
+                pkgs.bash
                 pkgs.bun
                 pkgs.gnugrep
+                pkgs.jq
                 pkgs.nix
               ];
             }
@@ -32,9 +34,12 @@ in
               export HOME="$TMPDIR/home"
               export NIX_CONFIG="experimental-features = nix-command flakes"
               export UPDATE_PINS_REPO_ROOT="$TMPDIR/repo"
-              mkdir -p "$HOME" "$UPDATE_PINS_REPO_ROOT/scripts"
+              mkdir -p "$HOME" "$UPDATE_PINS_REPO_ROOT/scripts" "$UPDATE_PINS_REPO_ROOT/modules/command-line/assets"
               cp ${../scripts/update-pins.ts} "$UPDATE_PINS_REPO_ROOT/scripts/update-pins.ts"
               cp ${../scripts/update-pins.json} "$UPDATE_PINS_REPO_ROOT/scripts/update-pins.json"
+              cp ${../scripts/nrs.test.ts} "$UPDATE_PINS_REPO_ROOT/scripts/nrs.test.ts"
+              cp ${../scripts/update-pins.test.ts} "$UPDATE_PINS_REPO_ROOT/scripts/update-pins.test.ts"
+              cp ${../modules/command-line/assets/nrs} "$UPDATE_PINS_REPO_ROOT/modules/command-line/assets/nrs"
 
               bun "$UPDATE_PINS_REPO_ROOT/scripts/update-pins.ts" --list >/dev/null
               if bun "$UPDATE_PINS_REPO_ROOT/scripts/update-pins.ts" --dry-run --only unknown-entry; then
@@ -49,6 +54,25 @@ in
               fi
               grep --fixed-strings 'screen-capture-toolbar (manual)' "$TMPDIR/manual.stdout"
               grep --fixed-strings 'validation was not run' "$TMPDIR/manual.stderr"
+
+              jq '.updates += [{
+                "name": "enabled-manual-test",
+                "type": "manual",
+                "enabled": true,
+                "command": ["nix", "flake", "update", "enabled-manual-test"]
+              }]' "$UPDATE_PINS_REPO_ROOT/scripts/update-pins.json" > "$TMPDIR/update-pins.json"
+              mv "$TMPDIR/update-pins.json" "$UPDATE_PINS_REPO_ROOT/scripts/update-pins.json"
+              if bun "$UPDATE_PINS_REPO_ROOT/scripts/update-pins.ts" \
+                --dry-run --only enabled-manual-test \
+                >"$TMPDIR/enabled-manual.stdout" 2>"$TMPDIR/enabled-manual.stderr"; then
+                echo "manually classified update entry unexpectedly succeeded" >&2
+                exit 1
+              fi
+              grep --fixed-strings 'enabled-manual-test (manual)' "$TMPDIR/enabled-manual.stdout"
+              grep --fixed-strings 'validation was not run' "$TMPDIR/enabled-manual.stderr"
+
+              bun test "$UPDATE_PINS_REPO_ROOT/scripts/nrs.test.ts"
+              bun test "$UPDATE_PINS_REPO_ROOT/scripts/update-pins.test.ts"
 
               touch "$out"
             '';

@@ -1,0 +1,35 @@
+.hey-wake-up {
+    display: none;
+    flex: none;
+    margin-left: 4px;
+}
+
+[class*="voiceUser_"]:hover .hey-wake-up,
+.hey-wake-up-sending,
+.hey-wake-up-sent,
+.hey-wake-up-failed {
+    display: flex;
+}
+
+.hey-wake-up button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--interactive-normal, #b5bac1);
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.hey-wake-up button:hover {
+    color: var(--interactive-hover, #f2f3f5);
+}
+
+.hey-wake-up-sent button { color: #57f287; }
+.hey-wake-up-failed button { color: #fa777c; }

@@ -38,7 +38,7 @@ python3Packages.buildPythonApplication (finalAttrs: {
     python3Packages.httpx
     python3Packages.lxml
     python3Packages.markdownify
-    python3Packages.mcp
+    python3Packages.mcp_1
   ];
 
   # The shared setup uses only the stdio server, so omit the HTTP launcher

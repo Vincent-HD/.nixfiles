@@ -15,23 +15,23 @@ let
     "x86_64-linux" = {
       arch = "x86_64";
       ext = "AppImage";
-      hash = "sha256-T5emKn9dVTp5HjS/B9JD15Hj1FtcunVvYeJMLu1ox7k=";
+      hash = "sha256-orO0UXpPKmc+cCCh5wbQePrIkcOj++5MMA6KPFGWkIk=";
     };
     "aarch64-darwin" = {
       arch = "arm64";
       ext = "dmg";
-      hash = "sha256-spffNrO4DltkhMAv6eCQu0LWVFnhDyEPXtGZrWjfoFE=";
+      hash = "sha256-XtqoR0MPiTfcOeGuqNbZZvMNmXrMSC2g+0A0+0FVUEc=";
     };
     "x86_64-darwin" = {
       arch = "x64";
       ext = "dmg";
-      hash = "sha256-JezC6zwZy4Nkjac9CE/x5o/iBggfyj5TY3LwZIBHETk=";
+      hash = "sha256-VHyPTzSUcYaoYycIOqnPYgQuHamF5jw4rxS8aEF/7So=";
     };
   };
   source = sources.${stdenvNoCC.hostPlatform.system};
 
   pname = "t3code";
-  version = "0.1.2-nightly.20261022.3541";
+  version = "0.1.7-nightly.20261031.3991";
 
   src = fetchurl {
     url = "https://github.com/pingdotgg/t3code/releases/download/v${version}/T3-Code-${version}-${source.arch}.${source.ext}";

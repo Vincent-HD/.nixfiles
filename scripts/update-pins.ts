@@ -147,7 +147,113 @@ function repoPath(root: string, ...segments: string[]): string {
 
 async function loadConfig(root: string): Promise<UpdateConfig> {
   const configPath = repoPath(root, "scripts", "update-pins.json");
-  return await Bun.file(configPath).json();
+  const value: unknown = await Bun.file(configPath).json();
+  return validateConfig(value);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === "string");
+}
+
+function validateUpdateCommand(value: unknown, label: string): Command {
+  if (!isStringArray(value) || value.length === 0) {
+    throw new Error(`${label}.command must be a non-empty array of strings`);
+  }
+  return value;
+}
+
+function validateSystems(value: Record<string, unknown>, label: string): string[] | undefined {
+  if (!Object.hasOwn(value, "systems")) {
+    return undefined;
+  }
+  if (!isStringArray(value.systems)) {
+    throw new Error(`${label}.systems must be an array of strings`);
+  }
+  return value.systems;
+}
+
+function validateConfig(value: unknown): UpdateConfig {
+  if (!isRecord(value)) {
+    throw new Error("registry must be a JSON object");
+  }
+  if (!Array.isArray(value.updates)) {
+    throw new Error("updates must be an array");
+  }
+  if (Object.hasOwn(value, "denylist") && !isStringArray(value.denylist)) {
+    throw new Error("denylist must be an array of strings");
+  }
+
+  const updates: UpdateEntry[] = [];
+  const names = new Set<string>();
+  for (const [index, candidate] of value.updates.entries()) {
+    const label = `updates[${index}]`;
+    if (!isRecord(candidate)) {
+      throw new Error(`${label} must be a JSON object`);
+    }
+    if (typeof candidate.name !== "string" || candidate.name.length === 0) {
+      throw new Error(`${label}.name must be a non-empty string`);
+    }
+    if (names.has(candidate.name)) {
+      throw new Error(`duplicate update name: ${candidate.name}`);
+    }
+    names.add(candidate.name);
+    if (typeof candidate.type !== "string" || candidate.type.length === 0) {
+      throw new Error(`${label}.type must be a non-empty string`);
+    }
+    if (Object.hasOwn(candidate, "description") && typeof candidate.description !== "string") {
+      throw new Error(`${label}.description must be a string`);
+    }
+    if (Object.hasOwn(candidate, "enabled") && typeof candidate.enabled !== "boolean") {
+      throw new Error(`${label}.enabled must be a boolean`);
+    }
+    const systems = validateSystems(candidate, label);
+    updates.push({
+      name: candidate.name,
+      type: candidate.type,
+      ...(Object.hasOwn(candidate, "description") ? { description: candidate.description as string } : {}),
+      ...(Object.hasOwn(candidate, "enabled") ? { enabled: candidate.enabled as boolean } : {}),
+      ...(systems !== undefined ? { systems } : {}),
+      command: validateUpdateCommand(candidate.command, label),
+    });
+  }
+
+  let validations: Record<string, ValidationEntry[]> | undefined;
+  if (Object.hasOwn(value, "validations")) {
+    if (!isRecord(value.validations)) {
+      throw new Error("validations must be an object of validation arrays");
+    }
+    validations = {};
+    for (const [setName, candidates] of Object.entries(value.validations)) {
+      if (!Array.isArray(candidates)) {
+        throw new Error(`validations.${setName} must be an array`);
+      }
+      validations[setName] = candidates.map((candidate, index) => {
+        const label = `validations.${setName}[${index}]`;
+        if (!isRecord(candidate)) {
+          throw new Error(`${label} must be a JSON object`);
+        }
+        if (typeof candidate.name !== "string" || candidate.name.length === 0) {
+          throw new Error(`${label}.name must be a non-empty string`);
+        }
+        const systems = validateSystems(candidate, label);
+        return {
+          name: candidate.name,
+          ...(systems !== undefined ? { systems } : {}),
+          command: validateUpdateCommand(candidate.command, label),
+        };
+      });
+    }
+  }
+
+  return {
+    ...(Object.hasOwn(value, "denylist") ? { denylist: value.denylist as string[] } : {}),
+    updates,
+    ...(validations !== undefined ? { validations } : {}),
+  };
 }
 
 function validateSelectedNames(config: UpdateConfig, options: Options): string[] {
@@ -213,7 +319,7 @@ function selectedEntries(config: UpdateConfig, options: Options, system: string)
       skipped.push({ name: entry.name, status: "skipped", reason: "not selected" });
     } else if (options.skip.has(entry.name)) {
       skipped.push({ name: entry.name, status: "skipped", reason: "skipped by CLI" });
-    } else if (entry.enabled === false) {
+    } else if (entry.type === "manual" || entry.enabled === false) {
       skipped.push({ name: entry.name, status: "skipped", reason: "manual" });
     } else if (unsupportedReason !== null) {
       skipped.push({ name: entry.name, status: "skipped", reason: unsupportedReason });
@@ -231,7 +337,7 @@ function runnableEntries(config: UpdateConfig, options: Options, system: string)
     if (options.only !== null && !options.only.has(entry.name)) {
       return false;
     }
-    if (options.skip.has(entry.name) || entry.enabled === false) {
+    if (options.skip.has(entry.name) || entry.type === "manual" || entry.enabled === false) {
       return false;
     }
     if (unsupportedSystemReason(entry, system) !== null) {
@@ -298,7 +404,17 @@ async function main(): Promise<void> {
   }
 
   const root = await repoRoot();
-  const config = await loadConfig(root);
+  let config: UpdateConfig;
+  try {
+    config = await loadConfig(root);
+  } catch (error) {
+    await Bun.write(
+      Bun.stderr,
+      `Invalid update registry: ${error instanceof Error ? error.message : String(error)}\n`,
+    );
+    process.exitCode = 2;
+    return;
+  }
 
   const unknownNames = validateSelectedNames(config, options);
   if (unknownNames.length > 0) {

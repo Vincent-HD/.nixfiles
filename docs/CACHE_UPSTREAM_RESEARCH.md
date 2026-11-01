@@ -60,33 +60,40 @@ The README identifies it as official packaging for Herdr’s prebuilt GitHub Rel
 
 ## CachyOS kernel cache caveat
 
-The pinned [`nix-cachyos-kernel` flake](https://github.com/xddxdd/nix-cachyos-kernel/blob/b1332396df6e880d7e3b6b451c6a74132ce8cf66/flake.nix) still declares `https://attic.xuyh0120.win/lantian` with key `lantian:EeAUQ+W+6r7EtwnmYjeVwx5kOGEBpjlBfPlzGlTNvHc=`. That is the removed/unreachable Attic endpoint, so it is not a usable cache recommendation.
+The upstream [release flake](https://github.com/xddxdd/nix-cachyos-kernel/blob/release/flake.nix)
+now declares `https://cache.lantian.pub/lantian` with the rotated key
+`lantian:WVGO7vsRMSEN+h7Lp7kv6SAmrkEXgUGbbXm7jMDjBuQ=`. The current
+[release README](https://github.com/xddxdd/nix-cachyos-kernel/blob/release/README.md#binary-cache)
+documents the same values and says the release branch tracks kernels built by
+the maintainer's Hydra. The old `attic.xuyh0120.win` endpoint and its key remain
+retired after the [October 15 compromise report](https://github.com/xddxdd/nix-cachyos-kernel/issues/110#issuecomment-6189203183).
 
-The upstream [release README](https://github.com/xddxdd/nix-cachyos-kernel/blob/release/README.md#alternative-binary-cache) lists an alternative mirror:
+The rebuilt endpoint returned HTTP 200 for `nix-cache-info` on 2026-11-01. I
+queried the current `linux-cachyos-latest-x86_64-v3-7.3.0` kernel, modules, and
+dev outputs by their Nix store hashes; all three narinfo files were present and
+signed with the rotated `lantian` key. The Xinux mirror also returned narinfo
+for these outputs. An earlier probe incorrectly used the full store basename
+instead of the hash in the narinfo URL, which produced false 404 results.
 
-- URL: `https://cache.xinux.uz`
-- Key: `cache.xinux.uz:BXCrtqejFjWzWEB9YuGB7X2MV4ttBur1N8BkwQRdH+0=`
+Upstream [issue #76](https://github.com/xddxdd/nix-cachyos-kernel/issues/76)
+documents prior cache misses where the maintainer found the S3 provider had
+reported successful uploads while narinfo objects were missing. The upstream
+README labels `cache.xinux.uz` as an alternative and explicitly says it cannot
+guarantee that mirror's security or availability; it remains unconfigured here.
 
-Live probe on 2026-10-23: the original Attic endpoint returned HTTP 503 with an
-explicit server-compromise notice. The maintainer [reported the shutdown on
-October 15](https://github.com/xddxdd/nix-cachyos-kernel/issues/110#issuecomment-6189203183).
-Their [October 21 update](https://github.com/xddxdd/nix-cachyos-kernel/issues/110#issuecomment-6310662239)
-says Hydra is restored, but the binary cache remains offline pending monitoring
-and will return under a new URL and signing key. They found no apparent data
-modifications; this is the maintainer's assessment, not independent verification.
-The mirror
-served matching narinfo for all three outputs of the pinned
-`linux-cachyos-latest-x86_64-v3-7.2.8` derivation (`out`, `dev`, and `modules`).
-Their metadata signatures verified against the documented mirror key, and ranged
-GET requests to their advertised NAR URLs succeeded. HEAD requests returned 404,
-so HEAD alone gives a false miss for this gateway. The active local substituter
-and trusted-key lists contain neither this mirror nor the original Attic cache.
-Signature verification establishes the mirror's signer, not independent evidence
-that its artifacts were rebuilt outside the compromised infrastructure. Its
-operator [advertises a separate Hydra build service](https://github.com/xddxdd/nix-cachyos-kernel/issues/89),
-but the exact outputs' build provenance was not checked here.
-
-The CachyOS-kernel maintainer explicitly says they cannot guarantee the mirror’s security or availability. Treat it as a third-party option requiring separate trust and endpoint checks. The project documents its own cache as tied to an exact nixpkgs revision and demonstrates `overlays.pinned`; this repo deliberately does **not** set `inputs.nix-cachyos-kernel.inputs.nixpkgs.follows` and uses that pinned overlay ([root input](../flake.nix), [kernel module](../modules/gaming-optimization.nix)). This is the important exception to the repo’s normal `follows = "nixpkgs"` convention.
+On `pc-fixe`, the repository configuration declares the rebuilt cache, but the
+currently active `/etc/nix/nix.conf` does not yet contain it. The active
+unprivileged `nh os switch` build therefore ignored a client-supplied
+substituter as untrusted and started compiling the kernel modules locally.
+NixOS writes the durable cache setting when the generation activates. To use
+the cache for this first switch, run `nixos-rebuild` as root with explicit
+`--option extra-substituters` and `--option extra-trusted-public-keys` values;
+after activation, ordinary `nh` rebuilds use the configured cache.
+The project documents its own cache as tied to an exact nixpkgs revision and
+demonstrates `overlays.pinned`; this repo deliberately does **not** set
+`inputs.nix-cachyos-kernel.inputs.nixpkgs.follows` and uses that pinned overlay
+([root input](../flake.nix), [kernel module](../modules/gaming-optimization.nix)).
+This is the important exception to the repo’s normal `follows = "nixpkgs"` convention.
 
 ## Pinning and configuration implications
 

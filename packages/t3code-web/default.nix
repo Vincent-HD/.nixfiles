@@ -13,11 +13,11 @@
 }:
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "t3code-web";
-  version = "0.1.2-nightly.20261022.3541";
+  version = "0.1.7-nightly.20261031.3991";
 
   src = fetchzip {
     url = "https://github.com/pingdotgg/t3code/archive/refs/tags/v${finalAttrs.version}.tar.gz";
-    hash = "sha256-C5l7541kanlsukhswrAEu8GFpr/YpWDnofJ5dlg7+LM=";
+    hash = "sha256-aWyK6tu1if2k3MGJIVMF9NrfTgo8Cs1+fOg3Gb3C6Tg=";
   };
 
   outputs = [ "out" ] ++ lib.optional (enableUsagePatch || enableJjPanel) "server";
@@ -50,7 +50,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     pnpm = pnpm_11;
     pnpmWorkspaces = finalAttrs.pnpmWorkspaces;
     fetcherVersion = 4;
-    hash = "sha256-vUfwaOFB6DsdH0UHGDjspL8F/GDU+I/cOBNBSV5wwk8=";
+    hash = "sha256-JikGsXejgxFJ9QOpIl18Fh8DGog5SymUJk+9lo43XZ8=";
   };
 
   env.APP_VERSION = finalAttrs.version;

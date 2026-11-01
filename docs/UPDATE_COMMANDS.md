@@ -303,7 +303,8 @@ nix run github:Mic92/nix-update -- --flake t3code --use-update-script
   The command is registered in `scripts/update-pins.json` as a disabled flake-input update, so routine bulk updates cannot move the fork. After editing the URL, verify the resulting lock revision is exactly the reviewed commit and build `.#z-code` before accepting the update. Do not use a moving branch or tag for this input.
 
 The Z Code integration targets x86_64 Linux and is pinned to reviewed fork commit
-`f2f155c8c7e0574575c8a3632f4fcafd32a6f89d`. The Linux host enables
+`4cf4257f893f7688127915d28f23ee498f741449` on branch `z-code`, based on upstream
+`v0.1.7-nightly.20261031.3991`. The Linux host enables
 `custom.t3code.enableZCode`; build the exposed fork package with
 `nix build .#z-code --no-link`. The Home Manager module selects that same package output,
 which uses nixfiles' pinned package set. The `z-code-source` and `z-code` outputs resolve from
@@ -318,11 +319,19 @@ extracted AppImage. The desktop entry remains `t3code` and keeps the `t3code` UR
 window class to preserve the existing T3 profile and session identity. macOS continues using the
 signed upstream bundle.
 
-The Linux host selects Z Code by default. Its upstream T3 Code fallback uses the local
+The Linux host selects Z Code by default. Its upstream T3 Code fallback remains pinned to
+`v0.1.2-nightly.20261022.3541` and uses the local
 patch settings `custom.t3code.enableUsagePatch`, `custom.t3code.enableJjPanel`, and
 `custom.t3code.enableTemporaryThreads` in `hosts/pc-fixe/default.nix`. Selecting the
 fallback with `nrs --no-z-code` builds and installs those patches under
 `packages/t3code-web/patches/`.
+The Z Code nightly includes database migrations `068` and `069` that are absent from
+the fallback version. In an isolated synthetic database smoke test, the app started
+on each step of `0.1.2` → `0.1.3` → `0.1.2`; after returning to `0.1.2`, SQLite
+integrity passed and the test marker remained. The old version logged warnings about
+unknown migrations `068` and `069`. This test did not cover the currently pinned nightly and does not establish compatibility with
+populated user data, cookies, or the OS keyring, or establish rollback safety. Preserve
+a pre-upgrade backup if returning to the older package may be necessary.
 Patch application uses `--fuzz=0`: context drift fails the build rather than dropping
 context lines. See the [patch repair guide and feature contracts](../packages/t3code-web/patches/README.md)
 for intended behavior, integration points, focused tests and manual acceptance checks.
@@ -498,8 +507,13 @@ nix flake update tokitoki
 ```
 
 `nrs` (`modules/command-line/assets/nrs`, installed at `~/bin/nrs`) is the
-switch command. It leaves `flake.lock` untouched. Point one rebuild at a local
-Tokitoki checkout, or override the T3 Code selection for that switch only:
+switch command. With no update options it leaves `flake.lock` untouched. It also
+lists and updates the configured flake's Nix inputs and `update-pins` registry.
+Update commands use the local flake directory from `NH_FLAKE` (set by this
+configuration); when that variable is unset they use `~/.nixfiles`, so they work
+from any current directory. Rebuild commands remain the same. Point one rebuild
+at a local Tokitoki checkout, or override the T3 Code selection for that switch
+only:
 
 ```bash
 nrs                              # pinned inputs, host patch selection
@@ -513,6 +527,38 @@ nrs --no-t3-temporary            # upstream fallback without temporary conversat
 ```
 
 Each `--no-t3-*` switch disables Z Code and the corresponding upstream patch for that rebuild.
+
+List and update pins with:
+
+```bash
+nrs --list-updates
+nrs --update --inputs all
+nrs --update --pins all
+nrs --update --inputs all --pins all
+nrs --update --inputs nixpkgs --pins codex
+nrs --update --inputs nixpkgs --pins codex --dry-run
+```
+
+`--inputs all` covers the configured flake's direct inputs. Inputs already
+registered as `flake-input` entries are sent through `update-pins`; the other
+direct inputs are passed together to one `nix flake update` command. `--pins
+all` runs the registry's normal selection rules: manual and disabled entries
+stay skipped, denylisted entries stay skipped unless `--include-denylisted` is
+explicitly supplied, and platform-scoped entries unsupported on the current
+system stay skipped. When both categories are selected, each registered flake
+input is updated once through the registry and is omitted from the direct Nix
+input command. The denylist also protects direct flake inputs that have no
+registry entry.
+
+The all-input mode also leaves manual, disabled, and denylisted input entries
+out of the direct Nix command, and reports them as skipped. Selecting one of
+those entries explicitly fails with its policy instead of updating around the
+registry. `--include-denylisted` opts into denylisted inputs and entries only;
+it does not enable manual or disabled entries. Follow each manual entry's instructions in
+this document, including changing a reviewed fixed revision before refreshing
+its lock entry. `--dry-run` prints direct Nix commands and forwards the runner's
+dry-run option; it does not update pins. Outside update mode, `nrs --dry-run`
+continues to pass that option to `nh` for a rebuild preview.
 
 The same Tokitoki rebuild without the helper:
 

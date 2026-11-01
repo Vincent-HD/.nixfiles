@@ -1679,15 +1679,18 @@ Purpose: determine whether a sandboxed application sees the host browser desktop
 ```bash
 systemctl --user show <unit>.service \
   -p LoadState -p UnitFileState -p ActiveState -p SubState \
-  -p Result -p FragmentPath -p DropInPaths
+  -p Result -p FragmentPath -p DropInPaths -p ExecStart -p WantedBy -p PartOf
 systemctl --user status <unit>.service --no-pager -l
 journalctl --user -u <unit>.service --since '24 hours ago' --no-pager
-readlink -f /run/current-system
+readlink -f "$HOME/.config/systemd/user/<unit>.service"
+systemctl --user status graphical-session.target --no-pager
+systemctl --user show graphical-session.target -p ActiveState -p Wants -p Requires
+nix eval --json ".#nixosConfigurations.${HOST}.config.home-manager.users.${USER}.systemd.user.services.<unit>"
 rg --files /run/current-system/etc/systemd/user /etc/systemd/user ~/.config/systemd/user \
   | grep -F '/<unit>.service'
 ```
 
-Purpose: distinguish a crashed service from a missing or dangling generated unit, and compare the live system generation with the checked-out Nix configuration. If the unit exists under `/etc/systemd/user` but is still `not-found`, inspect `~/.config/systemd/user/<unit>.service`: a dangling per-user symlink there shadows the valid system unit.
+Purpose: distinguish a crashed service from a missing or dangling generated unit, check whether a graphical-session dependency is active, and compare the loaded unit with its Home Manager declaration. If the unit exists under `/etc/systemd/user` but is still `not-found`, inspect `~/.config/systemd/user/<unit>.service`: a dangling per-user symlink there shadows the valid system unit. An active service with an empty application-level account or job list points to application setup rather than systemd startup.
 
 ## Session-Specific / Less Reusable Commands
 

@@ -87,6 +87,8 @@
           "https://nix-community.cachix.org"
           "https://cachix.cachix.org"
           "https://niri.cachix.org"
+          # Rebuilt CachyOS kernel cache; the old Attic endpoint was compromised.
+          "https://cache.lantian.pub/lantian"
         ];
         extra-trusted-public-keys = [
           "codex-cli.cachix.org-1:1Br3H1hHoRYG22n//cGKJOk3cQXgYobUel6O8DgSing="
@@ -98,6 +100,7 @@
           "nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs="
           "cachix.cachix.org-1:eWNHQldwUO7G2VkjpnjDbWwy4KQ/HNxht7H4SSoMckM="
           "niri.cachix.org-1:Wv0OmO7PsuocRKzfDoJ3mulSl7Z6oezYhGhR+3W2964="
+          "lantian:WVGO7vsRMSEN+h7Lp7kv6SAmrkEXgUGbbXm7jMDjBuQ="
         ];
       };
 

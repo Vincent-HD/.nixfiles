@@ -13,6 +13,7 @@ in
       nixos.dms
       nixos.graphics
       nixos.sound
+      nixos.bluetooth
       nixos.wifiAudioStreaming
       nixos.memoryPressure
       nixos.coding
