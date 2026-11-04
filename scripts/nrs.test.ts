@@ -13,7 +13,6 @@ type Fixture = {
   nixLog: string;
   nixEnvironmentLog: string;
   nhLog: string;
-  nhEnvironmentLog: string;
 };
 
 const nrsScriptPath =
@@ -35,7 +34,6 @@ async function createFixture(): Promise<Fixture> {
   const nixLog = join(root, "nix-argv.log");
   const nixEnvironmentLog = join(root, "nix-environment.log");
   const nhLog = join(root, "nh-argv.log");
-  const nhEnvironmentLog = join(root, "nh-environment.log");
 
   await mkdir(join(flakeRoot, "scripts"), { recursive: true });
   await mkdir(callerDirectory, { recursive: true });
@@ -110,8 +108,6 @@ async function createFixture(): Promise<Fixture> {
       `#!${bashExecutable}`,
       'printf \'%s\\0\' "$@" >> "$NRS_NH_ARGV_LOG"',
       "printf '\\0' >> \"$NRS_NH_ARGV_LOG\"",
-      'printf \'%s\\0\' "${NRS_Z_CODE:-}:${NRS_T3_USAGE:-}:${NRS_T3_JJ:-}:${NRS_T3_TEMPORARY:-}" >> "$NRS_NH_ENV_LOG"',
-      "printf '\\0' >> \"$NRS_NH_ENV_LOG\"",
       "",
     ].join("\n"),
   );
@@ -125,7 +121,6 @@ async function createFixture(): Promise<Fixture> {
     nixLog,
     nixEnvironmentLog,
     nhLog,
-    nhEnvironmentLog,
   };
 }
 
@@ -151,7 +146,6 @@ async function runNrs(args: string[]) {
     writeFile(fixture.nixLog, ""),
     writeFile(fixture.nixEnvironmentLog, ""),
     writeFile(fixture.nhLog, ""),
-    writeFile(fixture.nhEnvironmentLog, ""),
   ]);
   const result = Bun.spawn(["bash", nrsScriptPath, ...args], {
     cwd: fixture.callerDirectory,
@@ -164,7 +158,6 @@ async function runNrs(args: string[]) {
       NRS_NIX_ARGV_LOG: fixture.nixLog,
       NRS_NIX_ENV_LOG: fixture.nixEnvironmentLog,
       NRS_NH_ARGV_LOG: fixture.nhLog,
-      NRS_NH_ENV_LOG: fixture.nhEnvironmentLog,
     },
     stdout: "pipe",
     stderr: "pipe",
@@ -414,11 +407,11 @@ describe("nrs update interface", () => {
     }
   });
 
-  test("keeps existing rebuild arguments and T3 overrides on the nh switch path", async () => {
+  test("rejects removed T3 Code patch overrides before calling nh", async () => {
     const result = await runNrs(["--no-t3-usage", "--dry-run", "--ask"]);
-    expect(result.exitCode).toBe(0);
-    expect(await readGroups(fixture.nhLog)).toEqual([["os", "switch", "--dry-run", "--ask", "--impure"]]);
-    expect(await readGroups(fixture.nhEnvironmentLog)).toEqual([["0:0::"]]);
+    expect(result.exitCode).toBe(2);
+    expect(result.stderr).toContain("T3 Code patch overrides were removed");
+    expect(await readGroups(fixture.nhLog)).toEqual([]);
     expect(await readGroups(fixture.nixLog)).toEqual([]);
   });
 

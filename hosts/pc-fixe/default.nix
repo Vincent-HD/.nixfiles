@@ -41,13 +41,6 @@ in
         # we indicate to HM to rename the old file to ".hm-backup" first, then install the managed one.
         home-manager.backupFileExtension = "hm-backup";
         home-manager.users.${username} = {
-          # Use the reviewed Z Code fork; `nrs --no-z-code` selects the upstream fallback.
-          custom.t3code.enableZCode = true;
-          # Keep the upstream patch build ready as a one-switch fallback.
-          custom.t3code.enableUsagePatch = true;
-          custom.t3code.enableJjPanel = true;
-          # Offer temporary conversations with a confirmation before leaving.
-          custom.t3code.enableTemporaryThreads = true;
           imports = [
             #hm.plasma
             hm.cursorPointer

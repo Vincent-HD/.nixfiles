@@ -1,10 +1,12 @@
 .hey-wake-up {
     display: none;
     flex: none;
+    order: 1;
     margin-left: 4px;
 }
 
 [class*="voiceUser_"]:hover .hey-wake-up,
+[class*="listDefault_"] [class*="clickable_"]:hover .hey-wake-up,
 .hey-wake-up-sending,
 .hey-wake-up-sent,
 .hey-wake-up-failed {

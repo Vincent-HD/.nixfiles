@@ -87,26 +87,9 @@ in
           let
             extendLinux = modules: inputs.self.nixosConfigurations.pc-fixe.extendModules { inherit modules; };
             moonshine = extendLinux [ inputs.self.modules.nixos.moonshine ];
-            noctalia = extendLinux [
-              inputs.self.modules.nixos.noctalia
-              {
-                home-manager.users.vincent.imports = [
-                  inputs.self.modules.homeManager.noctalia
-                  inputs.self.modules.homeManager."noctalia-plugins-dependencies"
-                ];
-              }
-            ];
-            plasma = extendLinux [
-              inputs.self.modules.nixos.plasma
-              {
-                home-manager.users.vincent.imports = [ inputs.self.modules.homeManager.plasma ];
-              }
-            ];
           in
           mkEvaluationCheck "fallback-evaluations.json" {
             moonshine = moonshine.config.system.build.toplevel.drvPath;
-            noctalia = noctalia.config.system.build.toplevel.drvPath;
-            plasma = plasma.config.system.build.toplevel.drvPath;
           };
 
         persist-dms-tests =

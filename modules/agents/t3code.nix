@@ -20,37 +20,12 @@
       system = pkgs.stdenv.hostPlatform.system;
       isLinux = pkgs.stdenv.hostPlatform.isLinux;
       isX86_64Linux = system == "x86_64-linux";
-      zCodeEnabled = config.custom.t3code.enableZCode;
-      t3codeBasePackage = inputs.self.packages.${system}.t3code;
-      zCodePackage =
+      # The fork package exists only for x86_64 Linux. Darwin keeps the signed upstream bundle.
+      t3codePackage =
         if isX86_64Linux then
           inputs.self.packages.${system}.z-code
         else
-          throw "The Z Code fork package currently supports x86_64 Linux only.";
-      patchedT3codePackage =
-        if config.custom.t3code.enableTemporaryThreads then
-          let
-            patchedWeb = pkgs.callPackage ../../packages/t3code-web {
-              enableUsagePatch = config.custom.t3code.enableUsagePatch;
-              enableJjPanel = config.custom.t3code.enableJjPanel;
-              enableTemporaryThreads = true;
-            };
-          in
-          pkgs.callPackage ../../packages/t3code-patched {
-            t3code = t3codeBasePackage;
-            t3code-web = patchedWeb;
-            enableUsagePatch = config.custom.t3code.enableUsagePatch;
-            enableJjPanel = config.custom.t3code.enableJjPanel;
-          }
-        else if config.custom.t3code.enableUsagePatch && config.custom.t3code.enableJjPanel then
-          inputs.self.packages.${system}.t3code-patched
-        else if config.custom.t3code.enableJjPanel then
-          inputs.self.packages.${system}.t3code-jj
-        else if config.custom.t3code.enableUsagePatch then
-          inputs.self.packages.${system}.t3code-usage
-        else
-          t3codeBasePackage;
-      t3codePackage = if zCodeEnabled then zCodePackage else patchedT3codePackage;
+          inputs.self.packages.${system}.t3code;
       t3codeVersion = t3codePackage.version or t3codePackage.upstreamVersion;
       cursorAgentPackage = inputs.self.packages.${system}.cursor-agent;
       codexPackage = if isLinux then inputs.self.packages.${system}.codex else null;
@@ -86,7 +61,7 @@
         nativeBuildInputs = [ pkgs.makeWrapper ];
         postBuild = ''
           wrapProgram "$out/bin/t3code" --set T3CODE_DISABLE_AUTO_UPDATE true --prefix PATH : "${lib.makeBinPath providerPackages}:${config.home.profileDirectory}/bin" ${extraWrap}
-          ${lib.optionalString zCodeEnabled ''
+          ${lib.optionalString isX86_64Linux ''
             # Route every fork launcher through the same managed T3 Code wrapper.
             rm -f "$out/bin/zcode" "$out/bin/z-code"
             ln -s t3code "$out/bin/zcode"
@@ -96,59 +71,7 @@
       };
     in
     {
-      options.custom.t3code.enableZCode = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-        description = "Use the pinned Z Code fork on x86_64 Linux; `nrs --no-z-code` selects upstream T3 Code for one switch.";
-      };
-      options.custom.t3code.enableUsagePatch = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-        description = "Include the composer usage patch in the Linux upstream fallback. `nrs --no-t3-usage` selects the fallback and drops this patch for one switch.";
-      };
-      options.custom.t3code.enableJjPanel = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-        description = "Include the Jujutsu panel and matching server in the Linux upstream fallback. `nrs --no-t3-jj` selects the fallback and drops this patch for one switch.";
-      };
-      options.custom.t3code.enableTemporaryThreads = lib.mkOption {
-        type = lib.types.bool;
-        default = false;
-        description = "Include the temporary conversations patch in the Linux upstream fallback. `nrs --no-t3-temporary` selects the fallback and drops this patch for one switch.";
-      };
-
       config = {
-        # `nrs` exports these for one impure switch. Empty keeps the host value.
-        custom.t3code.enableZCode = lib.mkIf (isLinux && builtins.getEnv "NRS_Z_CODE" != "") (
-          lib.mkOverride 90 (builtins.getEnv "NRS_Z_CODE" != "0")
-        );
-        custom.t3code.enableUsagePatch = lib.mkIf (isLinux && builtins.getEnv "NRS_T3_USAGE" != "") (
-          lib.mkOverride 90 (builtins.getEnv "NRS_T3_USAGE" != "0")
-        );
-        custom.t3code.enableJjPanel = lib.mkIf (isLinux && builtins.getEnv "NRS_T3_JJ" != "") (
-          lib.mkOverride 90 (builtins.getEnv "NRS_T3_JJ" != "0")
-        );
-        custom.t3code.enableTemporaryThreads = lib.mkIf (
-          isLinux && builtins.getEnv "NRS_T3_TEMPORARY" != ""
-        ) (lib.mkOverride 90 (builtins.getEnv "NRS_T3_TEMPORARY" != "0"));
-        assertions = [
-          {
-            assertion = !zCodeEnabled || isX86_64Linux;
-            message = "The Z Code fork package currently supports x86_64 Linux only.";
-          }
-          {
-            assertion = !config.custom.t3code.enableUsagePatch || isLinux;
-            message = "The T3 Code usage patch currently supports Linux only.";
-          }
-          {
-            assertion = !config.custom.t3code.enableJjPanel || isLinux;
-            message = "The T3 Code Jujutsu panel currently supports Linux only.";
-          }
-          {
-            assertion = !config.custom.t3code.enableTemporaryThreads || isLinux;
-            message = "The T3 Code temporary conversations patch currently supports Linux only.";
-          }
-        ];
         # Merge declared preferences into writable files so UI edits remain possible.
         programs.t3code = {
           enable = true;
@@ -197,8 +120,8 @@
         };
 
         xdg.desktopEntries.t3code = lib.mkIf isLinux {
-          name = if zCodeEnabled then "zcode" else "T3 Code (Nightly)";
-          comment = if zCodeEnabled then "Z Code desktop build" else "T3 Code desktop build";
+          name = if isX86_64Linux then "zcode" else "T3 Code (Nightly)";
+          comment = if isX86_64Linux then "Z Code desktop build" else "T3 Code desktop build";
           exec = "t3code %U";
           # Read the icon from the selected package so it matches its extracted AppImage.
           icon = "${t3codePackage.extracted}/usr/share/icons/hicolor/512x512/apps/t3code.png";

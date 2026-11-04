@@ -1,6 +1,7 @@
 # JJ View feature inventory and comparison with the T3 Jujutsu panel
 
 Research date: 2026-10-13. The comparisons below describe the panel before expansion.
+The local patch files cited below were removed; the panel now lives in the pinned Z Code fork.
 On 2026-10-14 the user selected A3, A4, B2–B5, C1, C2, C4, C5, D1–D6 and E1–E4.
 See the [current feature contract][t3-contract] for the resulting scope and limitations.
 

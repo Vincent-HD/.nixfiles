@@ -6,7 +6,6 @@
   undmg,
   bun,
   updateScriptZod,
-  nix-update,
 }:
 
 let
@@ -52,7 +51,6 @@ let
       (lib.getExe bun)
       "${../..}/packages/t3code/update.ts"
       "${updateScriptZod}/index.js"
-      (lib.getExe nix-update)
     ];
   };
 in

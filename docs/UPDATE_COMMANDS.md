@@ -242,7 +242,7 @@ nix run github:Mic92/nix-update -- --flake cursor-agent --use-update-script
 - **File**: `packages/t3code/default.nix`
 - **Pattern**: Linux AppImage via `appimageTools.wrapType2`; macOS DMG via `undmg`
 - **Flake output**: `.#t3code`
-- **Note**: This tracks GitHub nightly prereleases, not stable tags. The update script refreshes Linux and both macOS artifacts, then uses nix-update to refresh `packages/t3code-web/default.nix` (shared renderer/server source and Linux dependency closure). It does not build the app. The Linux custom package variants share these pins, owned by the existing `t3code` registry entry.
+- **Note**: This tracks GitHub nightly prereleases, not stable tags. The update script refreshes the Linux AppImage and both macOS artifacts. It does not build the app. Linux installs the pinned Z Code fork instead of this package; macOS keeps this signed bundle.
 - **Configuration**: `modules/agents/t3code.nix` uses Home Manager mutable settings and the existing Codex home. The desktop wrapper disables upstream auto-updates; this command and the subsequent rebuild own nightly upgrades. Close T3 and back up `~/.t3` before upgrading persistent state; restore that backup along with the old package when rolling back.
 
 Provider CLIs are managed separately from the T3 application. The Home Manager
@@ -304,84 +304,17 @@ nix run github:Mic92/nix-update -- --flake t3code --use-update-script
 
 The Z Code integration targets x86_64 Linux and is pinned to reviewed fork commit
 `4cf4257f893f7688127915d28f23ee498f741449` on branch `z-code`, based on upstream
-`v0.1.7-nightly.20261031.3991`. The Linux host enables
-`custom.t3code.enableZCode`; build the exposed fork package with
-`nix build .#z-code --no-link`. The Home Manager module selects that same package output,
-which uses nixfiles' pinned package set. The `z-code-source` and `z-code` outputs resolve from
-the locked GitHub input and do not depend on a local checkout. Linux host evaluation does not
-instantiate the fork package when Z Code is disabled, so `nrs --no-z-code` selects the upstream
-T3 Code fallback.
+`v0.1.7-nightly.20261031.3991`. Linux installs that package. Build it with
+`nix build .#z-code --no-link`. The Home Manager module selects the same output
+and uses nixfiles' pinned package set. The `z-code-source` and `z-code` outputs resolve from
+the locked GitHub input and do not depend on a local checkout.
 
 The Home Manager wrapper routes all three executable names (`t3code`, `zcode`, and `z-code`)
 through the same managed launcher, including its provider `PATH` and the
-`T3CODE_DISABLE_AUTO_UPDATE=true` setting. The desktop icon comes from the selected package's
+`T3CODE_DISABLE_AUTO_UPDATE=true` setting. The desktop icon comes from the fork package's
 extracted AppImage. The desktop entry remains `t3code` and keeps the `t3code` URL schemes and
 window class to preserve the existing T3 profile and session identity. macOS continues using the
-signed upstream bundle.
-
-The Linux host selects Z Code by default. Its upstream T3 Code fallback remains pinned to
-`v0.1.2-nightly.20261022.3541` and uses the local
-patch settings `custom.t3code.enableUsagePatch`, `custom.t3code.enableJjPanel`, and
-`custom.t3code.enableTemporaryThreads` in `hosts/pc-fixe/default.nix`. Selecting the
-fallback with `nrs --no-z-code` builds and installs those patches under
-`packages/t3code-web/patches/`.
-The Z Code nightly includes database migrations `068` and `069` that are absent from
-the fallback version. In an isolated synthetic database smoke test, the app started
-on each step of `0.1.2` → `0.1.3` → `0.1.2`; after returning to `0.1.2`, SQLite
-integrity passed and the test marker remained. The old version logged warnings about
-unknown migrations `068` and `069`. This test did not cover the currently pinned nightly and does not establish compatibility with
-populated user data, cookies, or the OS keyring, or establish rollback safety. Preserve
-a pre-upgrade backup if returning to the older package may be necessary.
-Patch application uses `--fuzz=0`: context drift fails the build rather than dropping
-context lines. See the [patch repair guide and feature contracts](../packages/t3code-web/patches/README.md)
-for intended behavior, integration points, focused tests and manual acceptance checks.
-No automatic candidate-validation gate is installed.
-Restart T3 Code to load it. Compact footer chips open click popovers for session
-statistics, token usage, context usage, and account quotas. Session totals cover
-available completed main-agent turns in the active provider session; last-response counts
-remain visible in the token card. Throughput divides output tokens for the last
-completed turn by its whole duration, including tools and waits;
-it is not a measurement of model generation speed. Missing provider data is
-shown as unavailable. Token counts use compact K/M/B/T suffixes for thousands,
-millions, billions, and trillions. Click for exact counts, timestamps, reset times,
-cached and reasoning tokens. Overlapping tool calls count once in tool time.
-Completed agent responses also show a turn-usage chip beside their timestamp.
-API-equivalent cost estimates use current `https://models.dev/api.json` rates,
-cached for one hour, and each turn's recorded model/options. Cache reads/writes
-and reasoning subsets are counted once. Missing cache/context details have
-explicit assumptions; unknown model rates remain unpriced, and partial sessions
-show their priced-turn coverage. Canonical-model fallback pricing is identified
-for custom providers. These estimates are separate from subscription charges.
-Provider-reported cost, when available, is shown separately. TTFT and the
-system-prompt/tool/message context breakdown remain unavailable because the
-current contracts do not report them.
-
-The Jujutsu tab lives in the chat's right-panel add menu. It shows the current
-working copy and up to ten preceding revisions in compact rows. Only the working
-copy starts expanded; click a revision row to show its changed files. Description
-editors open on demand, with squash into an ancestor and undo of the panel's own
-most recent action. It uses the thread workspace and never initializes a repository
-automatically.
-
-Patch options apply to the upstream T3 Code fallback. For a one-switch fallback that
-keeps the host's patch settings, run `nrs --no-z-code`. To isolate a Jujutsu panel
-failure while keeping the footer, run `nrs --no-t3-jj`; it disables Z Code and the
-Jujutsu patch for that rebuild. For a persistent fallback configuration, also set
-`custom.t3code.enableZCode = false;` in the host, then set the patch option you want
-to disable (for example, `custom.t3code.enableJjPanel = false;`) and switch again.
-`nrs --no-t3` disables every local patch and selects the untouched upstream AppImage
-without selecting the fork package.
-macOS keeps the original signed bundle. The desktop and renderer versions must
-match; an upstream release that changes the patched source may require rebasing
-the patch before re-enabling it.
-
-```bash
-nix build .#t3code-all --no-link     # all three patches
-nix build .#t3code-patched --no-link # footer and Jujutsu
-nix build .#t3code-usage --no-link   # footer only
-nix build .#t3code-jj --no-link      # Jujutsu only
-nix build .#t3code-temporary --no-link # temporary conversations only
-```
+signed upstream bundle from `.#t3code`.
 
 ### plannotator
 
@@ -512,21 +445,13 @@ lists and updates the configured flake's Nix inputs and `update-pins` registry.
 Update commands use the local flake directory from `NH_FLAKE` (set by this
 configuration); when that variable is unset they use `~/.nixfiles`, so they work
 from any current directory. Rebuild commands remain the same. Point one rebuild
-at a local Tokitoki checkout, or override the T3 Code selection for that switch
-only:
+at a local Tokitoki checkout:
 
 ```bash
-nrs                              # pinned inputs, host patch selection
+nrs                              # pinned inputs
 nrs --tokitoki                   # ~/lab/tokitoki
 nrs --tokitoki ~/src/tokitoki    # another checkout
-nrs --no-z-code                  # upstream T3 Code with host-selected local patches
-nrs --no-t3                      # untouched upstream T3 Code, no local patches or Z Code
-nrs --no-t3-usage                # upstream fallback without the composer usage patch
-nrs --no-t3-jj                   # upstream fallback without the Jujutsu panel
-nrs --no-t3-temporary            # upstream fallback without temporary conversations
 ```
-
-Each `--no-t3-*` switch disables Z Code and the corresponding upstream patch for that rebuild.
 
 List and update pins with:
 

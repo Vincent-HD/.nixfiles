@@ -114,13 +114,12 @@ export default definePlugin({
     patches: [{
         find: ".VOICE_PANEL}}",
         replacement: {
-            // Append to the same icon list as the mute and deafen indicators.
-            match: /user:(\i).*?\.EMBEDDED.{0,25};(?=return 0!==(\i)\.length)/,
-            replace: "$&$self.addButton($2,$1);"
+            match: /\}\),children:\[(?=.{0,50}#{intl::PRIORITY_SPEAKER})/,
+            replace: "$&$self.renderButton(arguments[0]?.user),"
         }
     }],
-    addButton(icons: React.ReactNode[], user: User) {
-        if (!user || user.id === UserStore.getCurrentUser()?.id || user.bot) return;
-        icons.push(<WakeButton key="hey-wake-up" user={user} />);
+    renderButton(user: User) {
+        if (!user || user.id === UserStore.getCurrentUser()?.id || user.bot) return null;
+        return <WakeButton user={user} />;
     }
 });
