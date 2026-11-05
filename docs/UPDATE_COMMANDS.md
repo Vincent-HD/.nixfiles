@@ -303,7 +303,7 @@ nix run github:Mic92/nix-update -- --flake t3code --use-update-script
   The command is registered in `scripts/update-pins.json` as a disabled flake-input update, so routine bulk updates cannot move the fork. After editing the URL, verify the resulting lock revision is exactly the reviewed commit and build `.#z-code` before accepting the update. Do not use a moving branch or tag for this input.
 
 The Z Code integration targets x86_64 Linux and is pinned to reviewed fork commit
-`4cf4257f893f7688127915d28f23ee498f741449` on branch `z-code`, based on upstream
+`3b6cb3857f21bc410809a954a319c44651bd33c8` on branch `z-code`, based on upstream
 `v0.1.7-nightly.20261031.3991`. Linux installs that package. Build it with
 `nix build .#z-code --no-link`. The Home Manager module selects the same output
 and uses nixfiles' pinned package set. The `z-code-source` and `z-code` outputs resolve from
