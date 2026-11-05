@@ -951,17 +951,17 @@
     "z-code": {
       "flake": false,
       "locked": {
-        "lastModified": 1793886952,
-        "narHash": "sha256-Z4zOryHls4J3w5i13x5EqIT0n0x6TOvMCB7hL/I0u+A=",
+        "lastModified": 1793889388,
+        "narHash": "sha256-pjOpmPsA3VhZgE7daY4J69Ghs128ohiBcoRcNKpU5t8=",
         "owner": "Vincent-HD",
         "repo": "zcode",
-        "rev": "3b6cb3857f21bc410809a954a319c44651bd33c8",
+        "rev": "148bebf1679643168e3fde4c5c11aa91525dbc92",
         "type": "github"
       },
       "original": {
         "owner": "Vincent-HD",
         "repo": "zcode",
-        "rev": "3b6cb3857f21bc410809a954a319c44651bd33c8",
+        "rev": "148bebf1679643168e3fde4c5c11aa91525dbc92",
         "type": "github"
       }
     }
