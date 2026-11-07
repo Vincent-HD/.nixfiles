@@ -1,7 +1,7 @@
 { inputs, ... }:
 let
-  # Upstream now opens each plugin's settings directly from the widget row.
-  dmsShellPackage = pkgs: inputs.dms.packages.${pkgs.stdenv.hostPlatform.system}.dms-shell;
+  # Use the release CLI with the matching upstream Nix and QML integration.
+  dmsShellPackage = pkgs: inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.dms-prebuilt;
 in
 {
   # NixOS: install the DMS integration and the services used by its session,

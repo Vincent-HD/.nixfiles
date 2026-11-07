@@ -1033,6 +1033,17 @@ Purpose: verify that a supervised stdio MCP child is reachable through its local
 
 ## NixOS Host Evaluation
 
+### Check whether an application uses Wayland layer shell
+
+```bash
+WAYLAND_DEBUG=client <application> 2> /tmp/wayland-client.log
+rg 'wl_display|zwlr_layer_shell_v1|zwlr_layer_surface_v1' /tmp/wayland-client.log
+```
+
+Use an isolated test profile when the application enforces a single instance. A compositor's
+window list or XWayland logs can separately reveal an unexpected X11 fallback. Wayland protocol
+logs may contain application data, so treat them as private.
+
 ### Build a host while bypassing an unavailable configured substituter
 
 ```bash

@@ -80,10 +80,14 @@
         };
         arch-ops-server = pkgs.callPackage ../packages/arch-ops-server { };
         codeburn = pkgs.callPackage ../packages/codeburn { };
+        equicord-prebuilt = pkgs.callPackage ../packages/equicord-prebuilt { };
         cursor-agent = unfreePkgs.callPackage ../packages/cursor-agent {
           updateScriptZod = updateScriptZod;
         };
         executor = pkgs.callPackage ../packages/executor {
+          updateScriptZod = updateScriptZod;
+        };
+        handy = pkgs.callPackage ../packages/handy {
           updateScriptZod = updateScriptZod;
         };
         jj-ryu = pkgs.callPackage ../packages/jj-ryu {
@@ -111,6 +115,10 @@
         bitwarden-secret-tools = bwSecretTools;
       }
       // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
+        dms-prebuilt = pkgs.callPackage ../packages/dms-prebuilt {
+          dmsFlake = inputs.dms;
+          updateScriptZod = updateScriptZod;
+        };
         codex = pkgs.callPackage ../packages/codex { };
         cpuid-fault-emulation = pkgs.callPackage ../packages/cpuid-fault-emulation { };
         curseforge = unfreePkgs.callPackage ../packages/curseforge { };
@@ -119,7 +127,9 @@
         dankmail = pkgs.callPackage ../packages/dankmail { };
         droidcam-client = pkgs.callPackage ../packages/droidcam-client { };
         gamescope-lanczos = pkgs.callPackage ../packages/gamescope-lanczos { };
-        lsfg-vk = unfreePkgs.callPackage ../packages/lsfg-vk { };
+        lsfg-vk = unfreePkgs.callPackage ../packages/lsfg-vk {
+          updateScriptZod = updateScriptZod;
+        };
         persist-dms = mkBunRunner "persist-dms" ../scripts/persist-dms.ts;
         gpu-burn = cudaPkgs.gpu-burn;
       }

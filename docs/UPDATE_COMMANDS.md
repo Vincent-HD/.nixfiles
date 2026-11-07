@@ -59,6 +59,16 @@ These packages use pinned sources and are wired so `nix-update` can bump version
 nix run github:Mic92/nix-update -- --flake droidcam-client --use-github-releases --version-regex 'droidcam-(.*)'
 ```
 
+### handy
+
+- **File**: `packages/handy/default.nix`
+- **Platforms**: `x86_64-linux`, `aarch64-darwin`
+- **Updater**: Refreshes both prebuilt GitHub release artifacts together.
+
+```bash
+nix run github:Mic92/nix-update -- --flake handy --use-update-script
+```
+
 ### wifi-audio-streaming
 
 - **File**: `packages/wifi-audio-streaming/default.nix`
@@ -216,11 +226,12 @@ nix run github:Mic92/nix-update -- --flake dankmail --use-github-releases
 ### lsfg-vk
 
 - **File**: `packages/lsfg-vk/default.nix`
-- **Pattern**: locally packaged v2 source from the official `git.lsfg-vk.dev` forge, pinned to an immutable revision
+- **Pattern**: official prebuilt release containing both 64-bit and 32-bit Vulkan layers
 - **Flake output**: `.#lsfg-vk`
 - **Platform**: `x86_64-linux`
 - **Important**: LSFG-VK v2 is licensed CC BY-NC-ND 4.0 and is evaluated through the repository's unfree package set. Keep builds local; do not publish the result to a public or commercial binary cache.
-- **Note**: The package-specific updater discovers the newest stable v2 release tag from the official forge, deliberately ignores release candidates, resolves annotated tags to their commit, prefetches the source hash, and updates the version, revision, and hash together.
+- **Note**: The updater discovers the latest stable release from the official build server and refreshes its archive hash.
+- **Runtime**: The upstream CLI's `healthcheck` searches `/usr` and `/usr/local`, so it can report missing files on NixOS even when the Vulkan loader finds both installed layers.
 
 ```bash
 nix run github:Mic92/nix-update -- --flake lsfg-vk --use-update-script
@@ -423,10 +434,11 @@ nix eval --raw '.#nixosConfigurations.pc-fixe.config.specialisation.stock.config
 
 - **File**: `flake.nix`
 - **Why**: Provides the DankMaterialShell stable branch and its Nix/Home Manager modules.
-- **How**: Refresh the stable input, then re-run the NixOS evaluation and DMS build.
+- **How**: Update the release binaries for both Linux architectures and the matching stable flake input together. The updater rejects mismatched commits and restores the prior lock file.
+- **Note**: The independent `dms` flake-input entry is disabled; use the coupled updater so the release CLI and the upstream QML/modules remain in sync. A plain `nix flake update dms` can make the package build fail until the coupled updater is run.
 
 ```bash
-nix flake update dms
+nix run github:Mic92/nix-update -- --flake dms-prebuilt --use-update-script
 ```
 
 ### tokitoki
@@ -654,3 +666,11 @@ The executable is installed by the shared Home Manager command-line module,
 and `programs.git.lfs.enable` provides clone-time hydration on both hosts.
 Publishing a revision containing LFS pointers must also upload its LFS objects;
 that happens on a normal Git push with the installed LFS hook.
+
+## Equicord prebuilt
+
+Update the official Equicord release used by Equibop with:
+
+```sh
+nix run github:Mic92/nix-update -- --flake equicord-prebuilt --use-github-releases --version-regex '^(\d{4}-\d{2}-\d{2})$'
+```

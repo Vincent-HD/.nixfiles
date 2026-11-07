@@ -47,6 +47,9 @@
       # Required by libei-based input capture (Deskflow, fcitx5, etc.).
       systemd.user.services.xdg-desktop-portal.serviceConfig.Environment = "XDG_CURRENT_DESKTOP=gnome";
 
+      # The game-only LSFG-VK layer fails to load in the screen-sharing portal.
+      systemd.user.services.xdg-desktop-portal-gnome.serviceConfig.Environment = "DISABLE_LSFGVK=1";
+
       services.greetd = {
         enable = true;
       };
@@ -367,6 +370,12 @@
                 "vicinae"
                 "toggle"
               ];
+              # Wayland requires the compositor to handle Handy's global shortcut.
+              "Ctrl+Space".action.spawn = [
+                "handy"
+                "--toggle-transcription"
+              ];
+              "Ctrl+Space".repeat = false;
               "Mod+Tab".action.open-overview = [ ];
               "Mod+T".action.spawn = "ghostty";
               "Mod+Q".action.close-window = [ ];

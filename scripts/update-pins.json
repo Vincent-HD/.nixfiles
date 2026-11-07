@@ -4,6 +4,26 @@
   ],
   "updates": [
     {
+      "name": "equicord-prebuilt",
+      "type": "nix-update",
+      "description": "Official prebuilt Equicord for Equibop",
+      "systems": [
+        "aarch64-darwin",
+        "x86_64-linux"
+      ],
+      "command": [
+        "nix",
+        "run",
+        "github:Mic92/nix-update",
+        "--",
+        "--flake",
+        "equicord-prebuilt",
+        "--use-github-releases",
+        "--version-regex",
+        "^(\\d{4}-\\d{2}-\\d{2})$"
+      ]
+    },
+    {
       "name": "droidcam-client",
       "type": "nix-update",
       "description": "Current DroidCam Linux desktop client",
@@ -325,6 +345,13 @@
       ]
     },
     {
+      "name": "handy",
+      "type": "nix-update",
+      "description": "Handy speech-to-text releases for Linux and macOS",
+      "systems": ["x86_64-linux", "aarch64-darwin"],
+      "command": ["nix", "run", "github:Mic92/nix-update", "--", "--flake", "handy", "--use-update-script"]
+    },
+    {
       "name": "wifi-audio-streaming",
       "type": "nix-update",
       "description": "WiFi Audio Streaming desktop artifacts for Linux and macOS",
@@ -426,8 +453,16 @@
       ]
     },
     {
+      "name": "dms-prebuilt",
+      "type": "nix-update",
+      "description": "DMS release binaries and matching flake input",
+      "systems": ["x86_64-linux", "aarch64-linux"],
+      "command": ["nix", "run", "github:Mic92/nix-update", "--", "--flake", "dms-prebuilt", "--use-update-script"]
+    },
+    {
       "name": "dms",
       "type": "flake-input",
+      "enabled": false,
       "description": "DankMaterialShell stable branch and Nix/Home Manager modules",
       "command": [
         "nix",

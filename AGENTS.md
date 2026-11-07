@@ -1,5 +1,7 @@
 # nixfiles — Agent Guidelines
 
+Write repository documentation, reports, and other Markdown content in English.
+
 This is a Nix/NixOS/nix-darwin configuration repository for a single user (`vincent`) running on
 Linux (`pc-fixe`) and macOS (`macbook-pro`) hosts. The entire config is written in Nix using the
 **dendritic pattern**: every `.nix` file under `modules/` and `hosts/` is a flake-parts module,

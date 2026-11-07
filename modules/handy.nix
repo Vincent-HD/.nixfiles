@@ -1,9 +1,12 @@
-{ ... }:
+{ inputs, ... }:
 {
-  # Home Manager: offline speech transcription with Wayland text input on Linux.
+  # Install Handy's prebuilt release and Wayland text input support.
   config.flake.modules.homeManager.handy =
     { pkgs, lib, ... }:
     {
-      home.packages = [ pkgs.handy ] ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [ pkgs.wtype ];
+      home.packages = [
+        inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.handy
+      ]
+      ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [ pkgs.wtype ];
     };
 }
