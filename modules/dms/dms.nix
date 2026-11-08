@@ -64,6 +64,9 @@ in
         ffmpeg = pkgs.ffmpeg_8;
       };
       dmsPackage = dmsShellPackage pkgs;
+      dmsSettings = (builtins.fromJSON (builtins.readFile ./assets/generated-settings.json)) // {
+        calendarBackend = "dankcal";
+      };
       # Keep GitHub querying and alternate-token handling outside QML so the
       # token never appears in process arguments.
       githubPullRequestsCommand = pkgs.writeShellApplication {
@@ -121,10 +124,7 @@ in
 
         # persist-dms owns this generated file. It contains only settings that
         # differ from the DMS SettingsSpec defaults; plugin settings stay below.
-        settings = (builtins.fromJSON (builtins.readFile ./assets/generated-settings.json)) // {
-          # DMS 1.6's calendar backend value selects DankCalendar's dcal IPC service.
-          calendarBackend = "dankcal";
-        };
+        settings = dmsSettings;
 
         clipboardSettings = {
           disabled = false;
@@ -205,6 +205,17 @@ in
           };
         };
       };
+
+      # The repo stays the source of truth: persist-dms exports DMS's in-memory
+      # settings into generated-settings.json. Each activation replaces the live
+      # file with a writable copy, so DMS can save UI edits without permission
+      # errors and repo changes, including reverts, always reach DMS.
+      xdg.configFile."dms/settings.json".enable = lib.mkForce false;
+      home.activation.dmsSettings = lib.hm.dag.entryAfter [ "linkGeneration" ] ''
+        settingsFile="${config.xdg.configHome}/dms/settings.json"
+        run ${pkgs.coreutils}/bin/install -Dm644 ${pkgs.writeText "dms-settings.json" (builtins.toJSON dmsSettings)} "$settingsFile.tmp"
+        run ${pkgs.coreutils}/bin/mv -fT "$settingsFile.tmp" "$settingsFile"
+      '';
 
       # Merge defaults into the writable settings file without resetting values
       # entered in the GitHub widget, including its alternate approval token.

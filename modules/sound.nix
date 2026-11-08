@@ -5,7 +5,13 @@
     { pkgs, ... }:
     {
       services.pulseaudio.enable = false;
-      security.rtkit.enable = true;
+      security.rtkit = {
+        enable = true;
+        # RTKit caps its UID at three processes, but rootful Docker containers
+        # share host UIDs: dockurr/windows runs wsddn as UID 995, NixOS's rtkit
+        # UID. The watchdog thread then fails and portal D-Bus calls time out.
+        args = [ "--no-limit-resources" ];
+      };
 
       services.pipewire = {
         enable = true;

@@ -1465,6 +1465,37 @@ Purpose: check whether a user service is running and filter the current boot log
 
 Use when a Home Manager or NixOS-managed user service starts but fails at runtime.
 
+### Trace an audio scheduling or desktop portal timeout
+
+```bash
+systemctl status rtkit-daemon.service --no-pager -l
+RTKIT_PID=$(systemctl show --property=MainPID --value rtkit-daemon.service)
+cat "/proc/$RTKIT_PID/limits" | rg 'Max processes|Max open files'
+journalctl -b -u rtkit-daemon.service --no-pager
+journalctl --user -b -u xdg-desktop-portal.service --no-pager
+journalctl --user -b -u pipewire.service -u wireplumber.service --no-pager \
+  | rg -i 'rtkit|timeout|no reply|failed'
+journalctl -b -u rtkit-daemon.service -o verbose --no-pager | rg '_UID='
+for container in $(docker ps -q); do
+  docker top "$container" -eo uid,user,pid,comm | awk -v uid="$(id -u rtkit)" 'NR == 1 || $1 == uid'
+done
+```
+
+Purpose: correlate RTKit startup/resource-limit failures with desktop-portal and PipeWire
+timeouts, then find container processes that share RTKit's UID and consume its three-process
+limit. Agent sandboxes map unknown UIDs to 65534, so read RTKit's UID from the journal, not `ps`.
+
+### Compare configured Niri outputs with connected displays
+
+```bash
+niri msg outputs
+journalctl --user -b _COMM=niri --no-pager \
+  | rg -i 'configured mode|falling back|connector|connecting connector'
+```
+
+Purpose: confirm the connector names, available refresh rates, and fallback modes that Niri used
+for the current session.
+
 ### Validate a generated user unit and its drop-ins without starting it
 
 ```bash
