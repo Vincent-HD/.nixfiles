@@ -181,6 +181,8 @@
               include "recent-windows.kdl"
               include optional=true "dms/binds.kdl"
               include optional=true "dms/windowrules.kdl"
+              // DMS display settings own monitor modes, scales, positions, and on/off state.
+              include optional=true "dms/outputs.kdl"
 
               // Persistent destinations for DMS startup window rules.
               workspace "browser" {
@@ -257,51 +259,6 @@
           };
 
           xwayland-satellite.path = lib.getExe pkgs.xwayland-satellite;
-
-          # Niri defaults to each monitor's EDID "preferred" mode, which is often 60 Hz even when
-          # the panel supports 144/165 Hz. Plasma may have been using the high-refresh modes instead.
-          # Refresh values must match `niri msg outputs` exactly (see Available modes).
-          # Match by make/model/serial: connector names (DP-x) move between ports and boots.
-          outputs = {
-            # Dell AW3423DWF, 3440x1440 @ 164.9 Hz primary.
-            "Dell Inc. AW3423DWF JW542S3" = {
-              mode = {
-                width = 3440;
-                height = 1440;
-                refresh = 164.900;
-              };
-              position = {
-                x = 0;
-                y = 0;
-              };
-            };
-            # HP 27xq, 2560x1440 @ 143.856 Hz.
-            # Keep it directly next to the DELL so the KVM can stay 200 px beyond it.
-            "HP Inc. HP 27xq CNK9182GLP" = {
-              mode = {
-                width = 2560;
-                height = 1440;
-                refresh = 143.856;
-              };
-              position = {
-                x = 3440;
-                y = 0;
-              };
-            };
-            # NanoKVM-Pro, 3440x1440 @ 59.973 Hz support display for remote access.
-            # Keep it 200 px away from the HP.
-            "Philips Consumer Electronics Company NanoKVM-Pro 0x0000003F" = {
-              mode = {
-                width = 3440;
-                height = 1440;
-                refresh = 59.973;
-              };
-              position = {
-                x = 6200;
-                y = 0;
-              };
-            };
-          };
 
           environment = {
             # NixOS Chromium/Electron: prefer Ozone Wayland over XWayland. Niri applies this only to processes
