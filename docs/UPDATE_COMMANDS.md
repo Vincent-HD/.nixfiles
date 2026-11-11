@@ -302,7 +302,7 @@ nix run github:Mic92/nix-update -- --flake t3code --use-update-script
 
 - **File**: `flake.nix` (`z-code` input) and `flake.lock`
 - **Pattern**: GitHub source pinned to a reviewed full commit revision; the package uses nixfiles' existing `pkgs`
-- **Flake packages**: `.#z-code-source` (pinned source snapshot) and `.#z-code` (buildable fork package, x86_64 Linux only)
+- **Flake packages**: `.#z-code-source` (pinned source snapshot) and `.#z-code` (buildable fork package for x86_64 Linux and aarch64 Darwin)
 - **Source**: [Vincent-HD/zcode](https://github.com/Vincent-HD/zcode), branch `z-code`
 - **Update**: Choose and review an exact commit from the fork before changing the pin. Inspect the source diff and Nix packaging, then update only this input:
 
@@ -313,19 +313,20 @@ nix run github:Mic92/nix-update -- --flake t3code --use-update-script
 
   The command is registered in `scripts/update-pins.json` as a disabled flake-input update, so routine bulk updates cannot move the fork. After editing the URL, verify the resulting lock revision is exactly the reviewed commit and build `.#z-code` before accepting the update. Do not use a moving branch or tag for this input.
 
-The Z Code integration targets x86_64 Linux and is pinned to reviewed fork commit
-`148bebf1679643168e3fde4c5c11aa91525dbc92` on branch `z-code`, based on upstream
-`v0.1.8-nightly.20261105.4218`. Linux installs that package. Build it with
+The Z Code integration targets x86_64 Linux and Apple Silicon macOS and is pinned to reviewed fork
+commit `7a90eb01528d93bfd2d2a183147a25a0bc66e3bb` on branch `z-code`, based on upstream
+`v0.1.9-nightly.20261110.4478`. Both hosts install that package. Build it with
 `nix build .#z-code --no-link`. The Home Manager module selects the same output
 and uses nixfiles' pinned package set. The `z-code-source` and `z-code` outputs resolve from
 the locked GitHub input and do not depend on a local checkout.
 
 The Home Manager wrapper routes all three executable names (`t3code`, `zcode`, and `z-code`)
 through the same managed launcher, including its provider `PATH` and the
-`T3CODE_DISABLE_AUTO_UPDATE=true` setting. The desktop icon comes from the fork package's
+`T3CODE_DISABLE_AUTO_UPDATE=true` setting. On Linux, the desktop icon comes from the fork package's
 extracted AppImage. The desktop entry remains `t3code` and keeps the `t3code` URL schemes and
-window class to preserve the existing T3 profile and session identity. macOS continues using the
-signed upstream bundle from `.#t3code`.
+window class to preserve the existing T3 profile and session identity. On macOS, the fork repacks the
+upstream arm64 zip and re-signs it ad hoc, so the bundle no longer carries the upstream Developer ID
+signature.
 
 ### plannotator
 

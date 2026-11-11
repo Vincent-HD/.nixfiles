@@ -10,13 +10,10 @@
     let
       system = pkgs.stdenv.hostPlatform.system;
       isLinux = pkgs.stdenv.hostPlatform.isLinux;
-      isX86_64Linux = system == "x86_64-linux";
-      # The fork package exists only for x86_64 Linux. Darwin keeps the signed upstream bundle.
+      # The Z Code fork is packaged for x86_64 Linux and Apple Silicon macOS.
+      usesZCode = builtins.hasAttr "z-code" inputs.self.packages.${system};
       t3codePackage =
-        if isX86_64Linux then
-          inputs.self.packages.${system}.z-code
-        else
-          inputs.self.packages.${system}.t3code;
+        if usesZCode then inputs.self.packages.${system}.z-code else inputs.self.packages.${system}.t3code;
       t3codeVersion = t3codePackage.version or t3codePackage.upstreamVersion;
       cursorAgentPackage = inputs.self.packages.${system}.cursor-agent;
       codexPackage = if isLinux then inputs.self.packages.${system}.codex else null;
@@ -52,7 +49,7 @@
         nativeBuildInputs = [ pkgs.makeWrapper ];
         postBuild = ''
           wrapProgram "$out/bin/t3code" --set T3CODE_DISABLE_AUTO_UPDATE true --prefix PATH : "${lib.makeBinPath providerPackages}:${config.home.profileDirectory}/bin" ${extraWrap}
-          ${lib.optionalString isX86_64Linux ''
+          ${lib.optionalString usesZCode ''
             # Route every fork launcher through the same managed T3 Code wrapper.
             rm -f "$out/bin/zcode" "$out/bin/z-code"
             ln -s t3code "$out/bin/zcode"
@@ -111,8 +108,8 @@
         };
 
         xdg.desktopEntries.t3code = lib.mkIf isLinux {
-          name = if isX86_64Linux then "zcode" else "T3 Code (Nightly)";
-          comment = if isX86_64Linux then "Z Code desktop build" else "T3 Code desktop build";
+          name = if usesZCode then "zcode" else "T3 Code (Nightly)";
+          comment = if usesZCode then "Z Code desktop build" else "T3 Code desktop build";
           exec = "t3code %U";
           # Read the icon from the selected package so it matches its extracted AppImage.
           icon = "${t3codePackage.extracted}/usr/share/icons/hicolor/512x512/apps/t3code.png";

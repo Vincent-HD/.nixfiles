@@ -95,7 +95,7 @@ while [[ $# -gt 0 ]]; do
       fi
       ;;
     --no-z-code | --no-t3 | --no-t3-usage | --no-t3-jj | --no-t3-temporary)
-      fail "T3 Code patch overrides were removed; Linux uses the pinned Z Code fork"
+      fail "T3 Code patch overrides were removed; Linux and macOS use the pinned Z Code fork"
       ;;
     --)
       nh_separator_seen=1

@@ -133,11 +133,17 @@
         persist-dms = mkBunRunner "persist-dms" ../scripts/persist-dms.ts;
         gpu-burn = cudaPkgs.gpu-burn;
       }
-      # The fork package targets x86_64 Linux; Darwin keeps upstream T3 Code.
-      // lib.optionalAttrs (pkgs.stdenv.hostPlatform.system == "x86_64-linux") {
-        z-code-source = zCodeSourcePackage;
-        z-code = zCodePackage;
-      };
+      # The fork package repacks the upstream x86_64 Linux AppImage or arm64 macOS zip.
+      //
+        lib.optionalAttrs
+          (builtins.elem pkgs.stdenv.hostPlatform.system [
+            "x86_64-linux"
+            "aarch64-darwin"
+          ])
+          {
+            z-code-source = zCodeSourcePackage;
+            z-code = zCodePackage;
+          };
 
       # Keep local CLI builds on the same Bun and package-manager versions as Nix rebuilds.
       devShells.vtask = pkgs.mkShell {
