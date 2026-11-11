@@ -625,7 +625,7 @@
         "command": [
           "nix",
           "eval",
-          ".#darwinConfigurations.macbook-pro.system",
+          ".#darwinConfigurations.vincent-macbook-pro.system",
           "--raw"
         ]
       },
@@ -663,7 +663,7 @@
         "command": [
           "nix",
           "build",
-          ".#darwinConfigurations.macbook-pro.system",
+          ".#darwinConfigurations.vincent-macbook-pro.system",
           "--no-link"
         ]
       }

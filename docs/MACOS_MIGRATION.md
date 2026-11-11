@@ -8,7 +8,7 @@ snapshot or from the Nix configuration.
 
 The repository currently provides:
 
-- `darwinConfigurations.macbook-pro` for `aarch64-darwin`
+- `darwinConfigurations.vincent-macbook-pro` for `aarch64-darwin`
 - nix-darwin with integrated Home Manager
 - the same shared Zsh, coding, command-line, and agent configuration as Linux
 - Darwin-only OrbStack and JetBrains Toolbox paths in the shared shell module
@@ -107,17 +107,17 @@ Also inspect:
 ### 2. Inspect declarative owners
 
 ```bash
-nix eval .#darwinConfigurations.macbook-pro.config.homebrew.brews --json
-nix eval .#darwinConfigurations.macbook-pro.config.homebrew.casks --json
-nix eval .#darwinConfigurations.macbook-pro.config.homebrew.masApps --json
-nix eval .#darwinConfigurations.macbook-pro.config.home-manager.users.vincent.home.packages \
+nix eval .#darwinConfigurations.vincent-macbook-pro.config.homebrew.brews --json
+nix eval .#darwinConfigurations.vincent-macbook-pro.config.homebrew.casks --json
+nix eval .#darwinConfigurations.vincent-macbook-pro.config.homebrew.masApps --json
+nix eval .#darwinConfigurations.vincent-macbook-pro.config.home-manager.users.vincent.home.packages \
   --apply 'builtins.map (package: package.name or "")' --json
 ```
 
 Inspect the generated Brewfile before any activation:
 
 ```bash
-nix eval .#darwinConfigurations.macbook-pro.config.homebrew.brewfile --raw
+nix eval .#darwinConfigurations.vincent-macbook-pro.config.homebrew.brewfile --raw
 ```
 
 ### 3. Record decisions
@@ -362,7 +362,7 @@ None of that is stable enough to declare, so Raycast keeps ownership of its own 
 ### Verification
 
 ```bash
-nix eval .#darwinConfigurations.macbook-pro.config.system.defaults.CustomUserPreferences --json
+nix eval .#darwinConfigurations.vincent-macbook-pro.config.system.defaults.CustomUserPreferences --json
 defaults read com.knollsoft.Rectangle
 defaults read com.lwouis.alt-tab-macos
 defaults read com.pilotmoon.scroll-reverser
@@ -375,16 +375,16 @@ Before activation:
 ```bash
 nix fmt -- --ci
 nix flake check
-nix eval .#darwinConfigurations.macbook-pro.system --raw
-nix build .#darwinConfigurations.macbook-pro.system
-nix eval .#darwinConfigurations.macbook-pro.config.homebrew.brewfile --raw
+nix eval .#darwinConfigurations.vincent-macbook-pro.system --raw
+nix build .#darwinConfigurations.vincent-macbook-pro.system
+nix eval .#darwinConfigurations.vincent-macbook-pro.config.homebrew.brewfile --raw
 ```
 
 Apply conservatively on the Mac:
 
 ```bash
-darwin-rebuild build --flake .#macbook-pro
-sudo darwin-rebuild switch --flake .#macbook-pro
+darwin-rebuild build --flake .#vincent-macbook-pro
+sudo darwin-rebuild switch --flake .#vincent-macbook-pro
 ```
 
 Run the switch from the terminal emulator you normally use. Home Manager's app copying needs the

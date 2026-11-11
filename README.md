@@ -1,6 +1,6 @@
 # nixfiles
 
-Personal NixOS and macOS configuration for two machines, `pc-fixe` and `macbook-pro`, and a single
+Personal NixOS and macOS configuration for two machines, `pc-fixe` and `vincent-macbook-pro`, and a single
 user, `vincent`.
 
 This repository manages both system configuration and Home Manager configuration in one flake-based
@@ -9,7 +9,7 @@ other concerns each live in their own module.
 
 ## At a Glance
 
-- Hosts: `pc-fixe` (NixOS) and `macbook-pro` (nix-darwin)
+- Hosts: `pc-fixe` (NixOS) and `vincent-macbook-pro` (nix-darwin)
 - User: `vincent`
 - NixOS desktop: Niri + DankMaterialShell on NVIDIA; Plasma and Noctalia remain available as inactive alternatives
 - macOS platform: Apple Silicon with nix-darwin, Home Manager, and declarative Homebrew
@@ -233,7 +233,7 @@ sudo nixos-rebuild switch --flake .#pc-fixe
 Apply the macOS configuration:
 
 ```bash
-sudo darwin-rebuild switch --flake .#macbook-pro
+sudo darwin-rebuild switch --flake .#vincent-macbook-pro
 ```
 
 Test the configuration without making it the default boot target:

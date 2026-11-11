@@ -8,6 +8,12 @@ in
     {
       system.primaryUser = username;
 
+      # Keep the macOS host names aligned with the flake output so `nh darwin switch`
+      # selects darwinConfigurations."vincent-macbook-pro" without an explicit hostname.
+      networking.hostName = "vincent-macbook-pro";
+      networking.localHostName = "vincent-macbook-pro";
+      networking.computerName = "vincent-macbook-pro";
+
       users.users.${username} = {
         home = "/Users/${username}";
       };

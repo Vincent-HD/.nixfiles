@@ -5,7 +5,7 @@ let
   username = config.flake.username;
 in
 {
-  config.flake.darwinConfigurations."macbook-pro" = inputs.nix-darwin.lib.darwinSystem {
+  config.flake.darwinConfigurations."vincent-macbook-pro" = inputs.nix-darwin.lib.darwinSystem {
     modules = [
       darwin.macbookProConfiguration
       darwin.macosDefaults

@@ -113,7 +113,7 @@ in
       // pkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isDarwin {
         fallback-evaluations =
           let
-            homebrew = inputs.self.darwinConfigurations.macbook-pro.extendModules {
+            homebrew = inputs.self.darwinConfigurations.vincent-macbook-pro.extendModules {
               modules = [ inputs.self.modules.darwin.homebrew ];
             };
           in
