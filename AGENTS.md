@@ -38,7 +38,7 @@ modules/
   packages.nix                         # Standalone package and app outputs
   browser.nix                          # Brave (HM)
   equibop.nix                          # Equibop with Equicord settings and macOS cask
-  spotify.nix                          # Spotify (HM)
+  spotifast.nix                        # Spotifast (HM)
   bitwarden.nix                        # Bitwarden Desktop (HM)
   printing.nix                         # CUPS printing (NixOS)
   windows-mounts.nix                   # Windows / WSL mounts custom module (NixOS)
@@ -103,7 +103,6 @@ hosts/
 | `import-tree`    | `github:vic/import-tree`              | Auto-import all `.nix` files         |
 | `home-manager`   | `github:nix-community/home-manager`   | User-level config management         |
 | `code-cursor-nix`| `github:jacopone/code-cursor-nix`     | Cursor editor package                |
-| `spicetify-nix`  | `github:Gerg-L/spicetify-nix`         | Spotify + Spicetify (HM module)      |
 | `niri`           | `github:sodiboo/niri-flake`           | Niri compositor (optional session)   |
 | `noctalia`       | `github:noctalia-dev/noctalia-shell`  | Noctalia shell + HM module           |
 

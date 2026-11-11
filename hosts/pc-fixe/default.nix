@@ -68,7 +68,7 @@ in
             hm.equibop
             hm.browser
             hm.thunar
-            hm.spotify
+            hm.spotifast
             hm.vicinae
             hm.bitwarden
             hm.curseforge

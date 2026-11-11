@@ -53,11 +53,6 @@
     # Cursor's Linux agent-loop crash was fixed upstream in 3.19.13.
     code-cursor-nix.url = "github:jacopone/code-cursor-nix";
 
-    spicetify-nix = {
-      url = "github:Gerg-L/spicetify-nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     # The platform module is used without importing nix-gaming's optional game packages.
     nix-gaming = {
       url = "github:fufexan/nix-gaming";
