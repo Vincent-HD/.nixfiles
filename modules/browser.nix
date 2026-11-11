@@ -13,7 +13,7 @@
           commandLineArgs = "--remote-debugging-port=9222 --remote-allow-origins=*";
         }).overrideAttrs
           (
-            old:
+            _:
             lib.optionalAttrs pkgs.stdenv.hostPlatform.isDarwin {
               # The dmg has two top-level entries (the .app plus a " " symlink to
               # /Applications), so stdenv cannot infer a sourceRoot without sandbox.

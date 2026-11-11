@@ -13,7 +13,7 @@ const fixture = Effect.fn(function* (document: unknown) {
   const root = yield* fs.makeTempDirectoryScoped({ prefix: "vtask-test-" });
   yield* fs.makeDirectory(path.join(root, ".vscode"));
   yield* fs.writeFileString(path.join(root, ".vscode", "tasks.json"), JSON.stringify(document));
-  return root;
+  return yield* fs.realPath(root);
 });
 const cli = Effect.fn(function* (options: { cwd: string; args: ReadonlyArray<string> }) {
   const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
@@ -179,7 +179,7 @@ test("resolves repeated inputs, env, args and cwd without shell interpretation f
   );
 });
 
-test("quotes shell arguments safely and respects Linux platform overrides", async () => {
+test("quotes shell arguments safely and respects platform overrides", async () => {
   await run(
     Effect.gen(function* () {
       const root = yield* fixture({
@@ -189,13 +189,20 @@ test("quotes shell arguments safely and respects Linux platform overrides", asyn
             label: "echo",
             type: "shell",
             command: "false",
-            linux: { command: "printf '%s\\n'", args: ["two words; $(echo injected) ' quote"] },
+            linux: {
+              command: "printf '%s\\n'",
+              args: ["linux", "two words; $(echo injected) ' quote"],
+            },
+            osx: {
+              command: "printf '%s\\n'",
+              args: ["darwin", "two words; $(echo injected) ' quote"],
+            },
           },
         ],
       });
       const result = yield* cli({ cwd: root, args: ["echo"] });
       assert.equal(result.code, 0, result.output);
-      assert.ok(result.output.includes("two words; $(echo injected) ' quote"));
+      assert.ok(result.output.includes(`${process.platform}\ntwo words; $(echo injected) ' quote`));
     }),
   );
 });
