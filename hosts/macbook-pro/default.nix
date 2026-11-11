@@ -16,7 +16,6 @@ in
       darwin.deskflow
       darwin.rustdesk
       darwin.ghostty
-      darwin.agentT3Code
       darwin.equibop
 
       inputs.home-manager-darwin.darwinModules.home-manager
