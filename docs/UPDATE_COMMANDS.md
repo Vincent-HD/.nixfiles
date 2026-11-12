@@ -636,21 +636,16 @@ pnpm --dir packages/vtask version patch --no-git-tag-version
 pnpm --dir packages/vtask release
 VTASK_BINARY="$PWD/packages/vtask/bin/x86_64-linux/vtask" pnpm --dir packages/vtask test
 nix build .#vtask
-nix build .#vtask-source
 git add packages/vtask/package.json packages/vtask/pnpm-lock.yaml packages/vtask/bin
 ```
 
 Use `minor` for features and `major` for breaking changes once the interface
 is stable. `pnpm release` cross-compiles both configured platforms with the
 Nix-pinned Bun compiler and records source fingerprints, checksums and sizes.
-Run native checks on macOS before publishing a Darwin release. Normal clones
-with Git LFS installed hydrate the binaries; a skipped LFS download or changed
-source automatically makes Nix compile from the locked dependencies instead.
-
-When changing dependencies, regenerate `pnpm-lock.yaml` and the
-`fetchPnpmDeps` hash in `packages/vtask/default.nix`. To refresh the hash, set
-it temporarily to `lib.fakeHash`, run `nix build .#vtask-source`, and copy the
-reported `got: sha256-...` value. Then run the source build again. Neither
+Run native checks on macOS before publishing a Darwin release. Nix only
+packages these checked-in binaries and never compiles vtask: a release whose
+fingerprint no longer matches the sources fails evaluation and asks for
+`pnpm release`, and an unhydrated LFS pointer asks for `git lfs pull`. Neither
 ordinary switches nor `nix run .#vtask` mutate the repository's release files.
 
 The executable is installed by the shared Home Manager command-line module,

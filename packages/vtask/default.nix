@@ -1,17 +1,11 @@
 {
   lib,
   stdenvNoCC,
-  bun,
-  nodejs_24,
-  pnpm,
-  fetchPnpmDeps,
-  pnpmConfigHook,
-  writableTmpDirAsHomeHook,
   autoPatchelfHook,
-  preferPrebuilt ? true,
 }:
 let
   manifest = builtins.fromJSON (builtins.readFile ./package.json);
+  releaseManifest = builtins.fromJSON (builtins.readFile ./bin/manifest.json);
   system = stdenvNoCC.hostPlatform.system;
   sourceFiles = lib.sort builtins.lessThan (
     [
@@ -24,83 +18,41 @@ let
       lib.filter (file: lib.hasSuffix ".ts" file) (builtins.attrNames (builtins.readDir ./src))
     )
   );
-  # Rebuild when any executable source, dependency lock, or build recipe changes.
+  # Fingerprint of everything compiled into the release, matched against bin/manifest.json.
   sourceHash = builtins.hashString "sha256" (
     lib.concatMapStrings (
       file: "${file}\n${builtins.hashFile "sha256" (./. + "/${file}")}\n"
     ) sourceFiles
   );
-  releaseManifest =
-    if builtins.pathExists ./bin/manifest.json then
-      builtins.fromJSON (builtins.readFile ./bin/manifest.json)
-    else
-      { };
   binary = ./. + "/bin/${system}/vtask";
-  artifact = releaseManifest.binaries.${system} or null;
-  # A Git LFS pointer or stale binary automatically takes the source-build path.
-  usePrebuilt =
-    preferPrebuilt
-    && (releaseManifest.version or "") == manifest.version
-    && (releaseManifest.sourceHash or "") == sourceHash
-    && artifact != null
-    && builtins.pathExists binary
-    && builtins.hashFile "sha256" binary == artifact.sha256;
-  source = lib.fileset.toSource {
-    root = ./.;
-    fileset = lib.fileset.unions [
-      ./src
-      ./assets/tasks.schema.json
-      ./package.json
-      ./pnpm-lock.yaml
-      ./pnpm-workspace.yaml
-    ];
-  };
+  artifact =
+    releaseManifest.binaries.${system}
+      or (throw "vtask: bin/manifest.json has no binary for ${system}; run `pnpm --dir packages/vtask release`.");
 in
+# Only the checked-in Git LFS release is packaged; stale or missing binaries fail with the fix to run.
+assert lib.assertMsg (
+  releaseManifest.version == manifest.version && releaseManifest.sourceHash == sourceHash
+) "vtask: bin/ is stale for the current sources; run `pnpm --dir packages/vtask release`.";
+assert lib.assertMsg (
+  builtins.pathExists binary && builtins.hashFile "sha256" binary == artifact.sha256
+) "vtask: bin/${system}/vtask does not match bin/manifest.json; run `git lfs pull`.";
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "vtask";
   version = manifest.version;
-  src = if usePrebuilt then binary else source;
+  src = binary;
 
-  nativeBuildInputs =
-    lib.optionals stdenvNoCC.hostPlatform.isLinux [ autoPatchelfHook ]
-    ++ lib.optionals (!usePrebuilt) [
-      bun
-      nodejs_24
-      pnpm
-      pnpmConfigHook
-      writableTmpDirAsHomeHook
-    ];
+  # Linux binaries need Nix's ELF interpreter.
+  nativeBuildInputs = lib.optionals stdenvNoCC.hostPlatform.isLinux [ autoPatchelfHook ];
 
-  pnpmDeps =
-    if usePrebuilt then
-      null
-    else
-      fetchPnpmDeps {
-        pname = finalAttrs.pname;
-        version = finalAttrs.version;
-        src = source;
-        pnpm = pnpm;
-        fetcherVersion = 5;
-        pnpmInstallFlags = [ "--prod" ];
-        hash = "sha256-F5gvkyaRCqpIFT0XwEAl0lc+jrJgjvqy9MXtBDiUmz4=";
-      };
-  pnpmInstallFlags = [ "--prod" ];
-
-  dontUnpack = usePrebuilt;
-  dontConfigure = usePrebuilt;
-  dontBuild = usePrebuilt;
+  dontUnpack = true;
+  dontConfigure = true;
+  dontBuild = true;
   # Bun's embedded executable payload must survive Nix's ELF fixup phase.
   dontStrip = true;
 
-  buildPhase = ''
-    runHook preBuild
-    bun src/build.ts --native --target ${lib.escapeShellArg system}
-    runHook postBuild
-  '';
-
   installPhase = ''
     runHook preInstall
-    install -Dm755 ${if usePrebuilt then "$src" else "dist/${system}/vtask"} "$out/bin/vtask"
+    install -Dm755 "$src" "$out/bin/vtask"
     runHook postInstall
   '';
 
@@ -112,7 +64,6 @@ stdenvNoCC.mkDerivation (finalAttrs: {
   '';
 
   passthru = {
-    usesPrebuilt = usePrebuilt;
     sourceHash = sourceHash;
   };
   meta = {

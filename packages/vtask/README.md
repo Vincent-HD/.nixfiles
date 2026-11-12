@@ -81,16 +81,12 @@ switch installs it through the shared command-line module.
 
 `bin/<system>/vtask` is tracked by Git LFS. `bin/manifest.json` records the
 version, source fingerprint, compiler version, executable checksums, and sizes.
-With LFS hydrated, matching source, and the same Nix-pinned Bun version, Nix
-packages the checked-in executable directly. Changed source, changed Bun,
-a missing binary, or an LFS pointer triggers an offline source build instead.
-The source build embeds the current Nix-managed Bun executable, avoiding Bun's
-network download for an explicit cross-compilation target inside the sandbox.
-
-`nix build .#vtask-source` always exercises that source-build path. Its
-production dependencies come from the locked, fixed-output pnpm dependency
-closure. Linux executables receive Nix's ELF interpreter fixup. Switches never
-regenerate the checked-in release artifacts.
+Nix only packages the checked-in executable and never compiles vtask, so Bun
+updates in nixpkgs do not invalidate a release. If the sources changed since
+the last release, evaluation fails and asks for `pnpm release`; a missing or
+unhydrated LFS binary asks for `git lfs pull`. Linux executables receive Nix's
+ELF interpreter fixup. Switches never regenerate the checked-in release
+artifacts.
 
 To regenerate release artifacts with the pinned toolchain:
 
@@ -100,7 +96,6 @@ pnpm --dir packages/vtask install --frozen-lockfile
 pnpm --dir packages/vtask release
 VTASK_BINARY="$PWD/packages/vtask/bin/x86_64-linux/vtask" pnpm --dir packages/vtask test
 nix build .#vtask
-nix build .#vtask-source
 git add packages/vtask/bin
 ```
 

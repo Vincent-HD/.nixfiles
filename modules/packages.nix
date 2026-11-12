@@ -103,7 +103,6 @@
           updateScriptZod = updateScriptZod;
         };
         vtask = pkgs.callPackage ../packages/vtask { };
-        vtask-source = pkgs.callPackage ../packages/vtask { preferPrebuilt = false; };
         wifi-audio-streaming = pkgs.callPackage ../packages/wifi-audio-streaming {
           updateScriptZod = updateScriptZod;
         };
