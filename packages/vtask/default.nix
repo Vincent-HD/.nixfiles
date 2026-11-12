@@ -42,7 +42,6 @@ let
     preferPrebuilt
     && (releaseManifest.version or "") == manifest.version
     && (releaseManifest.sourceHash or "") == sourceHash
-    && (releaseManifest.compilerVersion or "") == bun.version
     && artifact != null
     && builtins.pathExists binary
     && builtins.hashFile "sha256" binary == artifact.sha256;
@@ -81,9 +80,9 @@ stdenvNoCC.mkDerivation (finalAttrs: {
         version = finalAttrs.version;
         src = source;
         pnpm = pnpm;
-        fetcherVersion = 4;
+        fetcherVersion = 5;
         pnpmInstallFlags = [ "--prod" ];
-        hash = "sha256-GI5cfFUmI1vvslXPwUDooVcCCCJVXa+D+owfgDdIWrk=";
+        hash = "sha256-F5gvkyaRCqpIFT0XwEAl0lc+jrJgjvqy9MXtBDiUmz4=";
       };
   pnpmInstallFlags = [ "--prod" ];
 
