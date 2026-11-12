@@ -914,17 +914,17 @@
     "z-code": {
       "flake": false,
       "locked": {
-        "lastModified": 1794405079,
-        "narHash": "sha256-r5nkxW5sVwrCdMZsKxCyZ+PdIwP7MttayvnmL/qOX5Y=",
+        "lastModified": 1794502170,
+        "narHash": "sha256-lEK1jcT6GIZgk1CSMXIHuAZWKlEkU/ufA55EDqssfGM=",
         "owner": "Vincent-HD",
         "repo": "zcode",
-        "rev": "7a90eb01528d93bfd2d2a183147a25a0bc66e3bb",
+        "rev": "8a07b86074cdc8649e067c367e9a775fd56626f5",
         "type": "github"
       },
       "original": {
         "owner": "Vincent-HD",
         "repo": "zcode",
-        "rev": "7a90eb01528d93bfd2d2a183147a25a0bc66e3bb",
+        "rev": "8a07b86074cdc8649e067c367e9a775fd56626f5",
         "type": "github"
       }
     }
