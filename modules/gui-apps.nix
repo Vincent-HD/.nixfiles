@@ -20,12 +20,14 @@
       });
     in
     {
-      home.packages = [
-        pkgs.slack
-      ]
-      ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
-        # Scroll Reverser is macOS-only.
-        scrollReverser
-      ];
+      # The native Mac installer owns Slack; avoid overwriting its native bundle.
+      home.packages =
+        lib.optionals pkgs.stdenv.hostPlatform.isLinux [
+          pkgs.slack
+        ]
+        ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
+          # Scroll Reverser is macOS-only.
+          scrollReverser
+        ];
     };
 }
