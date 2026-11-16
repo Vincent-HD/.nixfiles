@@ -177,7 +177,8 @@ in
           easyEffects = {
             src = ./plugins/easyeffects;
             settings = {
-              executablePath = "${pkgs.easyeffects}/bin/easyeffects";
+              # Start the Home Manager unit so the daemon stays hidden and supervised.
+              systemctlPath = "${pkgs.systemd}/bin/systemctl";
             };
           };
 

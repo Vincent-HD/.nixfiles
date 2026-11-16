@@ -9,7 +9,7 @@ import qs.Modules.Plugins
 PluginComponent {
     id: root
 
-    readonly property string executablePath: pluginData.executablePath || "easyeffects"
+    readonly property string systemctlPath: pluginData.systemctlPath || "systemctl"
     property string activeProfile: ""
     readonly property string profileIcon: activeProfile === "Music Ducking" ? "hearing" : "hearing_disabled"
 
@@ -20,8 +20,9 @@ PluginComponent {
         if (profileSocket.linkUp) {
             sendPendingPreset();
         } else {
-            // Start independently so a shell restart cannot kill audio effects.
-            Quickshell.execDetached([root.executablePath, "--service-mode"]);
+            // Running the binary directly opens or raises the window; the unit
+            // starts it hidden, outside the shell, and is a no-op when running.
+            Quickshell.execDetached([root.systemctlPath, "--user", "start", "easyeffects.service"]);
         }
     }
 
