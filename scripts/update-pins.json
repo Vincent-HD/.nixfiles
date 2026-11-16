@@ -337,8 +337,19 @@
       "name": "handy",
       "type": "nix-update",
       "description": "Handy speech-to-text releases for Linux and macOS",
-      "systems": ["x86_64-linux", "aarch64-darwin"],
-      "command": ["nix", "run", "github:Mic92/nix-update", "--", "--flake", "handy", "--use-update-script"]
+      "systems": [
+        "x86_64-linux",
+        "aarch64-darwin"
+      ],
+      "command": [
+        "nix",
+        "run",
+        "github:Mic92/nix-update",
+        "--",
+        "--flake",
+        "handy",
+        "--use-update-script"
+      ]
     },
     {
       "name": "wifi-audio-streaming",
@@ -445,8 +456,19 @@
       "name": "dms-prebuilt",
       "type": "nix-update",
       "description": "DMS release binaries and matching flake input",
-      "systems": ["x86_64-linux", "aarch64-linux"],
-      "command": ["nix", "run", "github:Mic92/nix-update", "--", "--flake", "dms-prebuilt", "--use-update-script"]
+      "systems": [
+        "x86_64-linux",
+        "aarch64-linux"
+      ],
+      "command": [
+        "nix",
+        "run",
+        "github:Mic92/nix-update",
+        "--",
+        "--flake",
+        "dms-prebuilt",
+        "--use-update-script"
+      ]
     },
     {
       "name": "dms",
@@ -606,6 +628,139 @@
         "--dir",
         "packages/vtask",
         "release"
+      ]
+    },
+    {
+      "name": "cadcraft",
+      "type": "nix-update",
+      "description": "ArtCraft cadcraft Linux tarball and universal macOS DMG",
+      "systems": [
+        "x86_64-linux",
+        "aarch64-darwin",
+        "x86_64-darwin"
+      ],
+      "command": [
+        "nix",
+        "run",
+        "github:Mic92/nix-update",
+        "--",
+        "--flake",
+        "cadcraft",
+        "--use-update-script"
+      ]
+    },
+    {
+      "name": "figcraft",
+      "type": "nix-update",
+      "description": "ArtCraft figcraft Linux tarball and universal macOS DMG",
+      "systems": [
+        "x86_64-linux",
+        "aarch64-darwin",
+        "x86_64-darwin"
+      ],
+      "command": [
+        "nix",
+        "run",
+        "github:Mic92/nix-update",
+        "--",
+        "--flake",
+        "figcraft",
+        "--use-update-script"
+      ]
+    },
+    {
+      "name": "filmcraft",
+      "type": "nix-update",
+      "description": "ArtCraft filmcraft Linux tarball and universal macOS DMG",
+      "systems": [
+        "x86_64-linux",
+        "aarch64-darwin",
+        "x86_64-darwin"
+      ],
+      "command": [
+        "nix",
+        "run",
+        "github:Mic92/nix-update",
+        "--",
+        "--flake",
+        "filmcraft",
+        "--use-update-script"
+      ]
+    },
+    {
+      "name": "gridcraft",
+      "type": "nix-update",
+      "description": "ArtCraft gridcraft Linux tarball and universal macOS DMG",
+      "systems": [
+        "x86_64-linux",
+        "aarch64-darwin",
+        "x86_64-darwin"
+      ],
+      "command": [
+        "nix",
+        "run",
+        "github:Mic92/nix-update",
+        "--",
+        "--flake",
+        "gridcraft",
+        "--use-update-script"
+      ]
+    },
+    {
+      "name": "pdfcraft",
+      "type": "nix-update",
+      "description": "ArtCraft pdfcraft Linux tarball and universal macOS DMG",
+      "systems": [
+        "x86_64-linux",
+        "aarch64-darwin",
+        "x86_64-darwin"
+      ],
+      "command": [
+        "nix",
+        "run",
+        "github:Mic92/nix-update",
+        "--",
+        "--flake",
+        "pdfcraft",
+        "--use-update-script"
+      ]
+    },
+    {
+      "name": "photocraft",
+      "type": "nix-update",
+      "description": "ArtCraft photocraft Linux tarball and universal macOS DMG",
+      "systems": [
+        "x86_64-linux",
+        "aarch64-darwin",
+        "x86_64-darwin"
+      ],
+      "command": [
+        "nix",
+        "run",
+        "github:Mic92/nix-update",
+        "--",
+        "--flake",
+        "photocraft",
+        "--use-update-script"
+      ]
+    },
+    {
+      "name": "wordcraft",
+      "type": "nix-update",
+      "description": "ArtCraft wordcraft Linux tarball and universal macOS DMG",
+      "systems": [
+        "x86_64-linux",
+        "aarch64-darwin",
+        "x86_64-darwin"
+      ],
+      "command": [
+        "nix",
+        "run",
+        "github:Mic92/nix-update",
+        "--",
+        "--flake",
+        "wordcraft",
+        "--use-update-script"
       ]
     }
   ],

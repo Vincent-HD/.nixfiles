@@ -51,6 +51,7 @@ in
             hm.wifiAudioStreaming
             hm.ghostty
             hm.bitwarden
+            hm.craftApps
           ];
 
           home.username = username;

@@ -72,7 +72,7 @@ in
             hm.vicinae
             hm.bitwarden
             hm.curseforge
-            hm.onlyoffice
+            hm.craftApps
             hm.work
             hm.kdeConnect
             hm.deskflow

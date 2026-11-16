@@ -18,6 +18,7 @@
         };
       };
       updateScriptZod = pkgs.callPackage ../packages/update-script-zod { };
+      craftAppNames = builtins.attrNames (lib.importJSON ../packages/craft-apps/sources.json);
 
       # Reuse the exact GitHub snapshot for both the source output and Linux package.
       zCodeSource = inputs.z-code;
@@ -113,6 +114,14 @@
         update-script-zod = updateScriptZod;
         bitwarden-secret-tools = bwSecretTools;
       }
+      # ArtCraft desktop apps share one builder and one pin file.
+      // lib.genAttrs craftAppNames (
+        appName:
+        pkgs.callPackage ../packages/craft-apps {
+          appName = appName;
+          updateScriptZod = updateScriptZod;
+        }
+      )
       // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
         dms-prebuilt = pkgs.callPackage ../packages/dms-prebuilt {
           dmsFlake = inputs.dms;

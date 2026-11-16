@@ -38,6 +38,7 @@ modules/
   packages.nix                         # Standalone package and app outputs
   browser.nix                          # Brave (HM)
   equibop.nix                          # Equibop with Equicord settings and macOS cask
+  craft-apps.nix                       # ArtCraft apps (PhotoCraft, PdfCraft, ...) with per-app toggles and file associations
   spotifast.nix                        # Spotifast (HM)
   bitwarden.nix                        # Bitwarden Desktop (HM)
   printing.nix                         # CUPS printing (NixOS)

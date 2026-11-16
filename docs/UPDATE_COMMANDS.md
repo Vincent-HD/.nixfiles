@@ -248,6 +248,19 @@ nix run github:Mic92/nix-update -- --flake lsfg-vk --use-update-script
 nix run github:Mic92/nix-update -- --flake cursor-agent --use-update-script
 ```
 
+### ArtCraft apps (cadcraft, figcraft, filmcraft, gridcraft, pdfcraft, photocraft, wordcraft)
+
+- **File**: `packages/craft-apps/default.nix` (shared builder) with pins in `packages/craft-apps/sources.json`
+- **Pattern**: Linux release tarball patched with `autoPatchelfHook`; universal macOS DMG unpacked with `_7zz`
+- **Flake outputs**: `.#cadcraft`, `.#figcraft`, `.#filmcraft`, `.#gridcraft`, `.#pdfcraft`, `.#photocraft`, `.#wordcraft`
+- **Platforms**: `x86_64-linux`, `aarch64-darwin`, `x86_64-darwin`
+- **Updater**: `packages/craft-apps/update.ts <app>` reads the latest GitHub release of `storytold/<app>` and converts its `SHA256SUMS.txt` entries to SRI hashes for both artifacts, without downloading them.
+- **Configuration**: `modules/craft-apps.nix` exposes `custom.craftApps.<app>.enable`, `.setDefaultApplication`, `.mimeTypes` (Linux), and `.uniformTypeIdentifiers` (macOS).
+
+```bash
+nix run github:Mic92/nix-update -- --flake photocraft --use-update-script
+```
+
 ### t3code
 
 - **File**: `packages/t3code/default.nix`

@@ -1,0 +1,65 @@
+{
+  "cadcraft": {
+    "displayName": "CADCraft",
+    "description": "Open-source CAD and drafting application",
+    "version": "0.20.1",
+    "hashes": {
+      "linux-x86_64.tar.gz": "sha256-V7bxtBtPPFQqgvEDIC7Rp3lEDl/40lwI72ar2hqMsbk=",
+      "macos-universal.dmg": "sha256-ye8c8CI05qXoVCh6ZP4xStbVMieRXDxmZPpBYeKh/nA="
+    }
+  },
+  "figcraft": {
+    "displayName": "FigCraft",
+    "description": "Open-source interface design and prototyping tool",
+    "version": "0.18.1",
+    "hashes": {
+      "linux-x86_64.tar.gz": "sha256-gnbSrFXG939686QRqbAEFdP+sLWWB6VFIzETQOZT/Bk=",
+      "macos-universal.dmg": "sha256-3nvCL7NjxXo1CSf1ygCb1ESxmZO96yhjtWTpnz+64jA="
+    }
+  },
+  "filmcraft": {
+    "displayName": "FilmCraft",
+    "description": "Open-source nonlinear video editor",
+    "version": "0.20.1",
+    "hashes": {
+      "linux-x86_64.tar.gz": "sha256-Pk/qPLjUc+aPGJoKh5K6RhYPq1B62rOriSAHP9QfJPo=",
+      "macos-universal.dmg": "sha256-VyLw8hypZYPuJ9/Yi64j4KSmq4eGKmwACCyIxcdZ514="
+    }
+  },
+  "gridcraft": {
+    "displayName": "GridCraft",
+    "description": "Open-source spreadsheet application",
+    "version": "0.19.1",
+    "hashes": {
+      "linux-x86_64.tar.gz": "sha256-jZe7otW7AP1p7VUGSFLB/ZFN5A1ezVXKAcjfgbgolG0=",
+      "macos-universal.dmg": "sha256-1QFl54uONau+aKp8bzbCkAI97GUNiqeXrCNHqTD2wZc="
+    }
+  },
+  "pdfcraft": {
+    "displayName": "PdfCraft",
+    "description": "Open-source PDF reader and editor",
+    "version": "0.21.1",
+    "hashes": {
+      "linux-x86_64.tar.gz": "sha256-wpGekETv/eMY5mgHrSohu7dKlVWzwLmfmtDEDPYc4l4=",
+      "macos-universal.dmg": "sha256-Gtyb89MZ5wfpJHAE2wWjKgWWNONxD+ebwU+S9onKTUo="
+    }
+  },
+  "photocraft": {
+    "displayName": "PhotoCraft",
+    "description": "Open-source layered photo editor",
+    "version": "0.23.1",
+    "hashes": {
+      "linux-x86_64.tar.gz": "sha256-Q4Ou9noHzDcK0lCm7WABUgXT5sRj+vP/Sw9nuBeMz8g=",
+      "macos-universal.dmg": "sha256-YGpSkXGIxl3HFwl4EYCg4yRODzt/QLL1uAFw6HNkQg0="
+    }
+  },
+  "wordcraft": {
+    "displayName": "WordCraft",
+    "description": "Open-source word processor",
+    "version": "0.18.1",
+    "hashes": {
+      "linux-x86_64.tar.gz": "sha256-MSoFfUbdgFl8EtzP0Ql84l7epAuqrrULy28BrBrrrbU=",
+      "macos-universal.dmg": "sha256-ifbgqRD4rVqBXYAkx5Mk0gW1b80uBd7tAQ6QFvWBPew="
+    }
+  }
+}

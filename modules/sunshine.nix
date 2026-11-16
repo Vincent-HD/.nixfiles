@@ -2,7 +2,7 @@
 {
   # NixOS system service: Sunshine with NVIDIA CUDA support.
   config.flake.modules.nixos.sunshine =
-    { pkgs, ... }:
+    { lib, pkgs, ... }:
     {
       services.sunshine = {
         enable = true;
@@ -11,6 +11,9 @@
         openFirewall = false;
         package = pkgs.sunshine.override { cudaSupport = true; };
       };
+
+      # Grant CAP_SYS_NICE too so Sunshine's EGL capture context can run at high GPU priority.
+      security.wrappers.sunshine.capabilities = lib.mkForce "cap_sys_admin,cap_sys_nice+p";
 
       # Replace nixpkgs Sunshine's obsolete Avahi defaults while preserving discovery.
       services.avahi = {
