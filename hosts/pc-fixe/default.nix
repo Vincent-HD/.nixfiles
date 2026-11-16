@@ -73,6 +73,9 @@ in
             hm.bitwarden
             hm.curseforge
             hm.craftApps
+            hm.libreoffice
+            hm.kdenlive
+            hm.openPencil
             hm.work
             hm.kdeConnect
             hm.deskflow

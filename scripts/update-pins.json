@@ -631,82 +631,6 @@
       ]
     },
     {
-      "name": "cadcraft",
-      "type": "nix-update",
-      "description": "ArtCraft cadcraft Linux tarball and universal macOS DMG",
-      "systems": [
-        "x86_64-linux",
-        "aarch64-darwin",
-        "x86_64-darwin"
-      ],
-      "command": [
-        "nix",
-        "run",
-        "github:Mic92/nix-update",
-        "--",
-        "--flake",
-        "cadcraft",
-        "--use-update-script"
-      ]
-    },
-    {
-      "name": "figcraft",
-      "type": "nix-update",
-      "description": "ArtCraft figcraft Linux tarball and universal macOS DMG",
-      "systems": [
-        "x86_64-linux",
-        "aarch64-darwin",
-        "x86_64-darwin"
-      ],
-      "command": [
-        "nix",
-        "run",
-        "github:Mic92/nix-update",
-        "--",
-        "--flake",
-        "figcraft",
-        "--use-update-script"
-      ]
-    },
-    {
-      "name": "filmcraft",
-      "type": "nix-update",
-      "description": "ArtCraft filmcraft Linux tarball and universal macOS DMG",
-      "systems": [
-        "x86_64-linux",
-        "aarch64-darwin",
-        "x86_64-darwin"
-      ],
-      "command": [
-        "nix",
-        "run",
-        "github:Mic92/nix-update",
-        "--",
-        "--flake",
-        "filmcraft",
-        "--use-update-script"
-      ]
-    },
-    {
-      "name": "gridcraft",
-      "type": "nix-update",
-      "description": "ArtCraft gridcraft Linux tarball and universal macOS DMG",
-      "systems": [
-        "x86_64-linux",
-        "aarch64-darwin",
-        "x86_64-darwin"
-      ],
-      "command": [
-        "nix",
-        "run",
-        "github:Mic92/nix-update",
-        "--",
-        "--flake",
-        "gridcraft",
-        "--use-update-script"
-      ]
-    },
-    {
       "name": "pdfcraft",
       "type": "nix-update",
       "description": "ArtCraft pdfcraft Linux tarball and universal macOS DMG",
@@ -760,6 +684,25 @@
         "--",
         "--flake",
         "wordcraft",
+        "--use-update-script"
+      ]
+    },
+    {
+      "name": "open-pencil",
+      "type": "nix-update",
+      "description": "OpenPencil Linux deb and macOS app archives, plus the version-matched MCP server npm closure",
+      "systems": [
+        "x86_64-linux",
+        "aarch64-darwin",
+        "x86_64-darwin"
+      ],
+      "command": [
+        "nix",
+        "run",
+        "github:Mic92/nix-update",
+        "--",
+        "--flake",
+        "open-pencil",
         "--use-update-script"
       ]
     }

@@ -1,0 +1,8 @@
+{
+  "name": "open-pencil-mcp-closure",
+  "version": "0.16.0",
+  "private": true,
+  "dependencies": {
+    "@open-pencil/mcp": "0.16.0"
+  }
+}

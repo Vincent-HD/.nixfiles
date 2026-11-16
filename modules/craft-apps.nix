@@ -14,57 +14,9 @@
       craftPackages = inputs.self.packages.${pkgs.stdenv.hostPlatform.system};
 
       # Default handlers per app. Only formats each app is the natural editor for are
-      # claimed; common viewing formats the apps also accept (PNG/JPEG, MP4, HTML,
+      # claimed; common viewing formats the apps also accept (PNG/JPEG, HTML,
       # Markdown, SVG) stay with the existing viewers unless added per host.
       defaultAssociations = {
-        cadcraft = {
-          mimeTypes = [
-            "image/vnd.dxf"
-            "image/vnd.dwg"
-            "application/x-dxf"
-            "application/acad"
-          ];
-          uniformTypeIdentifiers = [
-            "ai.storyteller.cadcraft.dxf"
-            "ai.storyteller.cadcraft.dwg"
-          ];
-        };
-        figcraft = {
-          mimeTypes = [
-            "application/x-figcraft"
-            "application/x-sketch"
-            "x-scheme-handler/figcraft"
-          ];
-          uniformTypeIdentifiers = [
-            "ai.storyteller.figcraft.document"
-            "com.bohemiancoding.sketch.drawing.single"
-          ];
-        };
-        filmcraft = {
-          mimeTypes = [
-            "application/x-filmcraft"
-            "application/mxf"
-          ];
-          uniformTypeIdentifiers = [ "ai.storyteller.filmcraft.project" ];
-        };
-        gridcraft = {
-          mimeTypes = [
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            "application/vnd.ms-excel.sheet.macroEnabled.12"
-            "application/vnd.ms-excel.sheet.binary.macroEnabled.12"
-            "application/vnd.oasis.opendocument.spreadsheet"
-            "text/csv"
-            "text/tab-separated-values"
-          ];
-          uniformTypeIdentifiers = [
-            "org.openxmlformats.spreadsheetml.sheet"
-            "org.openxmlformats.spreadsheetml.sheet.macroenabled"
-            "com.microsoft.excel.sheet.binary.macroenabled"
-            "org.oasis-open.opendocument.spreadsheet"
-            "public.comma-separated-values-text"
-            "public.tab-separated-values-text"
-          ];
-        };
         pdfcraft = {
           mimeTypes = [ "application/pdf" ];
           uniformTypeIdentifiers = [ "com.adobe.pdf" ];

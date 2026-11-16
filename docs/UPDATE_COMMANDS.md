@@ -248,17 +248,30 @@ nix run github:Mic92/nix-update -- --flake lsfg-vk --use-update-script
 nix run github:Mic92/nix-update -- --flake cursor-agent --use-update-script
 ```
 
-### ArtCraft apps (cadcraft, figcraft, filmcraft, gridcraft, pdfcraft, photocraft, wordcraft)
+### ArtCraft apps (pdfcraft, photocraft, wordcraft)
 
 - **File**: `packages/craft-apps/default.nix` (shared builder) with pins in `packages/craft-apps/sources.json`
 - **Pattern**: Linux release tarball patched with `autoPatchelfHook`; universal macOS DMG unpacked with `_7zz`
-- **Flake outputs**: `.#cadcraft`, `.#figcraft`, `.#filmcraft`, `.#gridcraft`, `.#pdfcraft`, `.#photocraft`, `.#wordcraft`
+- **Flake outputs**: `.#pdfcraft`, `.#photocraft`, `.#wordcraft`
 - **Platforms**: `x86_64-linux`, `aarch64-darwin`, `x86_64-darwin`
 - **Updater**: `packages/craft-apps/update.ts <app>` reads the latest GitHub release of `storytold/<app>` and converts its `SHA256SUMS.txt` entries to SRI hashes for both artifacts, without downloading them.
 - **Configuration**: `modules/craft-apps.nix` exposes `custom.craftApps.<app>.enable`, `.setDefaultApplication`, `.mimeTypes` (Linux), and `.uniformTypeIdentifiers` (macOS).
 
 ```bash
 nix run github:Mic92/nix-update -- --flake photocraft --use-update-script
+```
+
+### open-pencil
+
+- **Files**: `packages/open-pencil/default.nix` (app) and `packages/open-pencil/mcp/` (MCP server: generated `package.json` + `package-lock.json`)
+- **Pattern**: Linux Tauri `.deb` patched with `autoPatchelfHook` against nixpkgs WebKitGTK; macOS `.app.tar.gz` per architecture; MCP server via `buildNpmPackage`
+- **Flake outputs**: `.#open-pencil`, `.#open-pencil-mcp`
+- **Platforms**: `x86_64-linux`, `aarch64-darwin`, `x86_64-darwin`
+- **Updater**: Reads the latest stable GitHub release, converts `SHA256SUMS` to SRI hashes for all three app artifacts, then regenerates the MCP lockfile for the same version and refreshes `npmDepsHash`. The app and MCP server must stay on the same version.
+- **Configuration**: `modules/open-pencil.nix`; the MCP server is registered in Executor (`modules/executor.nix`).
+
+```bash
+nix run github:Mic92/nix-update -- --flake open-pencil --use-update-script
 ```
 
 ### t3code

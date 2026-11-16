@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-figma">
+    <comment>Figma design file</comment>
+    <glob pattern="*.fig"/>
+  </mime-type>
+  <mime-type type="application/x-pencil-pen">
+    <comment>pen.dev design file</comment>
+    <glob pattern="*.pen"/>
+  </mime-type>
+</mime-info>

@@ -17,6 +17,8 @@ in
       darwin.rustdesk
       darwin.ghostty
       darwin.equibop
+      darwin.libreoffice
+      darwin.kdenlive
 
       inputs.home-manager-darwin.darwinModules.home-manager
       {
@@ -52,6 +54,9 @@ in
             hm.ghostty
             hm.bitwarden
             hm.craftApps
+            hm.libreoffice
+            hm.kdenlive
+            hm.openPencil
           ];
 
           home.username = username;

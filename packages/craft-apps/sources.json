@@ -1,40 +1,4 @@
 {
-  "cadcraft": {
-    "displayName": "CADCraft",
-    "description": "Open-source CAD and drafting application",
-    "version": "0.20.1",
-    "hashes": {
-      "linux-x86_64.tar.gz": "sha256-V7bxtBtPPFQqgvEDIC7Rp3lEDl/40lwI72ar2hqMsbk=",
-      "macos-universal.dmg": "sha256-ye8c8CI05qXoVCh6ZP4xStbVMieRXDxmZPpBYeKh/nA="
-    }
-  },
-  "figcraft": {
-    "displayName": "FigCraft",
-    "description": "Open-source interface design and prototyping tool",
-    "version": "0.18.1",
-    "hashes": {
-      "linux-x86_64.tar.gz": "sha256-gnbSrFXG939686QRqbAEFdP+sLWWB6VFIzETQOZT/Bk=",
-      "macos-universal.dmg": "sha256-3nvCL7NjxXo1CSf1ygCb1ESxmZO96yhjtWTpnz+64jA="
-    }
-  },
-  "filmcraft": {
-    "displayName": "FilmCraft",
-    "description": "Open-source nonlinear video editor",
-    "version": "0.20.1",
-    "hashes": {
-      "linux-x86_64.tar.gz": "sha256-Pk/qPLjUc+aPGJoKh5K6RhYPq1B62rOriSAHP9QfJPo=",
-      "macos-universal.dmg": "sha256-VyLw8hypZYPuJ9/Yi64j4KSmq4eGKmwACCyIxcdZ514="
-    }
-  },
-  "gridcraft": {
-    "displayName": "GridCraft",
-    "description": "Open-source spreadsheet application",
-    "version": "0.19.1",
-    "hashes": {
-      "linux-x86_64.tar.gz": "sha256-jZe7otW7AP1p7VUGSFLB/ZFN5A1ezVXKAcjfgbgolG0=",
-      "macos-universal.dmg": "sha256-1QFl54uONau+aKp8bzbCkAI97GUNiqeXrCNHqTD2wZc="
-    }
-  },
   "pdfcraft": {
     "displayName": "PdfCraft",
     "description": "Open-source PDF reader and editor",

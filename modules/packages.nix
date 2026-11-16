@@ -113,6 +113,10 @@
         };
         update-script-zod = updateScriptZod;
         bitwarden-secret-tools = bwSecretTools;
+        open-pencil = pkgs.callPackage ../packages/open-pencil {
+          updateScriptZod = updateScriptZod;
+        };
+        open-pencil-mcp = pkgs.callPackage ../packages/open-pencil/mcp { };
       }
       # ArtCraft desktop apps share one builder and one pin file.
       // lib.genAttrs craftAppNames (

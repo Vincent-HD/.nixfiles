@@ -69,6 +69,18 @@
           remoteTransport = "streamable-http";
         }
         {
+          # Drives the running OpenPencil app (needs a document open); file access stays in $HOME.
+          slug = "open-pencil";
+          name = "OpenPencil";
+          description = "Inspect and edit designs in the running OpenPencil app.";
+          transport = "stdio";
+          command = "${pkgs.coreutils}/bin/env";
+          args = [
+            "OPENPENCIL_MCP_ROOT=${config.home.homeDirectory}"
+            (lib.getExe inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.open-pencil-mcp)
+          ];
+        }
+        {
           slug = "context7";
           name = "Context7";
           description = "Up-to-date library documentation and code examples.";
