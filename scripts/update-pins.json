@@ -669,25 +669,6 @@
       ]
     },
     {
-      "name": "wordcraft",
-      "type": "nix-update",
-      "description": "ArtCraft wordcraft Linux tarball and universal macOS DMG",
-      "systems": [
-        "x86_64-linux",
-        "aarch64-darwin",
-        "x86_64-darwin"
-      ],
-      "command": [
-        "nix",
-        "run",
-        "github:Mic92/nix-update",
-        "--",
-        "--flake",
-        "wordcraft",
-        "--use-update-script"
-      ]
-    },
-    {
       "name": "open-pencil",
       "type": "nix-update",
       "description": "OpenPencil Linux deb and macOS app archives, plus the version-matched MCP server npm closure",
