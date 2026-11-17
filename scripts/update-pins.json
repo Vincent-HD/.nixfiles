@@ -705,6 +705,24 @@
         "open-pencil",
         "--use-update-script"
       ]
+    },
+    {
+      "name": "ibis-office",
+      "type": "nix-update",
+      "description": "ibisOffice Linux AppImage and Apple Silicon macOS zip",
+      "systems": [
+        "x86_64-linux",
+        "aarch64-darwin"
+      ],
+      "command": [
+        "nix",
+        "run",
+        "github:Mic92/nix-update",
+        "--",
+        "--flake",
+        "ibis-office",
+        "--use-update-script"
+      ]
     }
   ],
   "validations": {

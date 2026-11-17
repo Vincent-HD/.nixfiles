@@ -40,7 +40,8 @@ modules/
   equibop.nix                          # Equibop with Equicord settings and macOS cask
   craft-apps.nix                       # ArtCraft apps (PhotoCraft, PdfCraft, WordCraft) with per-app toggles and file associations
   open-pencil.nix                      # OpenPencil design editor + MCP server and ACP agent adapters
-  libreoffice.nix                      # LibreOffice (HM on Linux, cask on macOS); default for spreadsheets
+  libreoffice.nix                      # LibreOffice (Qt6 build + render profiles on Linux, cask on macOS); default for spreadsheets
+  ibis-office.nix                      # ibisOffice GPU office suite (pinned, trial alongside LibreOffice)
   kdenlive.nix                         # Kdenlive video editor (HM on Linux, cask on macOS)
   spotifast.nix                        # Spotifast (HM)
   bitwarden.nix                        # Bitwarden Desktop (HM)

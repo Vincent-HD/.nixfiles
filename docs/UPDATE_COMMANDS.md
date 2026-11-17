@@ -274,6 +274,19 @@ nix run github:Mic92/nix-update -- --flake photocraft --use-update-script
 nix run github:Mic92/nix-update -- --flake open-pencil --use-update-script
 ```
 
+### ibis-office
+
+- **File**: `packages/ibis-office/default.nix`
+- **Pattern**: Linux AppImage unpacked with `appimageTools.extract`, its single Rust binary patched with `autoPatchelfHook` and wrapped with the dlopened Wayland/Vulkan/EGL libraries; macOS Apple Silicon `.app` zip copied unchanged
+- **Flake output**: `.#ibis-office`
+- **Platforms**: `x86_64-linux`, `aarch64-darwin`
+- **Updater**: Reads the latest GitHub release and converts the per-asset `digest` from the release API to SRI hashes for both artifacts; no download needed.
+- **Configuration**: `modules/ibis-office.nix` (installed only; LibreOffice keeps the spreadsheet associations).
+
+```bash
+nix run github:Mic92/nix-update -- --flake ibis-office --use-update-script
+```
+
 ### t3code
 
 - **File**: `packages/t3code/default.nix`

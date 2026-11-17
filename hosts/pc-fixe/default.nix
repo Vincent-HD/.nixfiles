@@ -74,6 +74,7 @@ in
             hm.curseforge
             hm.craftApps
             hm.libreoffice
+            hm.ibisOffice
             hm.kdenlive
             hm.openPencil
             hm.work
