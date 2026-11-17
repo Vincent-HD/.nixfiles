@@ -144,7 +144,6 @@ in
               middleClickAction = "region";
               rightClickAction = "clipboard";
               menuRightClickAction = "copy";
-              screenshotBackend = "dms";
               skipConfirm = true;
               includeCursor = false;
               defaultHideControlCenter = true;

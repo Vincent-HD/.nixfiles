@@ -116,7 +116,7 @@
     # widget. The pinned revision is kept declarative so activation does not
     # depend on a mutable plugin registry checkout.
     quick-capture = {
-      url = "github:hthienloc/dms-quick-capture/8e923d1604fd860007f0d5a3a3088011f253f2c1";
+      url = "github:hthienloc/dms-quick-capture/d9e4475404e29223fd68d60feadf2eab810d098e";
       flake = false;
     };
 
