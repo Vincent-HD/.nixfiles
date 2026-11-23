@@ -50,6 +50,37 @@
               }
             ]
           '')
+
+          # PS5 audio enters on the onboard analog input (Line In; its 0 dB point is
+          # ~10% in mixers, 100% adds +60 dB of boost). Forward it to the
+          # Unitek headset as a "PS5 audio" stream with its own volume and mute.
+          (pkgs.writeTextDir "share/pipewire/pipewire.conf.d/30-ps5-audio.conf" ''
+            context.modules = [
+              {
+                name = libpipewire-module-loopback
+                args = {
+                  node.description = "PS5 audio"
+                  media.name = "PS5 audio"
+
+                  capture.props = {
+                    node.name = "ps5_audio.capture"
+                    target.object = "alsa_input.pci-0000_2d_00.4.analog-stereo"
+                    node.dont-fallback = true
+                    audio.channels = 2
+                    audio.position = [ FL FR ]
+                  }
+
+                  playback.props = {
+                    node.name = "ps5_audio.playback"
+                    target.object = "alsa_output.usb-C-Media_Electronics_Inc._USB_Audio_Device-00.analog-stereo"
+                    node.dont-fallback = true
+                    audio.channels = 2
+                    audio.position = [ FL FR ]
+                  }
+                }
+              }
+            ]
+          '')
         ];
       };
     };
