@@ -73,7 +73,7 @@ in
             hm.bitwarden
             hm.curseforge
             hm.craftApps
-            hm.ibisOffice
+            hm.libreoffice
             hm.kdenlive
             hm.openPencil
             hm.work

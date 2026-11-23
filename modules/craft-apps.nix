@@ -40,6 +40,26 @@
             "ai.storyteller.photocraft.kra"
           ];
         };
+        wordcraft = {
+          mimeTypes = [
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            "application/vnd.ms-word.document.macroEnabled.12"
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.template"
+            "application/vnd.ms-word.template.macroEnabled.12"
+            "application/msword"
+            "application/msword-template"
+            "application/vnd.oasis.opendocument.text"
+            "application/rtf"
+            "text/rtf"
+          ];
+          uniformTypeIdentifiers = [
+            "org.openxmlformats.wordprocessingml.document"
+            "org.openxmlformats.wordprocessingml.template"
+            "com.microsoft.word.doc"
+            "org.oasis-open.opendocument.text"
+            "public.rtf"
+          ];
+        };
       };
 
       appNames = builtins.attrNames defaultAssociations;

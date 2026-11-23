@@ -117,9 +117,6 @@
           updateScriptZod = updateScriptZod;
         };
         open-pencil-mcp = pkgs.callPackage ../packages/open-pencil/mcp { };
-        ibis-office = pkgs.callPackage ../packages/ibis-office {
-          updateScriptZod = updateScriptZod;
-        };
       }
       # ArtCraft desktop apps share one builder and one pin file.
       // lib.genAttrs craftAppNames (

@@ -248,11 +248,11 @@ nix run github:Mic92/nix-update -- --flake lsfg-vk --use-update-script
 nix run github:Mic92/nix-update -- --flake cursor-agent --use-update-script
 ```
 
-### ArtCraft apps (pdfcraft, photocraft)
+### ArtCraft apps (pdfcraft, photocraft, wordcraft)
 
 - **File**: `packages/craft-apps/default.nix` (shared builder) with pins in `packages/craft-apps/sources.json`
 - **Pattern**: Linux release tarball patched with `autoPatchelfHook`; universal macOS DMG unpacked with `_7zz`
-- **Flake outputs**: `.#pdfcraft`, `.#photocraft`
+- **Flake outputs**: `.#pdfcraft`, `.#photocraft`, `.#wordcraft`
 - **Platforms**: `x86_64-linux`, `aarch64-darwin`, `x86_64-darwin`
 - **Updater**: `packages/craft-apps/update.ts <app>` reads the latest GitHub release of `storytold/<app>` and converts its `SHA256SUMS.txt` entries to SRI hashes for both artifacts, without downloading them.
 - **Configuration**: `modules/craft-apps.nix` exposes `custom.craftApps.<app>.enable`, `.setDefaultApplication`, `.mimeTypes` (Linux), and `.uniformTypeIdentifiers` (macOS).
@@ -272,19 +272,6 @@ nix run github:Mic92/nix-update -- --flake photocraft --use-update-script
 
 ```bash
 nix run github:Mic92/nix-update -- --flake open-pencil --use-update-script
-```
-
-### ibis-office
-
-- **File**: `packages/ibis-office/default.nix`
-- **Pattern**: Linux AppImage unpacked with `appimageTools.extract`, its single Rust binary patched with `autoPatchelfHook` and wrapped with the dlopened Wayland/Vulkan/EGL libraries; macOS Apple Silicon `.app` zip copied unchanged
-- **Flake output**: `.#ibis-office`
-- **Platforms**: `x86_64-linux`, `aarch64-darwin`
-- **Updater**: Reads the latest GitHub release and converts the per-asset `digest` from the release API to SRI hashes for both artifacts; no download needed.
-- **Configuration**: `modules/ibis-office.nix` (default app for spreadsheets, documents and presentations on Linux and macOS).
-
-```bash
-nix run github:Mic92/nix-update -- --flake ibis-office --use-update-script
 ```
 
 ### t3code
