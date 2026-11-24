@@ -112,9 +112,6 @@
         opencodev2 = pkgs.callPackage ../packages/opencodev2 {
           packageUpdater = packageUpdater;
         };
-        t3code = pkgs.callPackage ../packages/t3code {
-          packageUpdater = packageUpdater;
-        };
         vtask = pkgs.callPackage ../packages/vtask { };
         wifi-audio-streaming = pkgs.callPackage ../packages/wifi-audio-streaming {
           packageUpdater = packageUpdater;

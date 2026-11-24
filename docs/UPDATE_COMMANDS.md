@@ -164,8 +164,7 @@ nix flake update <input>
   lock revision is exactly the reviewed commit, and build `.#z-code`. Never use a moving
   branch or tag for this input.
 - **Before switching**: close T3 and back up `~/.t3`; restore that backup with the previous
-  package when rolling back. Both hosts install `.#z-code` (it replaces the upstream `t3code`
-  package), and its wrapper disables in-app updates.
+  package when rolling back. Both hosts install `.#z-code`, and its wrapper disables in-app updates.
 
 ### herdr
 

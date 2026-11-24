@@ -326,7 +326,7 @@ If you want to remove a feature, change the relevant host composition under `hos
   `~/.cursor/mcp.json` lives in `modules/agents/cursor.nix`, Codex's lower-precedence
   `/etc/codex/config.toml` lives in `modules/agents/codex.nix`, and VS Code's user-profile
   `mcp.json` lives in `modules/agents/vscode.nix`.
-- T3 Code nightly is a pinned desktop package (`packages/t3code`) wired by `modules/agents/t3code.nix`; it drives provider CLIs rather than a client MCP schema.
+- T3 Code runs as the pinned Z Code fork (the `z-code` flake input) wired by `modules/agents/t3code.nix`; it drives provider CLIs rather than a client MCP schema.
 - MCP credentials are loaded from the local Bitwarden sync files at process startup and passed only
   to the child process environment.
 - Executable MCPs use pinned Nix packages.
