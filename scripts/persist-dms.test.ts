@@ -2,7 +2,7 @@ import { chmod, mkdir, mkdtemp, rm, symlink } from "node:fs/promises";
 import { join } from "node:path";
 import { afterEach, describe, expect, test } from "bun:test";
 
-import { compactJson, nonDefaultSettings, normalizeSetting, prettyJson, sortJson } from "./persist-dms";
+import { compactJson, loadSettingsSpec, nonDefaultSettings, normalizeSetting, prettyJson, sortJson } from "./persist-dms";
 
 // Bun owns the test runner, subprocesses, and file writes. Bun does not expose
 // native recursive temp-directory or permission helpers, so the node:* imports
@@ -95,6 +95,59 @@ describe("persist-dms transformation", () => {
   });
 });
 
+describe("persist-dms QML JavaScript loader", () => {
+  const writeSpecTree = async (files: Record<string, string>): Promise<string> => {
+    const root = await mkdtemp(join(Bun.env.TMPDIR ?? "/tmp", "persist-dms-spec-test-"));
+    temporaryRoots.push(root);
+    for (const [path, content] of Object.entries(files)) {
+      await mkdir(join(root, path, ".."), { recursive: true });
+      await Bun.write(join(root, path), content);
+    }
+    return root;
+  };
+
+  test("resolves nested file imports into namespaces, like DMS 2.1 SettingsSpec.js", async () => {
+    const root = await writeSpecTree({
+      "shared/SpecUtil.js": ".pragma library\nfunction mergeSpec(base, local) { return Object.assign({}, base, local); }\n",
+      "shared/Shared.js": `.pragma library\n.import "./SpecUtil.js" as Util\nvar SPEC = { cornerRadius: { def: 12 } };\n`,
+      "settings/DockConfig.js": `.pragma library\nfunction create(id, name) { return { id: id, name: name, iconSize: 40 }; }\n`,
+      "settings/SettingsSpec.js": [
+        ".pragma library",
+        `.import "../shared/Shared.js" as Shared`,
+        `.import "../shared/SpecUtil.js" as Util`,
+        `.import "DockConfig.js" as DockConfig`,
+        "var SPEC = Util.mergeSpec(Shared.SPEC, {",
+        `  dockConfigs: { def: [DockConfig.create("dock", "Dock")] },`,
+        "  configVersion: { def: 0, persist: false }",
+        "});",
+        "",
+      ].join("\n"),
+    });
+
+    const spec = await loadSettingsSpec(join(root, "settings/SettingsSpec.js"));
+
+    expect(spec.defaults).toEqual({
+      cornerRadius: 12,
+      dockConfigs: [{ id: "dock", name: "Dock", iconSize: 40 }],
+      configVersion: 0,
+    });
+    expect([...spec.nonPersistent]).toEqual(["configVersion"]);
+  });
+
+  test("reports missing imports, module imports, and import cycles", async () => {
+    const root = await writeSpecTree({
+      "Missing.js": `.import "Absent.js" as Absent\nvar SPEC = {};\n`,
+      "Module.js": ".import QtQuick 2.15 as Quick\nvar SPEC = {};\n",
+      "A.js": `.import "B.js" as B\nvar SPEC = {};\n`,
+      "B.js": `.import "A.js" as A\n`,
+    });
+
+    await expect(loadSettingsSpec(join(root, "Missing.js"))).rejects.toThrow("QML JavaScript import not found");
+    await expect(loadSettingsSpec(join(root, "Module.js"))).rejects.toThrow("only file imports are supported");
+    await expect(loadSettingsSpec(join(root, "A.js"))).rejects.toThrow("Circular QML JavaScript import");
+  });
+});
+
 describe("persist-dms command", () => {
   test("commits only generated settings while preserving unrelated staged work", async () => {
     const root = await mkdtemp(join(Bun.env.TMPDIR ?? "/tmp", "persist-dms-test-"));
@@ -111,6 +164,7 @@ printf '%s\\n' '{"clockFormat":"HH:mm","cornerRadius":8,"configVersion":13}'
     );
     await chmod(dmsPath, 0o755);
 
+    await Bun.write(join(root, "SpecUtil.js"), ".pragma library\nfunction cloneDef(def) { return def; }\n");
     const specPath = join(root, "SettingsSpec.js");
     await Bun.write(
       specPath,
