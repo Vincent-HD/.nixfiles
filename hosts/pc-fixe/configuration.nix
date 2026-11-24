@@ -87,6 +87,8 @@
           "https://niri.cachix.org"
           # Rebuilt CachyOS kernel cache; the old Attic endpoint was compromised.
           "https://cache.lantian.pub/lantian"
+          # Official CUDA cache; covers CUDA-enabled builds such as Sunshine.
+          "https://cache.nixos-cuda.org"
         ];
         extra-trusted-public-keys = [
           "codex-cli.cachix.org-1:1Br3H1hHoRYG22n//cGKJOk3cQXgYobUel6O8DgSing="
@@ -97,6 +99,7 @@
           "cachix.cachix.org-1:eWNHQldwUO7G2VkjpnjDbWwy4KQ/HNxht7H4SSoMckM="
           "niri.cachix.org-1:Wv0OmO7PsuocRKzfDoJ3mulSl7Z6oezYhGhR+3W2964="
           "lantian:WVGO7vsRMSEN+h7Lp7kv6SAmrkEXgUGbbXm7jMDjBuQ="
+          "cache.nixos-cuda.org:74DUi4Ye579gUqzH4ziL9IyiJBlDpMRn9MBN8oNan9M="
         ];
       };
 
