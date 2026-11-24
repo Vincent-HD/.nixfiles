@@ -186,29 +186,22 @@ description; do not create `WIP`, `update`, `changes`, or other vague subjects.
 - **Use `custom.*` for user-defined option trees** that do not belong under a standard NixOS/Home
   Manager namespace such as `services.*`, `programs.*`, `users.*`, or `hardware.*`. Example:
   `options.custom.windowsMounts` and `config.custom.windowsMounts`.
-- When adding or bumping pinned packages backed by fixed-output sources (`fetchurl`,
-  `fetchFromGitHub`, `buildNpmPackage`, etc.), prefer `nix-update` over hand-editing hashes or
-  writing one-off update scripts. Example:
-  `nix run github:Mic92/nix-update -- --file modules/coding/default.nix --version 0.0.1-alpha.12 jj-ryu`
-- **Custom packages must be `nix-update` compatible.** When adding a new package that is not in
-  nixpkgs, create it as a standalone derivation under `packages/<name>/default.nix` using the
-  `finalAttrs` pattern. The module should then import it via `pkgs.callPackage`. This structure lets
-  `nix-update` locate and bump the version/hash automatically. See `packages/jj-ryu/default.nix`
-  for the reference pattern.
-- **Every new pinned package or flake input must be added to the update automation registry.** For
-  packages, make the derivation `nix-update` compatible (including a package-specific
-  `passthru.updateScript` when platform hashes must be synchronized together or upstream metadata/
-  coupled artifacts need custom handling),
-  expose it as a flake package, add its command to `scripts/update-pins.json`, and document it in
-  `docs/UPDATE_COMMANDS.md`. For flake inputs, add a `flake-input` entry to that JSON registry.
-- **Refresh every supported artifact in one package update.** When a package has platform-specific
-  hashes, its updater must refresh all entries in one run instead of depending on the machine that
-  invokes it. Use explicit target OS/CPU selection when a generated dependency closure differs by
-  platform. Do not add package or host builds as an update validation step; the target machine owns
-  that verification. Keep custom scripts focused on package sources, generated dependency closures,
-  and shared version-matched assets.
-- **See `docs/UPDATE_COMMANDS.md`** for the full list of nix-update-compatible pinned packages,
-  flake inputs, and their exact update commands.
+- **Pinned packages update through one path.** `nix run .#update-pins` refreshes every flake input and every
+  flake package; read `docs/UPDATE_COMMANDS.md` before adding or changing a pinned package. Never hand-edit
+  hashes and never add a per-package updater script (`update.ts`, shell updaters, regex rewrites of `.nix`).
+- **Packages not in nixpkgs live in `packages/<name>/default.nix`** (a standalone derivation, `finalAttrs`
+  pattern) exposed in `modules/packages.nix`; modules consume the flake package or `pkgs.callPackage` it.
+- **Every package under `packages/` declares `passthru.updateScript = packageUpdater.script { ... }`** (see
+  `packages/package-updater`) using the smallest knob that works: `nixUpdateArgs` (nix-update finds the
+  version), then `latestVersion` (a shell command printing it), then a short `postUpdate` Bun hook for coupled
+  artifacts. Multi-platform packages put every version-following fetch in `passthru.sources` so one host
+  refreshes all platform hashes. Keep the version and every hash as literals in the `file` given to the script.
+- **Anything intentionally not auto-updated gets a hold** in `scripts/update-pins.json` with a reason that
+  says how to update it by hand. Flake inputs need no registration: they are discovered from `flake.lock`, and
+  inputs pinned to a commit in `flake.nix` are skipped automatically.
+- **Run `nix run .#update-pins -- --check` after touching packages, holds, or inputs**; it fails when a
+  package lacks the shared updater or a hold names nothing. Do not add package or host builds to the update
+  run; each host validates its own configuration.
 - When adding a new external flake input, add `inputs.<name>.follows = "nixpkgs"` when the input
   supports it, to avoid duplicate nixpkgs evaluations.
 - Keep `system.stateVersion` and `home.stateVersion` stable unless intentionally migrating state.

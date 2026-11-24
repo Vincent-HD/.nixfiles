@@ -270,19 +270,16 @@ nix eval --raw ".#packages.${SYSTEM}.<pkg>.version"
 
 Purpose: confirm that a flake package exists for the platform an updater is targeting before running `nix-update`. This is especially useful when the current host does not provide a Linux-only output.
 
-### Verify a package updater and its runtime imports in the flake snapshot
+### Inspect a package's update script and pinned sources
 
 ```bash
 SYSTEM=$(nix eval --impure --raw --expr builtins.currentSystem)
-UPDATE_COMMAND=$(nix eval --json ".#packages.${SYSTEM}.<pkg>.passthru.updateScript")
-UPDATE_SCRIPT=$(jq -r '.[1]' <<<"$UPDATE_COMMAND")
-UPDATE_ZOD_MODULE=$(jq -r '.[2]' <<<"$UPDATE_COMMAND")
-test -f "$UPDATE_SCRIPT"
-test -f "$(dirname "$UPDATE_SCRIPT")/../update-schema.ts"
-test -f "$UPDATE_ZOD_MODULE"
+nix eval --json ".#packages.${SYSTEM}.<pkg>.updateScript"
+nix eval --json ".#packages.${SYSTEM}.<pkg>.sources" --apply 'builtins.mapAttrs (_: s: { url = s.url or (builtins.head s.urls); hash = s.outputHash; })'
+nix run .#update-pins -- --check
 ```
 
-Purpose: confirm that the update script, its shared relative schema import, and the Nix-store runtime module all exist in the evaluated flake snapshot. This catches scripts that work from the checkout but fail when `nix-update` executes a store copy. New files under the flake must be tracked before Nix includes them in its source snapshot.
+Purpose: show the arguments the shared package updater receives and every fetch it will re-hash after a version change, then confirm no package or hold drifts from the update conventions. New files under the flake must be tracked before Nix includes them in its source snapshot.
 
 ### Build a package for the current platform
 

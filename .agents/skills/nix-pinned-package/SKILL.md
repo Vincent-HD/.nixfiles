@@ -1,6 +1,6 @@
 ---
 name: nix-pinned-package
-description: Install and maintain pinned Nix packages from fixed upstream versions in a nix-update-friendly way.
+description: Install and maintain pinned Nix packages from fixed upstream versions through the shared packageUpdater and update-pins runner.
 metadata:
   workflow: nix-update
   scope: repo
@@ -10,44 +10,54 @@ metadata:
 
 ## Use This Skill
 
-Use this when the user wants to install something declaratively, but it must stay pinned to a specific upstream version, tarball, AppImage, npm artifact, or similar fixed-output source.
+Use this when adding, changing, or debugging a package under `packages/` that is pinned to an
+upstream version (release binary, tarball, AppImage, npm or PyPI artifact, branch snapshot), or
+when its update fails. `docs/UPDATE_COMMANDS.md` is the full reference; read its
+"Conventions for Pinned Packages" section first.
 
-## Default Decision Tree
+## Decision Tree
 
 1. Prefer an existing nixpkgs package.
-2. If none exists, use the smallest reproducible fixed-output derivation.
-3. Keep the package in a standalone file such as `packages/<name>.nix`.
-4. Expose it as a flake package output if you want `nix-update --flake` to manage it.
-5. Only fall back to a custom updater when `nix-update` cannot safely follow the version path.
+2. Otherwise write the smallest reproducible derivation in `packages/<name>/default.nix`
+   (`finalAttrs` pattern) and expose it in `modules/packages.nix` with
+   `packageUpdater = packageUpdater;`.
+3. Give it `passthru.updateScript = packageUpdater.script { attr; file = ./default.nix; ... }`
+   with the smallest knob that works:
+   - `nixUpdateArgs` when nix-update can find the version (GitHub releases/tags, npm, PyPI,
+     crates, `--version=branch=<name>`, `--version=unstable`, `--version-regex=...`);
+   - `latestVersion` when it cannot: one shell command printing the version (`curl`, `jq`,
+     `sed`, `github-api <path>` are available; avoid `head`/`grep -m1` under `pipefail`);
+   - `postUpdate` only for artifacts coupled to the release that nix-update cannot see.
+4. If the package cannot be automated, add a hold with a how-to reason to
+   `scripts/update-pins.json` instead of an update script.
 
 ## Package Shape
 
-- Keep the derivation explicit: `pname`, `version`, source URL, hash, wrapper, and metadata.
-- Avoid burying package logic inside a NixOS or Home Manager module.
-- If a module needs the package, import the package file and read `passthru` fields from the package instead of duplicating version data.
-
-## Updateability Rules
-
-- Prefer `nix-update` over hand-editing hashes.
-- If the source is versioned and machine-readable, add `passthru.updateScript`.
-- The update script should fetch upstream release metadata, determine the new version, prefetch the fixed-output hash, and rewrite the package file.
-- Keep the update script adjacent to the package definition.
-- Use `nix-update --flake --use-update-script <name>` when the package is exposed as a flake output.
-
-## Unfree Packages
-
-- If the package is unfree and exported via `flake.packages`, make sure the flake `pkgs` instance allows unfree packages.
-- Do not rely on the NixOS host config alone.
-
-## Verification
-
-Run:
-
-- `nix build .#<name>`
-- `nix run github:Mic92/nix-update -- --flake --use-update-script <name>`
+- Keep the version as one string literal and every hash as a literal in the `file` passed to
+  `packageUpdater.script`; derive URLs and asset names from the version.
+- Multi-platform: keep per-system data in a plain `artifacts` set, build `passthru.sources`
+  with `lib.mapAttrs` over it, and set `src = finalAttrs.passthru.sources.${system}`. Put
+  other version-following fetches (skills at the tag, npm tarballs) in `passthru.sources`
+  too. The updater re-hashes all of them from one host.
+- Avoid burying package logic inside a NixOS or Home Manager module. A module that calls the
+  package file directly passes
+  `packageUpdater = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.package-updater;`.
 
 ## Guardrails
 
+- Never add `update.ts`, a shell updater, or regex rewrites of `.nix` files.
+- Never hand-edit hashes; run the updater.
 - Do not use imperative installs like `npm -g`.
-- Do not create a one-off update script if `nix-update` can do the job cleanly.
-- Ask a short clarification if the source cannot be pinned or updated safely.
+- Unfree packages exported through `flake.packages` must use an unfree-enabled `pkgs`
+  (`unfreePkgs` in `modules/packages.nix`).
+
+## Verification
+
+```bash
+nix run .#update-pins -- --check              # convention drift
+nix run .#update-pins -- --only <name>        # exercise the update path
+nix build .#<name> --no-link
+```
+
+To prove a new update path end to end, lower the version and corrupt the hashes in a scratch
+copy, run the update, and confirm the original values come back.

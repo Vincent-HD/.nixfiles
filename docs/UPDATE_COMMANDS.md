@@ -1,286 +1,265 @@
-# Pinned Package Update Reference
+# Updating Pins
 
-Quick-reference commands for updating packages that are pinned to fixed upstream versions and backed by `fetchurl` / `fetchFromGitHub` sources.
-
-For packages with platform-specific hashes, the registered updater refreshes every supported
-artifact in one run, regardless of the machine running it. These commands update pins only; each
-host can build its own configuration when convenient.
-
-## Data-Driven Update Runner
-
-Routine updates are configured in `scripts/update-pins.json` and run through the Bun-based app:
+Every flake input and every pinned package in `packages/` is updated by one command:
 
 ```bash
 nix run .#update-pins
 ```
 
-`nix run` requires the separator `--` before every option intended for the update runner. Without
-it, flags such as `--only` and `--validate` are parsed as options to the Nix CLI itself.
-
-Useful variants:
+Pass options after `--`; without it, Nix parses them as its own flags.
 
 ```bash
-nix run .#update-pins -- --dry-run
-nix run .#update-pins -- --only codex,curseforge
+nix run .#update-pins -- --list              # inputs, packages, holds, validation sets
+nix run .#update-pins -- --check             # fail on update-convention drift
+nix run .#update-pins -- --dry-run           # print the commands only
+nix run .#update-pins -- --inputs            # every unheld flake input
+nix run .#update-pins -- --packages          # every unheld flake package
+nix run .#update-pins -- --only codex,t3code # named entries (combines with --inputs/--packages)
 nix run .#update-pins -- --skip dankmail
-nix run .#update-pins -- --validate fast
-nix run .#update-pins -- --list
+nix run .#update-pins -- --jobs 8            # package updates in parallel (default 4)
+nix run .#update-pins -- --validate fast     # linux + darwin eval after the updates
+nix run .#update-pins -- --validate full     # build this host's system after the updates
 ```
 
-Commit-pinned inputs (`noctalia` and the three DMS plugin sources) are disabled
-manual entries. Running `nix flake update <name>` cannot advance a revision embedded in `flake.nix`;
-edit the reviewed revision first, then refresh its lock entry. `noctalia` is additionally denylisted
-to make the intentional v4 hold visible.
+`nrs --update --inputs <all|name> --pins <all|name> [--dry-run] [--include-held]` and
+`nrs --list-updates` forward to the same runner from any directory (they use `NH_FLAKE`).
 
-`herdr` is also a disabled manual entry because its URL selects a fixed tag. Choose and test a new
-release in `flake.nix` before refreshing its lock entry.
-Selecting only a disabled manual entry exits with an error and does not run validations, so a
-skipped update cannot look successful.
+The runner does not build packages: each host validates its own configuration with
+`--validate full` or a normal rebuild.
 
-The `codex` and `curseforge` outputs are Linux-only. The data-driven updater
-reads each entry's `systems` field and skips packages that do not support the
-current host. Run their normal commands on a Linux target. Passing
-`--system x86_64-linux` alone does not provide a Linux builder on
-Darwin.
+## How It Works
 
-## nix-update Compatible Packages
+1. **Discovery.** Inputs come from the root of `flake.lock`. Packages come from
+   `packages.<current system>`, so Linux-only packages are updated from a Linux host.
+2. **Selection.** An entry is skipped when it is listed under `holds` in
+   `scripts/update-pins.json` (with its reason), or when it is an input whose URL in
+   `flake.nix` names an exact commit (`pinned`: `nix flake update` cannot move it).
+3. **Inputs first.** All selected inputs are refreshed in one `nix flake update`.
+4. **Packages.** Each package's `passthru.updateScript` runs, several at a time, with its
+   output in a per-package log. Every script is built by `packageUpdater.script`
+   (`packages/package-updater`), which:
+   - runs `nix-update` on the package (version detection, the running system's `src`
+     hash, and dependency hashes such as `npmDepsHash`, `vendorHash`, or `cargoHash`);
+   - when the version changed, prefetches every other fetch in `passthru.sources` and
+     replaces its old hash by value in the package file, so all platforms are refreshed
+     from one host without evaluating other systems;
+   - finally runs the package's `postUpdate` hook, if any.
+5. **Drift check.** Before anything runs, every package must use `packageUpdater.script`
+   or have a hold, and every hold must name an existing input or package. `--check` runs
+   only this check; the `update-pins-tests` flake check covers the runner itself.
 
-These packages use pinned sources and are wired so `nix-update` can bump versions and hashes automatically.
+`nix-update` itself is the `nix-update` flake input (upstream), so it is updated like any
+other input.
 
-### droidcam-client
+## Conventions for Pinned Packages
 
-- **File**: `packages/droidcam-client/default.nix`
-- **Pattern**: current Linux client `.deb` pinned with `fetchurl`, patched and wrapped for Nix
-- **Flake output**: `.#droidcam-client`
-- **Platforms**: `x86_64-linux`
-- **Release tag**: `droidcam-<version>`
+Follow these rules for every package under `packages/`; the drift check enforces the
+first two.
+
+1. **Always declare an update path.** Set `passthru.updateScript = packageUpdater.script { ... }`.
+   A package that truly cannot be automated (vendored source, local project) gets a hold in
+   `scripts/update-pins.json` whose reason says how to update it by hand.
+2. **Never write a per-package updater script.** Do not add `update.ts`, shell updaters, or
+   anything that rewrites `.nix` files with regular expressions. Express the package with
+   the knobs below instead.
+3. **Pick the smallest knob that works**, in this order:
+   - `nixUpdateArgs`: nix-update finds the version itself (GitHub releases or tags, npm,
+     PyPI, crates, branch snapshots). Typical flags: `--use-github-releases`,
+     `--version=unstable` (prereleases), `--version-regex=...`, `--version=branch=<name>`.
+   - `latestVersion`: a shell command printing the target version, for sources nix-update
+     cannot read (vendor APIs, install scripts, HTML indexes). It runs with `curl`, `jq`,
+     `sed`, `grep`, and `github-api <path>` (authenticated GitHub REST) on `PATH`. Avoid
+     `head`/`grep -m1` in pipelines (SIGPIPE fails `pipefail`); use `sed -n 1p`.
+   - `postUpdate`: a short Bun script for artifacts coupled to the release that nix-update
+     cannot see (a matching flake input, a generated lockfile). It receives
+     `NIXFILES_ROOT`, `UPDATE_ATTR`, `UPDATE_FILE`, `UPDATE_OLD_VERSION`, and
+     `UPDATE_NEW_VERSION`, and only runs after a version change.
+4. **Put every version-following fetch in `passthru.sources`.** Multi-platform packages keep
+   their per-system data (asset name, hash) in a plain `artifacts` attribute set, build
+   `passthru.sources` with `lib.mapAttrs` over it, and select `src` from it. Secondary
+   fetches that follow the version (skills at the same tag, an npm tarball) go in the same
+   attribute set under a descriptive name. Keep every hash literal in the file passed as
+   `file`.
+5. **Keep the version a single string literal in `file`**, and derive every URL and asset
+   name from it. If upstream names differ from the tag, derive them (for example
+   `lib.versions.pad 3 version`) rather than storing a second version.
+6. **Hold, don't disable.** Use a hold with a precise reason for anything intentionally
+   frozen. Remove the hold when the reason no longer applies.
+
+Minimal multi-platform example:
+
+```nix
+{ lib, stdenvNoCC, fetchurl, packageUpdater }:
+let
+  # Release artifact name and hash for each supported platform.
+  artifacts = {
+    "x86_64-linux" = { name = "tool-linux-x64"; hash = "sha256-..."; };
+    "aarch64-darwin" = { name = "tool-darwin-arm64"; hash = "sha256-..."; };
+  };
+in
+stdenvNoCC.mkDerivation (finalAttrs: {
+  pname = "tool";
+  version = "1.2.3";
+  src = finalAttrs.passthru.sources.${stdenvNoCC.hostPlatform.system};
+  # ...
+  passthru = {
+    # Every platform's fetch, so one host can refresh all hashes.
+    sources = lib.mapAttrs (
+      _system: artifact:
+      fetchurl {
+        url = "https://github.com/owner/tool/releases/download/v${finalAttrs.version}/${artifact.name}";
+        hash = artifact.hash;
+      }
+    ) artifacts;
+    updateScript = packageUpdater.script {
+      attr = "tool";
+      file = ./default.nix;
+      nixUpdateArgs = [ "--use-github-releases" ];
+    };
+  };
+  meta.platforms = builtins.attrNames artifacts;
+})
+```
+
+Wire the package in `modules/packages.nix` with `packageUpdater = packageUpdater;`. A module
+that calls the package file directly passes
+`packageUpdater = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.package-updater;`
+(it is only used by `passthru.updateScript`).
+
+To test an update path, check out a throwaway copy, lower the version and corrupt the
+hashes, then run the package's update script:
 
 ```bash
-nix run github:Mic92/nix-update -- --flake droidcam-client --use-github-releases --version-regex 'droidcam-(.*)'
+nix run .#update-pins -- --only <package>
 ```
 
-### handy
+## Package Reference
 
-- **File**: `packages/handy/default.nix`
-- **Platforms**: `x86_64-linux`, `aarch64-darwin`
-- **Updater**: Refreshes both prebuilt GitHub release artifacts together.
+| Package | Version source | Notes |
+| --- | --- | --- |
+| `agent-browser` | GitHub releases | 3 platforms |
+| `arch-ops-server` | PyPI JSON (`latestVersion`) | universal wheel |
+| `codeburn` | npm `latest` (`latestVersion`) | tag source + npm artifact; nix-update refreshes `npmDepsHash` |
+| `codex` | GitHub API, 30 releases (`latestVersion`) | nix-update's 100-release page times out on `openai/codex` |
+| `craft-apps` (`pdfcraft`, `photocraft`, `wordcraft`) | GitHub releases | one pin file per app in `packages/craft-apps/apps/` |
+| `crosspipe` | `main` branch snapshot | |
+| `curseforge` | Electron feed `latest-linux.yml` (`latestVersion`) | version is `<version>-<build>` |
+| `cursor-agent` | install script (`latestVersion`) | 4 platforms |
+| `dankmail` | GitHub releases | upstream renamed to Dux Mail; binary and service keep `dmail` |
+| `dms-prebuilt` | GitHub releases | `postUpdate` moves the held `dms` input to the release commit |
+| `droidcam-client` | GitHub releases `droidcam-<version>` | |
+| `equicord-prebuilt` | GitHub releases (date tags) | |
+| `executor` | npm `latest` (`latestVersion`) | 4 platforms, suffixed npm versions |
+| `gamescope-lanczos` | fork `master` snapshot | recursive submodules; build and test the WSI variants after updating |
+| `handy` | GitHub releases | |
+| `jj-ryu` | GitHub prereleases | alpha-only upstream |
+| `lightjj` | GitHub releases | |
+| `lsfg-vk` | build index "Latest release" (`latestVersion`) | |
+| `open-pencil` | GitHub releases | `postUpdate` regenerates the `open-pencil-mcp` lockfile and hash |
+| `opencodev2` | OpenCode update API (`latestVersion`) | |
+| `plannotator` | GitHub releases | binaries + shared skills at the same tag |
+| `portless` | npm `latest` (`latestVersion`) | |
+| `t3code` | GitHub nightly prereleases | Linux AppImage name is unversioned; the tag path pins it |
+| `wifi-audio-streaming` | GitHub releases | tags drop the patch number; assets pad it |
+
+## Holds and Manual Updates
+
+The current holds and their reasons are listed by `nix run .#update-pins -- --list`.
+
+### Commit-pinned inputs
+
+`noctalia` (intentional v4 hold until the v5 migration), `dms-plugins`, `quick-capture`, and
+`screen-capture-toolbar` name a reviewed commit in `flake.nix`. To update one, review the
+upstream change, edit the revision in `flake.nix`, then refresh only that entry:
 
 ```bash
-nix run github:Mic92/nix-update -- --flake handy --use-update-script
+nix flake update <input>
 ```
 
-### wifi-audio-streaming
+### z-code
 
-- **File**: `packages/wifi-audio-streaming/default.nix`
-- **Pattern**: Linux AppImage and macOS app archive pinned with `fetchurl`
-- **Flake output**: `.#wifi-audio-streaming`
-- **Platforms**: `x86_64-linux`, `aarch64-darwin`
-- **Updater**: Reads the latest GitHub release, then refreshes the Linux and macOS artifacts.
+- **File**: `flake.nix` (`z-code` input) and `flake.lock`
+- **Flake packages**: `.#z-code-source` (pinned source snapshot) and `.#z-code`
+- **Source**: [Vincent-HD/zcode](https://github.com/Vincent-HD/zcode), branch `z-code`
+- **Update**: choose and review an exact fork commit, edit the URL in `flake.nix` to
+  `github:Vincent-HD/zcode/<reviewed-commit>`, run `nix flake update z-code`, check that the
+  lock revision is exactly the reviewed commit, and build `.#z-code`. Never use a moving
+  branch or tag for this input.
+
+### herdr
+
+The URL selects a release tag. Change the tag in `flake.nix`, then refresh the lock entry and
+verify both host package sets:
 
 ```bash
-nix run github:Mic92/nix-update -- --flake wifi-audio-streaming --use-update-script
+nix flake update herdr
 ```
 
-### codex
+### dms
 
-- **File**: `packages/codex/default.nix`
-- **Pattern**: `stdenv.mkDerivation` + `fetchurl` from GitHub releases
-- **Flake output**: `.#codex`
-- **Note**: The release tag is `rust-v<version>`, so keep `version` as the bare semver. Fetch `codex-package-x86_64-unknown-linux-musl.tar.gz` (not the bare CLI tarball) so `codex-code-mode-host` is installed next to `codex`.
-- **Release lookup**: Limit discovery to the newest 100 releases (one GitHub API page).
+The `dms` input (QML and modules) must match the `dms-prebuilt` CLI release, so it is held and
+only moved by the `dms-prebuilt` update. Its `postUpdate` hook resolves the release tag's
+commit, refreshes the input into a candidate lock, and swaps it in only when the stable branch
+is at that commit; otherwise the update fails and `flake.lock` is untouched. The package build
+also refuses a mismatched pair.
 
 ```bash
-nix run github:Mic92/nix-update -- --flake codex --use-github-releases --github-releases-limit 100 --version-regex 'rust-v(.*)'
+nix run .#update-pins -- --only dms-prebuilt
 ```
 
-### lightjj
+### cpuid-fault-emulation
 
-- **File**: `packages/lightjj/default.nix`
-- **Pattern**: `stdenvNoCC.mkDerivation` + `fetchurl` from GitHub releases
-- **Flake output**: `.#lightjj`
-- **Platforms**: `x86_64-linux`, `aarch64-darwin`
-- **Note**: Its updater refreshes both supported release binaries in one run.
+The source archive is attached to a forum post that blocks unattended downloads. Download and
+inspect it manually, replace the vendored tree, then build and evaluate the Linux host:
 
 ```bash
-nix run github:Mic92/nix-update -- --flake lightjj --use-update-script
+rm -rf packages/cpuid-fault-emulation/source
+nix shell nixpkgs#unzip -c unzip <verified-local-archive> -d packages/cpuid-fault-emulation/source
+nix build .#cpuid-fault-emulation
+nix eval .#nixosConfigurations.pc-fixe.config.system.build.toplevel.drvPath --raw
 ```
 
-### opencodev2
+## Input Notes
 
-- **File**: `packages/opencodev2/default.nix`
-- **Pattern**: npm release binaries from the official OpenCode V2 channel for Linux and macOS
-- **Flake output**: `.#opencodev2`
-- **Platforms**: `aarch64-darwin`, `x86_64-linux`
-- **Note**: The updater reads the official V2 channel metadata and refreshes both supported artifacts in one run.
+- **nix-cachyos-kernel**: keep the input on the `release` branch and do not make its nixpkgs
+  follow this repository; upstream pins its own nixpkgs for binary-cache hits. After an update,
+  check the default and `stock` kernels and that the NVIDIA and CPUID modules follow them:
 
-```bash
-nix run github:Mic92/nix-update -- --flake opencodev2 --use-update-script
-```
+  ```bash
+  nix eval --raw '.#nixosConfigurations.pc-fixe.config.boot.kernelPackages.kernel.name'
+  nix eval --raw '.#nixosConfigurations.pc-fixe.config.specialisation.stock.configuration.boot.kernelPackages.kernel.name'
+  ```
 
-### codeburn
+- **nix-gaming**: only the standalone `platformOptimizations` module is imported; review it
+  against the current Steam/NixOS options.
+- **Skill inputs** (`context7-skills`, `mattpocock-skills`, `humanlayer-skills`,
+  `kitlangton-skills`): review the upstream skill changes before applying Home Manager.
+- **Claude Code** follows `nixpkgs`; update that input when its packaged version advances.
 
-- **File**: `packages/codeburn/default.nix`
-- **Pattern**: tagged GitHub source for the npm lockfile plus the published npm CLI artifact and production dependency closure
-- **Flake output**: `.#codeburn`
-- **Note**: The package-specific updater refreshes the tagged source hash and npm artifact integrity, then lets `nix-update` recalculate the lockfile-derived dependency cache.
+## Z Code Integration
 
-```bash
-nix run github:Mic92/nix-update -- --flake codeburn --use-update-script
-```
+The Z Code integration targets x86_64 Linux and Apple Silicon macOS and is pinned to reviewed fork
+commit `7a90eb01528d93bfd2d2a183147a25a0bc66e3bb` on branch `z-code`, based on upstream
+`v0.1.9-nightly.20261110.4478`. Both hosts install that package. Build it with
+`nix build .#z-code --no-link`. The Home Manager module selects the same output
+and uses nixfiles' pinned package set. The `z-code-source` and `z-code` outputs resolve from
+the locked GitHub input and do not depend on a local checkout.
 
-### agent-browser
+The Home Manager wrapper routes all three executable names (`t3code`, `zcode`, and `z-code`)
+through the same managed launcher, including its provider `PATH` and the
+`T3CODE_DISABLE_AUTO_UPDATE=true` setting. On Linux, the desktop icon comes from the fork package's
+extracted AppImage. The desktop entry remains `t3code` and keeps the `t3code` URL schemes and
+window class to preserve the existing T3 profile and session identity. On macOS, the fork repacks the
+upstream arm64 zip and re-signs it ad hoc, so the bundle no longer carries the upstream Developer ID
+signature.
 
-- **File**: `packages/agent-browser/default.nix`
-- **Pattern**: native GitHub release binaries for Linux and both macOS architectures
-- **Flake output**: `.#agent-browser`
-- **Note**: The updater refreshes all three supported platform binaries in one run.
+## T3 Code and Provider CLIs
 
-```bash
-nix run github:Mic92/nix-update -- --flake agent-browser --use-update-script
-```
-
-### update-script-zod
-
-- **File**: `packages/update-script-zod/default.nix`
-- **Pattern**: pinned npm distribution of Zod, shared by Nix-store-executed package update scripts
-- **Flake output**: `.#update-script-zod`
-- **Note**: Update scripts receive this package's module path as an argument, so validation works without a user-global Node/Bun installation.
-
-```bash
-nix run github:Mic92/nix-update -- --flake update-script-zod
-```
-
-### executor
-
-- **File**: `packages/executor/default.nix`
-- **Pattern**: npm binary archives for every supported OS/architecture
-- **Flake output**: `.#executor`
-- **Note**: The updater reads npm's published integrity metadata for every supported OS/architecture.
-
-```bash
-nix run github:Mic92/nix-update -- --flake executor --use-update-script
-```
-
-### arch-ops-server
-
-- **File**: `packages/arch-ops-server/default.nix`
-- **Pattern**: `python3Packages.buildPythonApplication` + universal PyPI wheel
-- **Flake output**: `.#arch-ops-server`
-- **Note**: The wheel avoids the sdist's strict, older `uv_build` constraint.
-
-```bash
-nix run github:Mic92/nix-update -- --flake arch-ops-server --use-update-script
-```
-
-### portless
-
-- **File**: `packages/portless/default.nix`
-- **Pattern**: self-contained npm release tarball executed with Nix's Node.js 24 runtime
-- **Flake output**: `.#portless`
-
-```bash
-nix run github:Mic92/nix-update -- --flake portless --use-update-script
-```
-
-### jj-ryu
-
-- **File**: `packages/jj-ryu/default.nix`
-- **Pattern**: `stdenvNoCC.mkDerivation` + Linux/macOS `fetchurl` artifacts from GitHub releases
-- **Flake output**: `.#jj-ryu`
-- **Platforms**: `x86_64-linux`, `aarch64-darwin`
-- **Note**: Its updater refreshes both supported release binaries in one run.
-
-```bash
-nix run github:Mic92/nix-update -- --flake jj-ryu --version=unstable --use-update-script
-```
-
-### curseforge
-
-- **File**: `packages/curseforge/default.nix`
-- **Pattern**: `appimageTools.wrapType2` + `fetchurl` from CurseForge's versioned AppImage URL
-- **Flake output**: `.#curseforge`
-- **Note**: Upstream artifact names include both the public version and a separate build number; use the package update script so both are updated together.
-
-```bash
-nix run github:Mic92/nix-update -- --flake curseforge --use-update-script
-```
-
-To run the package-specific updater directly:
-
-```bash
-nix run .#update-curseforge -- --check
-```
-
-### dankmail
-
-- **File**: `packages/dankmail/default.nix`
-- **Pattern**: tagged GitHub source built with `buildGoModule`, including the Quickshell UI and DankMaterialShell widget
-- **Flake output**: `.#dankmail`
-- **Platforms**: `x86_64-linux`
-- **Build note**: v0.3.11's `TestRemoteSearchContinuesAfterAccountDeferral` uses a one-second context while creating a fresh SQLite database. It expired during schema inspection in a concurrent Nix build, so `postPatch` raises the test-only deadline to ten seconds. Remove the patch once upstream fixes that deadline; it does not affect the installed application.
-
-```bash
-nix run github:Mic92/nix-update -- --flake dankmail --use-github-releases
-```
-
-### lsfg-vk
-
-- **File**: `packages/lsfg-vk/default.nix`
-- **Pattern**: official prebuilt release containing both 64-bit and 32-bit Vulkan layers
-- **Flake output**: `.#lsfg-vk`
-- **Platform**: `x86_64-linux`
-- **Important**: LSFG-VK v2 is licensed CC BY-NC-ND 4.0 and is evaluated through the repository's unfree package set. Keep builds local; do not publish the result to a public or commercial binary cache.
-- **Note**: The updater discovers the latest stable release from the official build server and refreshes its archive hash.
-- **Runtime**: The upstream CLI's `healthcheck` searches `/usr` and `/usr/local`, so it can report missing files on NixOS even when the Vulkan loader finds both installed layers.
-
-```bash
-nix run github:Mic92/nix-update -- --flake lsfg-vk --use-update-script
-```
-
-### cursor-agent
-
-- **File**: `packages/cursor-agent/default.nix`
-- **Pattern**: `stdenvNoCC.mkDerivation` + Cursor's versioned multi-architecture archives
-- **Flake output**: `.#cursor-agent`
-- **Note**: Cursor publishes one shared version through its installer. The updater refreshes all four supported OS/architecture archives in one run.
-
-```bash
-nix run github:Mic92/nix-update -- --flake cursor-agent --use-update-script
-```
-
-### ArtCraft apps (pdfcraft, photocraft, wordcraft)
-
-- **File**: `packages/craft-apps/default.nix` (shared builder) with pins in `packages/craft-apps/sources.json`
-- **Pattern**: Linux release tarball patched with `autoPatchelfHook`; universal macOS DMG unpacked with `_7zz`
-- **Flake outputs**: `.#pdfcraft`, `.#photocraft`, `.#wordcraft`
-- **Platforms**: `x86_64-linux`, `aarch64-darwin`, `x86_64-darwin`
-- **Updater**: `packages/craft-apps/update.ts <app>` reads the latest GitHub release of `storytold/<app>` and converts its `SHA256SUMS.txt` entries to SRI hashes for both artifacts, without downloading them.
-- **Configuration**: `modules/craft-apps.nix` exposes `custom.craftApps.<app>.enable`, `.setDefaultApplication`, `.mimeTypes` (Linux), and `.uniformTypeIdentifiers` (macOS).
-
-```bash
-nix run github:Mic92/nix-update -- --flake photocraft --use-update-script
-```
-
-### open-pencil
-
-- **Files**: `packages/open-pencil/default.nix` (app) and `packages/open-pencil/mcp/` (MCP server: generated `package.json` + `package-lock.json`)
-- **Pattern**: Linux Tauri `.deb` patched with `autoPatchelfHook` against nixpkgs WebKitGTK; macOS `.app.tar.gz` per architecture; MCP server via `buildNpmPackage`
-- **Flake outputs**: `.#open-pencil`, `.#open-pencil-mcp`
-- **Platforms**: `x86_64-linux`, `aarch64-darwin`, `x86_64-darwin`
-- **Updater**: Reads the latest stable GitHub release, converts `SHA256SUMS` to SRI hashes for all three app artifacts, then regenerates the MCP lockfile for the same version and refreshes `npmDepsHash`. The app and MCP server must stay on the same version.
-- **Configuration**: `modules/open-pencil.nix`; the MCP server is registered in Executor (`modules/executor.nix`).
-
-```bash
-nix run github:Mic92/nix-update -- --flake open-pencil --use-update-script
-```
-
-### t3code
-
-- **File**: `packages/t3code/default.nix`
-- **Pattern**: Linux AppImage via `appimageTools.wrapType2`; macOS DMG via `undmg`
-- **Flake output**: `.#t3code`
-- **Note**: This tracks GitHub nightly prereleases, not stable tags. The update script refreshes the Linux AppImage and both macOS artifacts. It does not build the app. Linux installs the pinned Z Code fork instead of this package; macOS keeps this signed bundle.
-- **Configuration**: `modules/agents/t3code.nix` uses Home Manager mutable settings and the existing Codex home. The desktop wrapper disables upstream auto-updates; this command and the subsequent rebuild own nightly upgrades. Close T3 and back up `~/.t3` before upgrading persistent state; restore that backup along with the old package when rolling back.
+T3 Code tracks GitHub nightly prereleases. Linux installs the pinned Z Code fork instead of the
+`t3code` package; macOS keeps the signed upstream bundle. `modules/agents/t3code.nix` disables
+upstream auto-updates, so the update runner and the next rebuild own nightly upgrades. Close T3
+and back up `~/.t3` before upgrading persistent state; restore that backup with the old package
+when rolling back.
 
 Provider CLIs are managed separately from the T3 application. The Home Manager
 module pins the Codex, Claude, Cursor, and OpenCode executable paths explicitly;
@@ -320,339 +299,10 @@ closed and backups of both homes: Evvi already contains real state directories
 that conflict with the symlinks T3 creates for a shadow home. Do not simply
 point its shadow home at the existing directory or copy Perso's credentials.
 
-```bash
-nix run github:Mic92/nix-update -- --flake t3code --use-update-script
-```
-
-### z-code
-
-- **File**: `flake.nix` (`z-code` input) and `flake.lock`
-- **Pattern**: GitHub source pinned to a reviewed full commit revision; the package uses nixfiles' existing `pkgs`
-- **Flake packages**: `.#z-code-source` (pinned source snapshot) and `.#z-code` (buildable fork package for x86_64 Linux and aarch64 Darwin)
-- **Source**: [Vincent-HD/zcode](https://github.com/Vincent-HD/zcode), branch `z-code`
-- **Update**: Choose and review an exact commit from the fork before changing the pin. Inspect the source diff and Nix packaging, then update only this input:
-
-  ```bash
-  # Edit the z-code URL in flake.nix to github:Vincent-HD/zcode/<reviewed-commit>.
-  nix flake update z-code
-  ```
-
-  The command is registered in `scripts/update-pins.json` as a disabled flake-input update, so routine bulk updates cannot move the fork. After editing the URL, verify the resulting lock revision is exactly the reviewed commit and build `.#z-code` before accepting the update. Do not use a moving branch or tag for this input.
-
-The Z Code integration targets x86_64 Linux and Apple Silicon macOS and is pinned to reviewed fork
-commit `7a90eb01528d93bfd2d2a183147a25a0bc66e3bb` on branch `z-code`, based on upstream
-`v0.1.9-nightly.20261110.4478`. Both hosts install that package. Build it with
-`nix build .#z-code --no-link`. The Home Manager module selects the same output
-and uses nixfiles' pinned package set. The `z-code-source` and `z-code` outputs resolve from
-the locked GitHub input and do not depend on a local checkout.
-
-The Home Manager wrapper routes all three executable names (`t3code`, `zcode`, and `z-code`)
-through the same managed launcher, including its provider `PATH` and the
-`T3CODE_DISABLE_AUTO_UPDATE=true` setting. On Linux, the desktop icon comes from the fork package's
-extracted AppImage. The desktop entry remains `t3code` and keeps the `t3code` URL schemes and
-window class to preserve the existing T3 profile and session identity. On macOS, the fork repacks the
-upstream arm64 zip and re-signs it ad hoc, so the bundle no longer carries the upstream Developer ID
-signature.
-
-### plannotator
-
-- **File**: `packages/plannotator/default.nix`
-- **Pattern**: `stdenvNoCC.mkDerivation` + platform-selected release binary and tagged shared Agent Skills
-- **Flake output**: `.#plannotator`
-- **Note**: The updater refreshes every supported platform release checksum and the tagged source hash that supplies the Codex/Cursor-compatible skills.
-
-```bash
-nix run github:Mic92/nix-update -- --flake plannotator --use-update-script
-```
-
-### crosspipe
-
-- **File**: `packages/crosspipe/default.nix`
-- **Pattern**: `stdenv.mkDerivation` + `fetchFromGitHub` snapshot from upstream `main`
-- **Flake output**: `.#crosspipe`
-- **Note**: The package keeps an exact commit and fixed-output hash for reproducibility; the updater resolves the current `main` branch head and refreshes both the snapshot version and source hash.
-
-```bash
-nix run github:Mic92/nix-update -- --flake crosspipe --version branch=main --system x86_64-linux
-```
-
-## Branch-Pinned Packages
-
-These packages are packaged in a `nix-update`-friendly shape, but the upstream tracking model means the naive command is not necessarily correct.
-
-### gamescope-lanczos
-
-- **File**: `packages/gamescope-lanczos/default.nix`
-- **Flake output**: `.#gamescope-lanczos`
-- **Source**: recursive checkout of the fork's moving `master` branch
-- **Why**: the fork has no releases, so its updater resolves `refs/heads/master`, records the commit date/revision, and recursively hashes all Git submodules. The local shader relocation, watchdog hardening, and current-STB compatibility patches remain in the package and are reviewed separately.
-- **How**: run the registered updater, then build the executable and WSI variants before evaluating `pc-fixe`; successful compilation does not establish NVIDIA rendering, Steam, or WSI runtime behavior, which still requires testing after activation.
-
-```bash
-nix run .#update-pins -- --only gamescope-lanczos
-nix build .#gamescope-lanczos --no-link
-nix eval .#nixosConfigurations.pc-fixe.config.system.build.toplevel.drvPath --raw
-```
-
-### cpuid-fault-emulation
-
-- **File**: `packages/cpuid-fault-emulation/default.nix`
-- **Source**: locally vendored `source/` tree extracted from `cpuid_fault_emulation.zip`
-- **Flake output**: `.#cpuid-fault-emulation`
-- **Why**: the source archive is attached to a forum post that blocks unattended downloads, so it cannot be safely updated through `nix-update`.
-- **How**: manually download, inspect, and replace the archive only after confirming the source and intended version. Then build the module and evaluate the Linux host before switching.
-
-```bash
-rm -rf packages/cpuid-fault-emulation/source
-nix shell nixpkgs#unzip -c unzip <verified-local-archive> -d packages/cpuid-fault-emulation/source
-nix build .#cpuid-fault-emulation
-nix eval .#nixosConfigurations.pc-fixe.config.system.build.toplevel.drvPath --raw
-```
-
-## Custom Flake Inputs
-
-These are updated with `nix flake lock`, not `nix-update`.
-
-### nix-gaming
-
-- **File**: `flake.nix`
-- **Why**: Provides the standalone `platformOptimizations` NixOS module. The module is imported
-  explicitly; nix-gaming's optional game, Wine, and Proton packages are not installed by this host.
-- **How**: Refresh the locked source, then review the module against the current Steam/NixOS options.
-
-```bash
-nix flake update nix-gaming
-```
-
-### nix-cachyos-kernel
-
-- **File**: `flake.nix`
-- **Why**: Provides the release-branch CachyOS kernel package set used as the default kernel, with
-  a stock-kernel fallback specialization in `modules/gaming-optimization.nix`.
-- **Important**: Keep the input on the `release` branch and do not make its nixpkgs input follow this
-  repository. The upstream project pins its own nixpkgs revision for binary-cache compatibility.
-- **How**: Refresh the lock entry, then evaluate the default and `stock` kernel paths and check that
-  the NVIDIA and custom CPUID modules still follow the selected kernel.
-
-```bash
-nix flake update nix-cachyos-kernel
-nix eval --raw '.#nixosConfigurations.pc-fixe.config.boot.kernelPackages.kernel.name'
-nix eval --raw '.#nixosConfigurations.pc-fixe.config.specialisation.stock.configuration.boot.kernelPackages.kernel.name'
-```
-
-### noctalia
-
-- **File**: `flake.nix`
-- **Why**: It is intentionally pinned to a specific v4 revision and should stay out of routine updates until you migrate to v5.
-- **How**: Do not update this as part of normal maintenance. When migration work begins, edit the
-  pinned revision in `flake.nix` before refreshing the lock entry.
-
-### dms
-
-- **File**: `flake.nix`
-- **Why**: Provides the DankMaterialShell stable branch and its Nix/Home Manager modules.
-- **How**: Update the release binaries for both Linux architectures and the matching stable flake input together. The updater rejects mismatched commits and restores the prior lock file.
-- **Note**: The independent `dms` flake-input entry is disabled; use the coupled updater so the release CLI and the upstream QML/modules remain in sync. A plain `nix flake update dms` can make the package build fail until the coupled updater is run.
-
-```bash
-nix run github:Mic92/nix-update -- --flake dms-prebuilt --use-update-script
-```
-
-### tokitoki
-
-- **File**: `flake.nix`
-- **Why**: Provides the Tokitoki usage analytics package and Home Manager module used by DMS.
-- **How**: Refresh the upstream input, then re-run the NixOS evaluation and flake checks.
-
-```bash
-nix flake update tokitoki
-```
-
-`nrs` (`modules/command-line/assets/nrs`, installed at `~/bin/nrs`) is the
-switch command. With no update options it leaves `flake.lock` untouched. It also
-lists and updates the configured flake's Nix inputs and `update-pins` registry.
-Update commands use the local flake directory from `NH_FLAKE` (set by this
-configuration); when that variable is unset they use `~/.nixfiles`, so they work
-from any current directory. Rebuild commands remain the same. Point one rebuild
-at a local Tokitoki checkout:
-
-```bash
-nrs                              # pinned inputs
-nrs --tokitoki                   # ~/lab/tokitoki
-nrs --tokitoki ~/src/tokitoki    # another checkout
-```
-
-List and update pins with:
-
-```bash
-nrs --list-updates
-nrs --update --inputs all
-nrs --update --pins all
-nrs --update --inputs all --pins all
-nrs --update --inputs nixpkgs --pins codex
-nrs --update --inputs nixpkgs --pins codex --dry-run
-```
-
-`--inputs all` covers the configured flake's direct inputs. Inputs already
-registered as `flake-input` entries are sent through `update-pins`; the other
-direct inputs are passed together to one `nix flake update` command. `--pins
-all` runs the registry's normal selection rules: manual and disabled entries
-stay skipped, denylisted entries stay skipped unless `--include-denylisted` is
-explicitly supplied, and platform-scoped entries unsupported on the current
-system stay skipped. When both categories are selected, each registered flake
-input is updated once through the registry and is omitted from the direct Nix
-input command. The denylist also protects direct flake inputs that have no
-registry entry.
-
-The all-input mode also leaves manual, disabled, and denylisted input entries
-out of the direct Nix command, and reports them as skipped. Selecting one of
-those entries explicitly fails with its policy instead of updating around the
-registry. `--include-denylisted` opts into denylisted inputs and entries only;
-it does not enable manual or disabled entries. Follow each manual entry's instructions in
-this document, including changing a reviewed fixed revision before refreshing
-its lock entry. `--dry-run` prints direct Nix commands and forwards the runner's
-dry-run option; it does not update pins. Outside update mode, `nrs --dry-run`
-continues to pass that option to `nh` for a rebuild preview.
-
-The same Tokitoki rebuild without the helper:
-
-```bash
-nh os switch --override-input tokitoki "path:$HOME/lab/tokitoki"
-```
-
-### dankcalendar
-
-- **File**: `flake.nix`
-- **Why**: Provides the official `dcal` package and Home Manager module used by DMS's calendar backend.
-- **How**: Refresh the upstream DankCalendar input, then re-run the NixOS evaluation.
-
-```bash
-nix flake update dankcalendar
-```
-
-### screen-capture-toolbar
-
-- **File**: `flake.nix`
-- **Why**: Pinned source for the DMS screenshot and GPU video-recording toolbar.
-- **How**: The source URL is pinned to a reviewed commit; update the revision in `flake.nix`, then refresh the lock entry. The registry entry is manual/disabled because refreshing the unchanged revision is a no-op.
-
-```bash
-nix flake update screen-capture-toolbar
-```
-
-### quick-capture
-
-- **File**: `flake.nix`
-- **Why**: Pinned source for the Quick Capture annotation plugin.
-- **How**: Update the reviewed commit in `flake.nix`, refresh the lock entry, and verify the plugin dependencies. The registry entry is manual/disabled because refreshing the unchanged revision is a no-op.
-
-```bash
-nix flake update quick-capture
-```
-
-### dms-plugins
-
-- **File**: `flake.nix`
-- **Why**: Pinned first-party DMS plugin source used for the declarative Dank Actions variants.
-- **How**: Update the reviewed commit in `flake.nix`, refresh the lock entry, and check the variant schema. The registry entry is manual/disabled because refreshing the unchanged revision is a no-op.
-
-```bash
-nix flake update dms-plugins
-```
-
-### code-cursor-nix
-
-- **File**: `flake.nix`
-- **Why**: Provides the Cursor editor package. The Linux agent-loop crash was fixed upstream
-  in Cursor 3.19.13, so this input follows upstream releases again.
-- **How**: Refresh the input with the command below, then validate the affected host package.
-
-```bash
-nix flake update code-cursor-nix
-```
-
-### herdr
-
-- **File**: `flake.nix`
-- **Why**: The URL selects a specific Herdr release tag.
-- **How**: Change the tag in `flake.nix`, then refresh the lock entry and verify both host package
-  sets. A plain update cannot advance the embedded tag.
-
-```bash
-nix flake update herdr
-```
-
-### context7-skills
-
-- **File**: `flake.nix`
-- **Why**: Provides only the selected upstream `context7-mcp` Agent Skill through Home Manager.
-- **How**: Refresh the locked source, then review the upstream skill changes before applying Home Manager.
-
-```bash
-nix flake update context7-skills
-```
-
-### mattpocock-skills
-
-- **File**: `flake.nix`
-- **Why**: Provides selected upstream Matt Pocock Agent Skills through Home Manager: `grill-me`, `grill-with-docs`, `grilling`, `domain-modeling`, `handoff`, `research`, and the spec-to-review flow (`to-spec`, `to-tickets`, `implement`, `code-review`, and `setup-matt-pocock-skills`, which writes the per-repo docs the flow reads). `bro` is a local snapshot.
-- **How**: Refresh the locked source, then review the upstream skill changes before applying Home Manager.
-
-```bash
-nix flake update mattpocock-skills
-```
-
-### humanlayer-skills
-
-- **File**: `flake.nix`
-- **Why**: Provides only the selected upstream `narrow-react-prop-types` Agent Skill through Home Manager.
-- **How**: Refresh the locked source, then review the upstream skill changes before applying Home Manager.
-
-```bash
-nix flake update humanlayer-skills
-```
-
-### kitlangton-skills
-
-- **File**: `flake.nix`
-- **Why**: Provides the upstream Effect v4 Agent Skill and its reference guides. Home Manager
-  renames its skill metadata to `effect-program-design` for slash invocation.
-- **How**: Refresh the locked source, review upstream changes, and evaluate both configured hosts.
-
-```bash
-nix flake update kitlangton-skills
-```
-
-## One-Shot: Update All Straightforward Compatible Packages
-
-Prefer the data-driven runner:
-
-```bash
-nix run .#update-pins -- --validate fast
-```
-
-## Verification
-
-After any update, verify the package still builds:
-
-```bash
-nix build .#<package-name>
-```
-
-```bash
-nix build .#jj-ryu
-```
-
-Then apply the system configuration:
-
-```bash
-sudo nixos-rebuild switch --flake .#pc-fixe
-```
-
-## vtask local releases
+## vtask Local Releases
 
 `vtask` is authored in this repository, rather than pinned to an upstream
-release. Its disabled manual entry in `scripts/update-pins.json` rebuilds the
+release. It is held in `scripts/update-pins.json`; the steps below rebuild the
 Git LFS binaries; routine upstream pin updates do not bump its SemVer version.
 
 ```bash
@@ -678,11 +328,3 @@ The executable is installed by the shared Home Manager command-line module,
 and `programs.git.lfs.enable` provides clone-time hydration on both hosts.
 Publishing a revision containing LFS pointers must also upload its LFS objects;
 that happens on a normal Git push with the installed LFS hook.
-
-## Equicord prebuilt
-
-Update the official Equicord release used by Equibop with:
-
-```sh
-nix run github:Mic92/nix-update -- --flake equicord-prebuilt --use-github-releases --version-regex '^(\d{4}-\d{2}-\d{2})$'
-```

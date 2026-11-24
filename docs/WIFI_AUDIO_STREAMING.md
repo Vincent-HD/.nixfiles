@@ -47,8 +47,7 @@ virtual audio device is needed for that direction.
 
 ## Update the desktop package
 
-The Linux AppImage and macOS archive are pinned separately for their current platforms. Run the
-registered update command on each target host when updating its artifact:
+The Linux AppImage and macOS archive are pinned together; one run refreshes both hashes:
 
 ```bash
 nix run .#update-pins -- --only wifi-audio-streaming

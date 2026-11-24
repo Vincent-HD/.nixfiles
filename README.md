@@ -267,11 +267,12 @@ Evaluate all flake outputs and run the registered build checks:
 nix flake check
 ```
 
-Review or run the data-driven pin update registry:
+Update every flake input and pinned package, or check the update conventions:
 
 ```bash
 nix run .#update-pins -- --list
-nix run .#update-pins -- --dry-run
+nix run .#update-pins -- --check
+nix run .#update-pins
 ```
 
 Persist DMS settings edited in the running shell:
@@ -305,7 +306,7 @@ If you want to remove a feature, change the relevant host composition under `hos
   MacBook Pro.
 - `docs/COMMAND_LINE_OVERVIEW.html` is a visual map of the shared terminal environment.
 - `docs/WIFI_AUDIO_STREAMING.md` covers Android-to-desktop streaming and host setup.
-- `docs/UPDATE_COMMANDS.md` documents every registered pinned package and flake-input update.
+- `docs/UPDATE_COMMANDS.md` explains the update runner, the pinned-package conventions, and the holds.
 - `docs/NIX_CLI_CHEATSHEET.md` describes the repository's validation ladder and Nix tooling.
 
 ## Shared Agent Setup
