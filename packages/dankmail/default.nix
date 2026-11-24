@@ -8,13 +8,13 @@
 }:
 buildGoModule (finalAttrs: {
   pname = "dankmail";
-  version = "0.3.12";
+  version = "0.6.2";
 
   src = fetchFromGitHub {
     owner = "arqueon";
-    repo = "dankmail";
+    repo = "dux-mail";
     rev = "v${finalAttrs.version}";
-    hash = "sha256-7c/hQjRYARNIAxOAQz9F+zoKksE+EOUGZulJKjVri2w=";
+    hash = "sha256-BIqIiPPUszz6j19g9EcJfUGNjyN/c8r+2B001DvZBlk=";
   };
 
   # The upstream handler test's 1s deadline can expire during SQLite migration
@@ -25,9 +25,14 @@ buildGoModule (finalAttrs: {
         'context.WithTimeout(context.Background(), 10*time.Second)'
   '';
 
+  # Attachment tests create files under $HOME, which the sandbox leaves unwritable.
+  preCheck = ''
+    export HOME="$TMPDIR"
+  '';
+
   modRoot = "core";
   subPackages = [ "cmd/dmail" ];
-  vendorHash = "sha256-R5qlfcUqTmXaUThFule2tXRivUavnYVkzS8+Z4i8zt4=";
+  vendorHash = "sha256-JSURjt7trVE9Mi5lPGKcBFV0vZ7ewsRO2ccVN8NPC2c=";
 
   env.CGO_ENABLED = "0";
   ldflags = [
@@ -47,10 +52,10 @@ buildGoModule (finalAttrs: {
     cp -R "${finalAttrs.src}/quickshell/." "$out/share/quickshell/dankmail/"
 
     install -Dm644 "${finalAttrs.src}/LICENSE" "$out/share/licenses/dankmail/LICENSE"
-    install -Dm644 "${finalAttrs.src}/assets/org.arqueon.dankmail.desktop" \
-      "$out/share/applications/org.arqueon.dankmail.desktop"
-    install -Dm644 "${finalAttrs.src}/quickshell/assets/dankmail.svg" \
-      "$out/share/icons/hicolor/scalable/apps/dankmail.svg"
+    install -Dm644 "${finalAttrs.src}/assets/org.arqueon.duxmail.desktop" \
+      "$out/share/applications/org.arqueon.duxmail.desktop"
+    install -Dm644 "${finalAttrs.src}/quickshell/assets/duxmail.svg" \
+      "$out/share/icons/hicolor/scalable/apps/duxmail.svg"
 
     install -d "$out/share/DankMaterialShell/plugins/dankmailUnread"
     cp -R "${finalAttrs.src}/dms-plugin/." \
@@ -59,8 +64,8 @@ buildGoModule (finalAttrs: {
 
   meta = {
     description = "Keyboard-driven local-first email triage for Linux";
-    homepage = "https://github.com/arqueon/dankmail";
-    changelog = "https://github.com/arqueon/dankmail/releases/tag/v${finalAttrs.version}";
+    homepage = "https://github.com/arqueon/dux-mail";
+    changelog = "https://github.com/arqueon/dux-mail/releases/tag/v${finalAttrs.version}";
     license = lib.licenses.gpl3Plus;
     mainProgram = "dmail";
     platforms = lib.platforms.linux;

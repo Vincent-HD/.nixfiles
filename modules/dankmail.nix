@@ -12,7 +12,7 @@
       systemd.user.services.dmail = {
         Unit = {
           Description = "Dank Mail";
-          Documentation = "https://github.com/arqueon/dankmail";
+          Documentation = "https://github.com/arqueon/dux-mail";
           After = [ "graphical-session.target" ];
           PartOf = [ "graphical-session.target" ];
         };
