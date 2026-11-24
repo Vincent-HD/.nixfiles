@@ -9,16 +9,16 @@
   dmsFlake,
 }:
 let
-  version = "2.0.0";
-  revision = "9b413296b16721f7679fb62e624cb1ed2433fa58";
+  version = "2.1.2";
+  revision = "43255a46ea01e9d0de1fe8ce9897c0d71566b2a8";
   sources = {
     "x86_64-linux" = {
       asset = "dms-full-amd64.tar.gz";
-      hash = "sha256-ooBW2/h0YXj2prB5YHcCNwW+y2A3xBgxETK9pXm90YU=";
+      hash = "sha256-Pj7rI1tkFY69FMeBE6QXi8mUexpigjjXREkyfWns6po=";
     };
     "aarch64-linux" = {
       asset = "dms-full-arm64.tar.gz";
-      hash = "sha256-Vd+GnwLFjq+s3/+N1myGs1seeRj0zwt3dTOldh0/3pI=";
+      hash = "sha256-F5Lmj88QTIvVuTR92MVEyN/NZLGIkJNkl7LR7Po/sWc=";
     };
   };
   source = sources.${stdenv.hostPlatform.system};

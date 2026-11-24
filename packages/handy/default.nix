@@ -9,18 +9,18 @@
 let
   sources = {
     "x86_64-linux" = {
-      asset = "Handy_0.10.0_amd64.AppImage";
-      hash = "sha256-IGYcFrC54bfcUCC+Rj8rF/ZUv+rwuh1wMrxLd7Jo7Gw=";
+      asset = "Handy_0.10.2_amd64.AppImage";
+      hash = "sha256-F8XxpKM/nExcI0oITMCq92bzpbYmYuAtcOURYYAKzhc=";
     };
     "aarch64-darwin" = {
       asset = "Handy_aarch64.app.tar.gz";
-      hash = "sha256-Ul5dNue2Bm6K8VVFVKh6y9D6Wgx+TE1IlOEPYx7Xnko=";
+      hash = "sha256-aSKZJSLmeSV8QyY7KVDy2YW5yrNbDeI7FzQMRvZ/Yxw=";
     };
   };
   source = sources.${stdenvNoCC.hostPlatform.system};
   finalAttrs = rec {
     pname = "handy";
-    version = "0.10.0";
+    version = "0.10.2";
     src = fetchurl {
       url = "https://github.com/cjpais/Handy/releases/download/v${version}/${source.asset}";
       hash = source.hash;

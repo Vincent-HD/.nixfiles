@@ -6,11 +6,11 @@
 }:
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "equicord-prebuilt";
-  version = "2026-11-06";
+  version = "2026-11-23";
 
   src = fetchurl {
     url = "https://github.com/Equicord/Equicord/releases/download/${finalAttrs.version}/equibop.asar";
-    hash = "sha256-XV+EH3FGKxJZdGV3253CAVs1f+g69x/iqu4VMlCRh/g=";
+    hash = "sha256-B3ng3TBBlDkELtFugAnrT6uy6BXH7OJu6fT3rhltSRg=";
   };
 
   nativeBuildInputs = [ asar ];

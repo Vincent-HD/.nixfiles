@@ -21,7 +21,7 @@ buildNpmPackage (finalAttrs: {
     ];
   };
 
-  npmDepsHash = "sha256-3fpQHo9kmIsFwCs8EkpcgDp0IVeN1l3fuy4Msyqgq2Q=";
+  npmDepsHash = "sha256-bevkU9aJ1pwStW2t9kUpyz0ALoooa8uQWGvub/PVn5o=";
   npmFlags = [ "--ignore-scripts" ];
   dontNpmBuild = true;
   nativeBuildInputs = [ makeWrapper ];

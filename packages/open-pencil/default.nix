@@ -21,16 +21,16 @@ let
   # Tauri release artifacts from github.com/open-pencil/open-pencil.
   sources = {
     "x86_64-linux" = {
-      asset = "OpenPencil_0.16.0_amd64.deb";
-      hash = "sha256-RR6Q79Rgf1KP9ecF38b2GT6u7yIsM6pp6/vYY9FwvXM=";
+      asset = "OpenPencil_0.17.0_amd64.deb";
+      hash = "sha256-fuxRsdxJUZWrTCp4N4TetZfQXI10zUZK860wa0TIXI0=";
     };
     "aarch64-darwin" = {
       asset = "OpenPencil_aarch64.app.tar.gz";
-      hash = "sha256-MdP8W93nrP+lBuBjJj0qG8uRP0Bd3vR9QFdCUU7mVSc=";
+      hash = "sha256-qNkOVzNcBReOJsk55hb1EtijMKO0G/bqCBPbr898sxU=";
     };
     "x86_64-darwin" = {
       asset = "OpenPencil_x64.app.tar.gz";
-      hash = "sha256-Oa4Ag+1oQOgFM9SwgYfQb8QOR0ot7TWpAddUjEtc9u0=";
+      hash = "sha256-fFcKocIOZ/93vF0NRmnGUa0vLPUNHP7/wkmvIr4XvQk=";
     };
   };
   source = sources.${stdenv.hostPlatform.system};
@@ -40,7 +40,7 @@ let
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = "open-pencil";
-  version = "0.16.0";
+  version = "0.17.0";
 
   src = fetchurl {
     url = "https://github.com/open-pencil/open-pencil/releases/download/v${finalAttrs.version}/${source.asset}";
