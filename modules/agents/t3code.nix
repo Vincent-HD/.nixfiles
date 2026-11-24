@@ -18,7 +18,8 @@
       cursorAgentPackage = inputs.self.packages.${system}.cursor-agent;
       codexPackage = if isLinux then inputs.self.packages.${system}.codex else null;
       codexBinary = if isLinux then lib.getExe codexPackage else "/opt/homebrew/bin/codex";
-      # Keep T3 subscription accounts on the direct ChatGPT endpoint.
+      # Keep T3 subscription accounts on the direct ChatGPT endpoint, so a leftover proxy setting
+      # cannot redirect them. Leave T3CODE_CODEX_LAUNCH_ARGS unset: it overrides these per account.
       codexLaunchArgs = lib.escapeShellArgs [
         "-c"
         ''model_provider="openai"''

@@ -132,41 +132,13 @@ that calls the package file directly passes
 `packageUpdater = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.package-updater;`
 (it is only used by `passthru.updateScript`).
 
-To test an update path, check out a throwaway copy, lower the version and corrupt the
-hashes, then run the package's update script:
+Each package's `updateScript` (with a comment above it when the version source is unusual) is
+the reference for how it updates; `nix run .#update-pins -- --list` shows what is held and why.
+To test an update path, lower the version and corrupt the hashes in a scratch copy, then run:
 
 ```bash
 nix run .#update-pins -- --only <package>
 ```
-
-## Package Reference
-
-| Package | Version source | Notes |
-| --- | --- | --- |
-| `agent-browser` | GitHub releases | 3 platforms |
-| `arch-ops-server` | PyPI JSON (`latestVersion`) | universal wheel |
-| `codeburn` | npm `latest` (`latestVersion`) | tag source + npm artifact; nix-update refreshes `npmDepsHash` |
-| `codex` | GitHub API, 30 releases (`latestVersion`) | nix-update's 100-release page times out on `openai/codex` |
-| `craft-apps` (`pdfcraft`, `photocraft`, `wordcraft`) | GitHub releases | one pin file per app in `packages/craft-apps/apps/` |
-| `crosspipe` | `main` branch snapshot | |
-| `curseforge` | Electron feed `latest-linux.yml` (`latestVersion`) | version is `<version>-<build>` |
-| `cursor-agent` | install script (`latestVersion`) | 4 platforms |
-| `dankmail` | GitHub releases | upstream renamed to Dux Mail; binary and service keep `dmail` |
-| `dms-prebuilt` | GitHub releases | `postUpdate` moves the held `dms` input to the release commit |
-| `droidcam-client` | GitHub releases `droidcam-<version>` | |
-| `equicord-prebuilt` | GitHub releases (date tags) | |
-| `executor` | npm `latest` (`latestVersion`) | 4 platforms, suffixed npm versions |
-| `gamescope-lanczos` | fork `master` snapshot | recursive submodules; build and test the WSI variants after updating |
-| `handy` | GitHub releases | |
-| `jj-ryu` | GitHub prereleases | alpha-only upstream |
-| `lightjj` | GitHub releases | |
-| `lsfg-vk` | build index "Latest release" (`latestVersion`) | |
-| `open-pencil` | GitHub releases | `postUpdate` regenerates the `open-pencil-mcp` lockfile and hash |
-| `opencodev2` | OpenCode update API (`latestVersion`) | |
-| `plannotator` | GitHub releases | binaries + shared skills at the same tag |
-| `portless` | npm `latest` (`latestVersion`) | |
-| `t3code` | GitHub nightly prereleases | Linux AppImage name is unversioned; the tag path pins it |
-| `wifi-audio-streaming` | GitHub releases | tags drop the patch number; assets pad it |
 
 ## Holds and Manual Updates
 
@@ -191,6 +163,9 @@ nix flake update <input>
   `github:Vincent-HD/zcode/<reviewed-commit>`, run `nix flake update z-code`, check that the
   lock revision is exactly the reviewed commit, and build `.#z-code`. Never use a moving
   branch or tag for this input.
+- **Before switching**: close T3 and back up `~/.t3`; restore that backup with the previous
+  package when rolling back. Both hosts install `.#z-code` (it replaces the upstream `t3code`
+  package), and its wrapper disables in-app updates.
 
 ### herdr
 
@@ -240,76 +215,13 @@ nix eval .#nixosConfigurations.pc-fixe.config.system.build.toplevel.drvPath --ra
   against the current Steam/NixOS options.
 - **Skill inputs** (`context7-skills`, `mattpocock-skills`, `humanlayer-skills`,
   `kitlangton-skills`): review the upstream skill changes before applying Home Manager.
-- **Claude Code** follows `nixpkgs`; update that input when its packaged version advances.
-
-## Z Code Integration
-
-The Z Code integration targets x86_64 Linux and Apple Silicon macOS and is pinned to reviewed fork
-commit `7a90eb01528d93bfd2d2a183147a25a0bc66e3bb` on branch `z-code`, based on upstream
-`v0.1.9-nightly.20261110.4478`. Both hosts install that package. Build it with
-`nix build .#z-code --no-link`. The Home Manager module selects the same output
-and uses nixfiles' pinned package set. The `z-code-source` and `z-code` outputs resolve from
-the locked GitHub input and do not depend on a local checkout.
-
-The Home Manager wrapper routes all three executable names (`t3code`, `zcode`, and `z-code`)
-through the same managed launcher, including its provider `PATH` and the
-`T3CODE_DISABLE_AUTO_UPDATE=true` setting. On Linux, the desktop icon comes from the fork package's
-extracted AppImage. The desktop entry remains `t3code` and keeps the `t3code` URL schemes and
-window class to preserve the existing T3 profile and session identity. On macOS, the fork repacks the
-upstream arm64 zip and re-signs it ad hoc, so the bundle no longer carries the upstream Developer ID
-signature.
-
-## T3 Code and Provider CLIs
-
-T3 Code tracks GitHub nightly prereleases. Linux installs the pinned Z Code fork instead of the
-`t3code` package; macOS keeps the signed upstream bundle. `modules/agents/t3code.nix` disables
-upstream auto-updates, so the update runner and the next rebuild own nightly upgrades. Close T3
-and back up `~/.t3` before upgrading persistent state; restore that backup with the old package
-when rolling back.
-
-Provider CLIs are managed separately from the T3 application. The Home Manager
-module pins the Codex, Claude, Cursor, and OpenCode executable paths explicitly;
-both Linux Codex accounts use the same package. Rebuild and fully restart T3
-after updating them. Existing sessions can keep their already-running CLI.
-T3's **Update all** cannot update immutable Nix store packages: use the Codex,
-Cursor Agent, and OpenCode commands in this document. Claude Code follows
-`nixpkgs`; update that input when its packaged version advances.
-
-Investigation on 2026-10-23 found Perso configured for Codex 0.163.0 while Evvi
-inherited 0.162.1 through executable discovery. Cursor was pinned to
-2026.10.22-27dcf5f in this repo but the running environment still resolved
-2026.10.14-941492e. Codex was refreshed to 0.164.0 and OpenCode to 2.1.4.
-Claude's upstream npm release was 2.1.309, while both the locked nixpkgs and
-the current `nixos-unstable` manifest still provided 2.1.303. Updating nixpkgs
-alone would therefore not close that gap yet; prefer waiting for its package
-update over adding another installation method.
-
-Perso uses `~/.codex`; Evvi uses `~/.codex-evvi`, which had no user
-`config.toml`. These are independent state directories, including authentication,
-plugins, and user settings. OpenCodex has been removed. T3 still passes explicit
-launch arguments that set `model_provider` to `openai` and `openai_base_url` to
-`https://chatgpt.com/backend-api/codex` for both accounts, so a leftover local
-proxy setting cannot redirect subscription traffic. Standalone Codex uses the
-same direct ChatGPT endpoint. T3 forwards these configuration arguments to both
-app-server and auxiliary exec launches. Leave `T3CODE_CODEX_LAUNCH_ARGS` unset:
-T3 gives that environment variable precedence over per-account launch arguments.
-The grey `~/.codex-t3/personal` text in the settings form is a placeholder, not
-an active shadow home.
-
-Keep separate homes to preserve the current account separation. If shared
-settings are desired, preserve the T3 direct-connection overrides.
-For a few shared preferences, manage just those preferences in each home's
-config. For shared state as well, T3 supports a common `homePath` and a distinct
-`shadowHomePath` per account, with separate `auth.json` files. Migrate with T3
-closed and backups of both homes: Evvi already contains real state directories
-that conflict with the symlinks T3 creates for a shadow home. Do not simply
-point its shadow home at the existing directory or copy Perso's credentials.
+- **Claude Code** comes from `nixpkgs`; it advances with that input, not through a pin here.
 
 ## vtask Local Releases
 
 `vtask` is authored in this repository, rather than pinned to an upstream
-release. It is held in `scripts/update-pins.json`; the steps below rebuild the
-Git LFS binaries; routine upstream pin updates do not bump its SemVer version.
+release, so it is held in `scripts/update-pins.json`. Release it by hand; routine pin updates
+never bump its SemVer version or rebuild its Git LFS binaries.
 
 ```bash
 nix develop .#vtask
