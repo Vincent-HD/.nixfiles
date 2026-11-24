@@ -16,6 +16,12 @@
       inshellisenseRoot = "${inshellisensePackage}/lib/node_modules/@microsoft/inshellisense";
       inshellisenseResources = "${config.xdg.dataHome}/inshellisense";
       # `nrs` switches this machine or updates its pins; shellcheck runs on it at build time.
+      # The terminal inventory stays a standalone asset; it keeps its original nounset-only mode.
+      cliToolsPackage = pkgs.writeShellApplication {
+        name = "cli-tools";
+        bashOptions = [ "nounset" ];
+        text = builtins.readFile ./assets/cli-tools;
+      };
       nrsPackage = pkgs.writeShellApplication {
         name = "nrs";
         runtimeInputs = [ pkgs.nh ];
@@ -50,6 +56,7 @@
         pkgs.lazygit
         pkgs.nh
         nrsPackage
+        cliToolsPackage
         pkgs.nix-output-monitor
         pkgs.nurl
         pkgs.nvd
@@ -81,12 +88,6 @@
       ++ lib.optionals pkgs.stdenv.hostPlatform.isDarwin [
         pkgs.mas
       ];
-
-      # Install the terminal inventory separately from the Nix module logic so it can evolve as a script.
-      home.file."bin/cli-tools" = {
-        source = ./assets/cli-tools;
-        executable = true;
-      };
 
       # Put user-managed helper scripts and Darwin-only application CLIs on PATH.
       home.sessionPath = [

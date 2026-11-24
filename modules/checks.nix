@@ -50,6 +50,17 @@ in
               touch "$out"
             '';
 
+        # Shell scripts must use writeShellApplication (pinned runtime inputs, strict mode, shellcheck).
+        shell-script-builders =
+          pkgs.runCommand "shell-script-builders-check" { nativeBuildInputs = [ pkgs.ripgrep ]; }
+            ''
+              if rg --line-number --glob '!checks.nix' 'writeShellScript|writeScriptBin|writeScript ' ${../modules} ${../hosts}; then
+                echo "Use pkgs.writeShellApplication for shell scripts (see AGENTS.md)." >&2
+                exit 1
+              fi
+              touch "$out"
+            '';
+
         statix = pkgs.runCommand "statix-check" { nativeBuildInputs = [ pkgs.statix ]; } ''
           statix check --config ${../checks/statix.toml} ${../.}
           touch "$out"

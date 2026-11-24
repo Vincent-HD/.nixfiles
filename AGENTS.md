@@ -202,6 +202,15 @@ description; do not create `WIP`, `update`, `changes`, or other vague subjects.
 - **Run `nix run .#update-pins -- --check` after touching packages, holds, or inputs**; it fails when a
   package lacks the shared updater or a hold names nothing. Do not add package or host builds to the update
   run; each host validates its own configuration.
+- **Build every shell script with `pkgs.writeShellApplication`**, never `writeShellScript`,
+  `writeShellScriptBin`, `writeScript(Bin)`, or an executable `home.file`. It pins bash, adds
+  `errexit`, `nounset`, and `pipefail`, and runs shellcheck at build time. List the commands a
+  script calls in `runtimeInputs` (keep absolute store paths only for commands run under `sudo`,
+  which resets `PATH`), reference the result with `lib.getExe`, and keep long scripts in the
+  module's `assets/` through `builtins.readFile`. Fix shellcheck findings rather than excluding
+  them, and use `bashOptions` only to keep a script's deliberate mode. The `shell-script-builders`
+  flake check enforces this in `modules/` and `hosts/`; build-time stubs inside derivations under
+  `packages/` and Agent Skill resource scripts are exempt.
 - When adding a new external flake input, add `inputs.<name>.follows = "nixpkgs"` when the input
   supports it, to avoid duplicate nixpkgs evaluations.
 - Keep `system.stateVersion` and `home.stateVersion` stable unless intentionally migrating state.

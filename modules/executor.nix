@@ -21,23 +21,25 @@
       # allow remote debugging. Remote MCP is pooled, so keep one stdio child
       # behind mcp-proxy and point Executor at that HTTP endpoint.
       # Do not bake a CDP WebSocket UUID: --auto-connect rediscovers Brave.
-      agentBrowserProxy = pkgs.writeShellScript "executor-agent-browser-mcp-proxy" ''
-        set -eu
-        exec ${lib.getExe pkgs.mcp-proxy} \
-          --host 127.0.0.1 \
-          --port ${toString agentBrowserProxyPort} \
-          --transport streamablehttp \
-          --no-stateless \
-          -e HOME ${config.home.homeDirectory} \
-          -e AGENT_BROWSER_AUTO_CONNECT 1 \
-          -e AGENT_BROWSER_IDLE_TIMEOUT_MS 0 \
-          -e AGENT_BROWSER_SESSION executor \
-          -- ${lib.getExe agentBrowserPackage} \
-            --auto-connect \
-            --session executor \
-            --idle-timeout 0 \
-            mcp
-      '';
+      agentBrowserProxy = pkgs.writeShellApplication {
+        name = "executor-agent-browser-mcp-proxy";
+        text = ''
+          exec ${lib.getExe pkgs.mcp-proxy} \
+            --host 127.0.0.1 \
+            --port ${toString agentBrowserProxyPort} \
+            --transport streamablehttp \
+            --no-stateless \
+            -e HOME ${config.home.homeDirectory} \
+            -e AGENT_BROWSER_AUTO_CONNECT 1 \
+            -e AGENT_BROWSER_IDLE_TIMEOUT_MS 0 \
+            -e AGENT_BROWSER_SESSION executor \
+            -- ${lib.getExe agentBrowserPackage} \
+              --auto-connect \
+              --session executor \
+              --idle-timeout 0 \
+              mcp
+        '';
+      };
 
       # Load API tokens at MCP startup so they never enter Executor's saved config.
       # Runtime Bitwarden items share a generic prefix; the remaining name
@@ -182,11 +184,14 @@
         servers = mcpServers;
       };
 
-      executorDaemon = pkgs.writeShellScript "executor-daemon" ''
-        set -eu
-        mkdir -p ${lib.escapeShellArg "${executorDataDirectory}/logs"}
-        exec ${lib.getExe executorPackage} daemon run --foreground --port 4789 --hostname 127.0.0.1
-      '';
+      executorDaemon = pkgs.writeShellApplication {
+        name = "executor-daemon";
+        runtimeInputs = [ pkgs.coreutils ];
+        text = ''
+          mkdir -p ${lib.escapeShellArg "${executorDataDirectory}/logs"}
+          exec ${lib.getExe executorPackage} daemon run --foreground --port 4789 --hostname 127.0.0.1
+        '';
+      };
 
       executorSync = pkgs.writeShellApplication {
         name = "executor-sync";
@@ -239,7 +244,7 @@
           After = [ "network-online.target" ];
         };
         Service = {
-          ExecStart = "${executorDaemon}";
+          ExecStart = lib.getExe executorDaemon;
           Environment = lib.mapAttrsToList (name: value: "${name}=${value}") serviceEnvironment;
           Restart = "on-failure";
           RestartSec = "5";
@@ -257,7 +262,7 @@
           ];
         };
         Service = {
-          ExecStart = "${agentBrowserProxy}";
+          ExecStart = lib.getExe agentBrowserProxy;
           Restart = "always";
           RestartSec = "2";
           WorkingDirectory = config.home.homeDirectory;
@@ -287,7 +292,7 @@
       launchd.agents.executor = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
         enable = true;
         config = {
-          ProgramArguments = [ "${executorDaemon}" ];
+          ProgramArguments = [ (lib.getExe executorDaemon) ];
           EnvironmentVariables = serviceEnvironment;
           ProcessType = "Background";
           RunAtLoad = true;
@@ -301,7 +306,7 @@
       launchd.agents.agent-browser-mcp-proxy = lib.mkIf pkgs.stdenv.hostPlatform.isDarwin {
         enable = true;
         config = {
-          ProgramArguments = [ "${agentBrowserProxy}" ];
+          ProgramArguments = [ (lib.getExe agentBrowserProxy) ];
           ProcessType = "Background";
           RunAtLoad = true;
           KeepAlive = true;

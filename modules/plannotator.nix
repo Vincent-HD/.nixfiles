@@ -14,19 +14,21 @@
       #! TODO: Ugly workaround to remove when upstream is fixed
       # Plannotator forces Cursor's unavailable Linux sandbox for guided reviews.
       # Remove only that forced flag so Cursor can use its configured allowlist mode.
-      cursorAgentPlannotatorAllowlist = pkgs.writeShellScriptBin "agent" ''
-        set -eu
-        args=()
-        while [ "$#" -gt 0 ]; do
-          if [ "$1" = "--sandbox" ] && [ "''${2-}" = "enabled" ]; then
-            shift 2
-          else
-            args+=("$1")
-            shift
-          fi
-        done
-        exec ${lib.getExe cursorAgentPackage} "''${args[@]}"
-      '';
+      cursorAgentPlannotatorAllowlist = pkgs.writeShellApplication {
+        name = "agent";
+        text = ''
+          args=()
+          while [ "$#" -gt 0 ]; do
+            if [ "$1" = "--sandbox" ] && [ "''${2-}" = "enabled" ]; then
+              shift 2
+            else
+              args+=("$1")
+              shift
+            fi
+          done
+          exec ${lib.getExe cursorAgentPackage} "''${args[@]}"
+        '';
+      };
       cursorAgentForPlannotator =
         if pkgs.stdenv.hostPlatform.isLinux then cursorAgentPlannotatorAllowlist else cursorAgentPackage;
 

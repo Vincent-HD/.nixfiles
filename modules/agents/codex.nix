@@ -104,11 +104,12 @@ in
 
       # Keep the selected Codex executable behind one user-facing wrapper.
       codex = pkgs.lib.hiPrio (
-        pkgs.writeShellScriptBin "codex" ''
-          set -euo pipefail
-
-          exec ${codexExec} "$@"
-        ''
+        pkgs.writeShellApplication {
+          name = "codex";
+          text = ''
+            exec ${codexExec} "$@"
+          '';
+        }
       );
 
     in

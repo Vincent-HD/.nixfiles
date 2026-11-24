@@ -85,66 +85,76 @@
           environment.systemPackages = [
             pkgs.qemu-utils
 
-            (pkgs.writeShellScriptBin "wsl-mount" ''
-              set -euo pipefail
+            (pkgs.writeShellApplication {
+              name = "wsl-mount";
+              runtimeInputs = [
+                pkgs.coreutils
+                pkgs.util-linux
+              ];
+              text = ''
+                DISTRO_ROOT="$(dirname "$(dirname "${cfg.wslVhdxPath}")")"
+                DISTRO="''${1:-$(basename "$(dirname "${cfg.wslVhdxPath}")")}"
+                MOUNT="''${2:-/mnt/wsl}"
+                VHDX="$DISTRO_ROOT/$DISTRO/ext4.vhdx"
+                DEV="/dev/nbd0"
 
-              DISTRO_ROOT="$(dirname "$(dirname "${cfg.wslVhdxPath}")")"
-              DISTRO="''${1:-$(basename "$(dirname "${cfg.wslVhdxPath}")")}"
-              MOUNT="''${2:-/mnt/wsl}"
-              VHDX="$DISTRO_ROOT/$DISTRO/ext4.vhdx"
-              DEV="/dev/nbd0"
+                if mountpoint -q "$MOUNT"; then
+                  echo "Already mounted at $MOUNT"
+                  exit 0
+                fi
 
-              if mountpoint -q "$MOUNT"; then
-                echo "Already mounted at $MOUNT"
-                exit 0
-              fi
+                if [ ! -f "$VHDX" ]; then
+                  echo "Error: VHDX not found at $VHDX"
+                  echo "Available distros in $DISTRO_ROOT:"
+                  ls -1 "$DISTRO_ROOT" 2>/dev/null || true
+                  echo "Is the Windows partition mounted at /mnt/windows (and path correct)?"
+                  exit 1
+                fi
 
-              if [ ! -f "$VHDX" ]; then
-                echo "Error: VHDX not found at $VHDX"
-                echo "Available distros in $DISTRO_ROOT:"
-                ls -1 "$DISTRO_ROOT" 2>/dev/null || true
-                echo "Is the Windows partition mounted at /mnt/windows (and path correct)?"
-                exit 1
-              fi
+                MOUNT_OPTS="rw"
+                if [ "''${WSL_MOUNT_RO:-0}" = "1" ]; then
+                  MOUNT_OPTS="ro"
+                fi
 
-              MOUNT_OPTS="rw"
-              if [ "''${WSL_MOUNT_RO:-0}" = "1" ]; then
-                MOUNT_OPTS="ro"
-              fi
+                sudo mkdir -p "$MOUNT"
 
-              sudo mkdir -p "$MOUNT"
+                sudo ${pkgs.kmod}/bin/modprobe nbd max_part=8
+                sudo ${pkgs.qemu-utils}/bin/qemu-nbd --connect="$DEV" "$VHDX"
+                sleep 1
 
-              sudo ${pkgs.kmod}/bin/modprobe nbd max_part=8
-              sudo ${pkgs.qemu-utils}/bin/qemu-nbd --connect="$DEV" "$VHDX"
-              sleep 1
+                if [ -b "''${DEV}p1" ]; then
+                  sudo mount -o "$MOUNT_OPTS" "''${DEV}p1" "$MOUNT"
+                else
+                  sudo mount -o "$MOUNT_OPTS" "$DEV" "$MOUNT"
+                fi
 
-              if [ -b "''${DEV}p1" ]; then
-                sudo mount -o "$MOUNT_OPTS" "''${DEV}p1" "$MOUNT"
-              else
-                sudo mount -o "$MOUNT_OPTS" "$DEV" "$MOUNT"
-              fi
+                echo "Mounted WSL disk ($DISTRO, $MOUNT_OPTS) at $MOUNT"
+              '';
+            })
 
-              echo "Mounted WSL disk ($DISTRO, $MOUNT_OPTS) at $MOUNT"
-            '')
+            (pkgs.writeShellApplication {
+              name = "wsl-umount";
+              runtimeInputs = [
+                pkgs.coreutils
+                pkgs.util-linux
+              ];
+              text = ''
+                MOUNT="''${1:-/mnt/wsl}"
+                DEV="/dev/nbd0"
 
-            (pkgs.writeShellScriptBin "wsl-umount" ''
-              set -euo pipefail
+                if mountpoint -q "$MOUNT"; then
+                  sudo umount "$MOUNT"
+                  echo "Unmounted $MOUNT"
+                else
+                  echo "$MOUNT is not mounted"
+                fi
 
-              MOUNT="''${1:-/mnt/wsl}"
-              DEV="/dev/nbd0"
-
-              if mountpoint -q "$MOUNT"; then
-                sudo umount "$MOUNT"
-                echo "Unmounted $MOUNT"
-              else
-                echo "$MOUNT is not mounted"
-              fi
-
-              if [ -b "$DEV" ]; then
-                sudo ${pkgs.qemu-utils}/bin/qemu-nbd --disconnect "$DEV" 2>/dev/null || true
-                echo "Disconnected $DEV"
-              fi
-            '')
+                if [ -b "$DEV" ]; then
+                  sudo ${pkgs.qemu-utils}/bin/qemu-nbd --disconnect "$DEV" 2>/dev/null || true
+                  echo "Disconnected $DEV"
+                fi
+              '';
+            })
           ];
         })
       ];

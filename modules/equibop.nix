@@ -41,6 +41,27 @@
           };
         }
       );
+      # Merge the managed plugin settings into Equicord's writable settings.json.
+      equicordWritableSettings = pkgs.writeShellApplication {
+        name = "equicord-writable-settings";
+        runtimeInputs = [
+          pkgs.coreutils
+          pkgs.jq
+        ];
+        text = ''
+          settings_dir="$1/settings"
+          settings_file="$settings_dir/settings.json"
+          mkdir -p "$settings_dir"
+          temporary=$(mktemp "$settings_dir/.settings.XXXXXX")
+          trap 'rm -f "$temporary"' EXIT
+          if [ -f "$settings_file" ]; then
+            jq -s ".[0] * .[1]" "$settings_file" "$2" > "$temporary"
+          else
+            jq . "$2" > "$temporary"
+          fi
+          mv -f "$temporary" "$settings_file"
+        '';
+      };
     in
     {
       programs.equibop = {
@@ -52,20 +73,7 @@
       home.activation.equicordWritableSettings =
         lib.hm.dag.entryBetween [ "linkGeneration" ] [ "writeBoundary" ]
           ''
-            run ${pkgs.writeShellScript "equicord-writable-settings" ''
-              set -eu
-              settings_dir="$1/settings"
-              settings_file="$settings_dir/settings.json"
-              mkdir -p "$settings_dir"
-              temporary=$(mktemp "$settings_dir/.settings.XXXXXX")
-              trap "rm -f \"$temporary\"" EXIT
-              if [ -f "$settings_file" ]; then
-                ${pkgs.jq}/bin/jq -s ".[0] * .[1]" "$settings_file" "$2" > "$temporary"
-              else
-                ${pkgs.jq}/bin/jq . "$2" > "$temporary"
-              fi
-              mv -f "$temporary" "$settings_file"
-            ''} ${lib.escapeShellArg equibopDataDir} ${lib.escapeShellArg (toString equicordSettings)}
+            run ${lib.getExe equicordWritableSettings} ${lib.escapeShellArg equibopDataDir} ${lib.escapeShellArg (toString equicordSettings)}
           '';
 
       # Electron's generated autostart entry otherwise keeps obsolete Nix store paths.

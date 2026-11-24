@@ -10,12 +10,16 @@
     }:
     let
       # Native presets omit the device selection for the external sidechain.
-      sidechainSettings = pkgs.writeShellScript "easyeffects-sidechain" ''
-        ${pkgs.kdePackages.kconfig}/bin/kwriteconfig6 \
-          --file ${lib.escapeShellArg "${config.xdg.configHome}/easyeffects/db/compressorrc"} \
-          --group soe --group 'Compressor#0' \
-          --key sidechainInputDevice communication_sink.capture
-      '';
+      sidechainSettings = pkgs.writeShellApplication {
+        name = "easyeffects-sidechain";
+        runtimeInputs = [ pkgs.kdePackages.kconfig ];
+        text = ''
+          kwriteconfig6 \
+            --file ${lib.escapeShellArg "${config.xdg.configHome}/easyeffects/db/compressorrc"} \
+            --group soe --group 'Compressor#0' \
+            --key sidechainInputDevice communication_sink.capture
+        '';
+      };
     in
     {
       services.easyeffects = {
@@ -46,7 +50,7 @@
       # just the routing key without freezing the writable effect database.
       xdg.configFile."systemd/user/easyeffects.service.d/sidechain.conf".text = ''
         [Service]
-        ExecStartPre=${sidechainSettings}
+        ExecStartPre=${lib.getExe sidechainSettings}
       '';
 
       # Mask the app-created XDG autostart entry; the HM service owns startup.
