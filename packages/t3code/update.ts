@@ -1,8 +1,7 @@
 import { PrefetchResultSchema, UrlSchema, VersionSchema, z } from "../update-schema.ts";
 
 type Source = {
-  arch: string;
-  ext: string;
+  asset: (version: string) => string;
 };
 
 const GithubReleaseSchema = z
@@ -13,9 +12,9 @@ const GithubReleaseSchema = z
   .passthrough();
 
 const sources: Record<string, Source> = {
-  "x86_64-linux": { arch: "x86_64", ext: "AppImage" },
-  "aarch64-darwin": { arch: "arm64", ext: "dmg" },
-  "x86_64-darwin": { arch: "x64", ext: "dmg" },
+  "x86_64-linux": { asset: () => "T3-Code-Nightly-x86_64.AppImage" },
+  "aarch64-darwin": { asset: (version) => "T3-Code-" + version + "-arm64.dmg" },
+  "x86_64-darwin": { asset: (version) => "T3-Code-" + version + "-x64.dmg" },
 };
 
 const nightlyTag = /^v(\d+\.\d+\.\d+-nightly\.\d{8}\.\d+)$/;
@@ -73,14 +72,7 @@ console.log("t3code latest:  " + version);
 // GitHub can replace a nightly asset without changing its tag; always refresh its hash.
 for (const [system, source] of Object.entries(sources)) {
   const url = UrlSchema.parse(
-    "https://github.com/pingdotgg/t3code/releases/download/v" +
-    version +
-    "/T3-Code-" +
-    version +
-    "-" +
-    source.arch +
-    "." +
-    source.ext,
+    "https://github.com/pingdotgg/t3code/releases/download/v" + version + "/" + source.asset(version),
   );
   const hash = await prefetchHash(url, root);
   const block = new RegExp('("' + system + '" = \\{[\\s\\S]*?hash = ")[^"]+(";)');

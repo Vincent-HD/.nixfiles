@@ -9,31 +9,29 @@
 }:
 
 let
-  # Nightly GitHub prereleases; artifact names follow T3-Code-<version>-<arch>.<ext>.
+  pname = "t3code";
+  version = "0.1.12-nightly.20261124.5178";
+
+  # Nightly GitHub prereleases: the Linux AppImage name is unversioned, while the
+  # macOS DMGs follow T3-Code-<version>-<arch>.dmg. The tag path pins each asset.
   sources = {
     "x86_64-linux" = {
-      arch = "x86_64";
-      ext = "AppImage";
-      hash = "sha256-orO0UXpPKmc+cCCh5wbQePrIkcOj++5MMA6KPFGWkIk=";
+      asset = "T3-Code-Nightly-x86_64.AppImage";
+      hash = "sha256-/AKr0RL833PPYENbog65FoRkjNICOxpK6kulmGHzZv4=";
     };
     "aarch64-darwin" = {
-      arch = "arm64";
-      ext = "dmg";
-      hash = "sha256-XtqoR0MPiTfcOeGuqNbZZvMNmXrMSC2g+0A0+0FVUEc=";
+      asset = "T3-Code-${version}-arm64.dmg";
+      hash = "sha256-vKjuqtXqdmUCmiYixapHntceiPUVp/Xn54+RAnCyEAo=";
     };
     "x86_64-darwin" = {
-      arch = "x64";
-      ext = "dmg";
-      hash = "sha256-VHyPTzSUcYaoYycIOqnPYgQuHamF5jw4rxS8aEF/7So=";
+      asset = "T3-Code-${version}-x64.dmg";
+      hash = "sha256-UOL8CAUGQ/yzwCQRtbfC2yCpITo221cnAUtKo90674k=";
     };
   };
   source = sources.${stdenvNoCC.hostPlatform.system};
 
-  pname = "t3code";
-  version = "0.1.7-nightly.20261031.3991";
-
   src = fetchurl {
-    url = "https://github.com/pingdotgg/t3code/releases/download/v${version}/T3-Code-${version}-${source.arch}.${source.ext}";
+    url = "https://github.com/pingdotgg/t3code/releases/download/v${version}/${source.asset}";
     hash = source.hash;
   };
 
