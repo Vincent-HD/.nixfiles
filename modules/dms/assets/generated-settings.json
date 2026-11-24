@@ -162,14 +162,18 @@
       "enabled": true,
       "id": "builtin_tailscale",
       "width": 50
+    },
+    {
+      "enabled": true,
+      "h": 1,
+      "id": "edit",
+      "small": true,
+      "w": 1
     }
   ],
-  "cornerRadius": 8,
   "currentThemeCategory": "registry",
   "currentThemeName": "custom",
   "customThemeFile": "~/.config/dms/themes/crimsonVoltage/theme.json",
-  "groupWorkspaceApps": false,
-  "maxWorkspaceIcons": 6,
   "niriLayoutBorderSize": 2,
   "registryThemeVariants": {
     "catppuccin": {
@@ -184,17 +188,5 @@
         "flavor": "material-hard-dark"
       }
     }
-  },
-  "showBattery": false,
-  "showCpuTemp": false,
-  "showGpuTemp": false,
-  "showLauncherButton": false,
-  "showMusic": false,
-  "showWeather": false,
-  "showWorkspaceApps": true,
-  "showWorkspacePadding": true,
-  "workspaceAppIconSizeOffset": 2,
-  "workspaceColorMode": "secondaryContainer",
-  "workspaceFocusedBorderColor": "primaryContainer",
-  "workspaceUnfocusedColorMode": "schh"
+  }
 }
