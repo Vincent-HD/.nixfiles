@@ -9,10 +9,6 @@ in
   config.flake.modules.nixos.dms =
     { pkgs, ... }:
     let
-      # NVIDIA 595 exposes NVENC API 13.0; FFmpeg 9 requires 13.1.
-      gpuScreenRecorderPackage = pkgs.gpu-screen-recorder.override {
-        ffmpeg = pkgs.ffmpeg_8;
-      };
       dmsPackage = dmsShellPackage pkgs;
     in
     {
@@ -41,7 +37,7 @@ in
       # fall back to an interactive Polkit authentication prompt.
       programs.gpu-screen-recorder = {
         enable = true;
-        package = gpuScreenRecorderPackage;
+        package = pkgs.gpu-screen-recorder;
       };
 
       services.power-profiles-daemon.enable = true;
@@ -58,11 +54,6 @@ in
       ...
     }:
     let
-      # Keep the user-visible executable on the same FFmpeg/NVENC-compatible
-      # build as the NixOS KMS wrapper above.
-      gpuScreenRecorderPackage = pkgs.gpu-screen-recorder.override {
-        ffmpeg = pkgs.ffmpeg_8;
-      };
       dmsPackage = dmsShellPackage pkgs;
       dmsSettings = (builtins.fromJSON (builtins.readFile ./assets/generated-settings.json)) // {
         calendarBackend = "dankcal";
@@ -96,7 +87,7 @@ in
         pkgs.curl
         pkgs.file
         pkgs.ffmpeg
-        gpuScreenRecorderPackage
+        pkgs.gpu-screen-recorder
         pkgs.grim
         pkgs.img2pdf
         pkgs.imagemagick
@@ -236,10 +227,7 @@ in
       # Install dcal and keep its background daemon available to the DMS calendar backend.
       programs.dank-calendar = {
         enable = true;
-        # Correct the stale Go module hash in the locked upstream flake.
-        package = (inputs.dankcalendar.lib.mkDcal pkgs).overrideAttrs (_: {
-          vendorHash = "sha256-JT6mHK52mIJh4lzVWYVpqNY2S2oeinSWBIKaI3TiY34=";
-        });
+        package = inputs.dankcalendar.lib.mkDcal pkgs;
         systemd.enable = true;
       };
 
