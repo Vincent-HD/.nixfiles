@@ -8,7 +8,7 @@ let
   # A generated lockfile pins @open-pencil/mcp and its npm closure; keep it in step with the app.
   closure = lib.importJSON ./package.json;
 in
-buildNpmPackage (finalAttrs: {
+buildNpmPackage {
   pname = "open-pencil-mcp";
   version = closure.version;
   nodejs = nodejs_24;
@@ -45,4 +45,4 @@ buildNpmPackage (finalAttrs: {
     mainProgram = "openpencil-mcp";
     platforms = lib.platforms.unix;
   };
-})
+}

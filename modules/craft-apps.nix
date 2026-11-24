@@ -63,8 +63,8 @@
       };
 
       appNames = builtins.attrNames defaultAssociations;
-      enabledApps = lib.filterAttrs (appName: appCfg: appCfg.enable) cfg;
-      associatedApps = lib.filterAttrs (appName: appCfg: appCfg.setDefaultApplication) enabledApps;
+      enabledApps = lib.filterAttrs (_appName: appCfg: appCfg.enable) cfg;
+      associatedApps = lib.filterAttrs (_appName: appCfg: appCfg.setDefaultApplication) enabledApps;
 
       # LaunchServices only resolves bundle IDs for apps it has registered.
       lsregister = "/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister";
@@ -121,7 +121,7 @@
       config = lib.mkMerge [
         {
           # Install every enabled app; the Linux packages ship desktop entries and MIME definitions.
-          home.packages = lib.mapAttrsToList (appName: appCfg: craftPackages.${appName}) enabledApps;
+          home.packages = lib.mapAttrsToList (appName: _appCfg: craftPackages.${appName}) enabledApps;
         }
 
         # Linux: point each claimed MIME type at the app's desktop entry.
@@ -131,7 +131,7 @@
             defaultApplications = lib.mkMerge (
               lib.mapAttrsToList (
                 appName: appCfg:
-                lib.genAttrs appCfg.mimeTypes (mimeType: [ craftPackages.${appName}.passthru.desktopFile ])
+                lib.genAttrs appCfg.mimeTypes (_mimeType: [ craftPackages.${appName}.passthru.desktopFile ])
               ) associatedApps
             );
           };

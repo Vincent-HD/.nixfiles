@@ -34,7 +34,7 @@
             "application/x-figma"
             "application/x-pencil-pen"
             "x-scheme-handler/openpencil"
-          ] (mimeType: [ openPencil.passthru.desktopFile ]);
+          ] (_mimeType: [ openPencil.passthru.desktopFile ]);
         };
       })
 

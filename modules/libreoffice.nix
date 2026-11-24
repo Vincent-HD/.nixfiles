@@ -129,7 +129,7 @@ in
           ];
           xdg.mimeApps = {
             enable = true;
-            defaultApplications = lib.genAttrs spreadsheetMimeTypes (mimeType: [ "calc.desktop" ]);
+            defaultApplications = lib.genAttrs spreadsheetMimeTypes (_mimeType: [ "calc.desktop" ]);
           };
 
           # Calc's AutoInput scans the column on every keystroke, which lags on huge sheets.
