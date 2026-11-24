@@ -15,6 +15,12 @@
       inshellisensePackage = pkgs.inshellisense;
       inshellisenseRoot = "${inshellisensePackage}/lib/node_modules/@microsoft/inshellisense";
       inshellisenseResources = "${config.xdg.dataHome}/inshellisense";
+      # `nrs` switches this machine or updates its pins; shellcheck runs on it at build time.
+      nrsPackage = pkgs.writeShellApplication {
+        name = "nrs";
+        runtimeInputs = [ pkgs.nh ];
+        text = builtins.readFile ./assets/nrs;
+      };
     in
     {
       home.packages = [
@@ -43,6 +49,7 @@
         pkgs.just
         pkgs.lazygit
         pkgs.nh
+        nrsPackage
         pkgs.nix-output-monitor
         pkgs.nurl
         pkgs.nvd
@@ -78,11 +85,6 @@
       # Install the terminal inventory separately from the Nix module logic so it can evolve as a script.
       home.file."bin/cli-tools" = {
         source = ./assets/cli-tools;
-        executable = true;
-      };
-      # `nrs` switches this machine and can retarget one rebuild without editing the host.
-      home.file."bin/nrs" = {
-        source = ./assets/nrs;
         executable = true;
       };
 

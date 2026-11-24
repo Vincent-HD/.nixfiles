@@ -41,7 +41,7 @@ const createFixture = async (): Promise<Fixture> => {
   await writeFile(join(flakeRoot, "flake.nix"), '{ description = "test"; }\n');
   await writeExecutable({
     path: join(fakeBin, "nix"),
-    content: `${recorder("NRS_NIX_ARGV_LOG")}printf '%s\\0\\0' "\${UPDATE_PINS_REPO_ROOT:-<empty>}" >> "$NRS_NIX_ENV_LOG"\n`,
+    content: `${recorder("NRS_NIX_ARGV_LOG")}printf '%s\\0\\0' "\${UPDATE_PINS_REPO_ROOT:-<empty>}" >> "$NRS_NIX_ENV_LOG"\nif [ -e "${join(root, "nix-fails")}" ]; then exit 1; fi\n`,
   });
   await writeExecutable({ path: join(fakeBin, "nh"), content: recorder("NRS_NH_ARGV_LOG") });
   await writeExecutable({ path: join(fakeBin, "uname"), content: `#!${bashExecutable}\nprintf 'Linux\\n'\n` });
@@ -110,67 +110,64 @@ afterEach(async () => {
   await rm(fixture.root, { recursive: true, force: true });
 });
 
-describe("nrs update interface", () => {
-  test("lists updates through update-pins in NH_FLAKE from outside the checkout", async () => {
-    const result = await runNrs(["--list-updates"]);
+describe("nrs", () => {
+  test("updates everything through update-pins in NH_FLAKE from outside the checkout", async () => {
+    const result = await runNrs(["update"]);
 
     expect(result.exitCode).toBe(0);
-    expect(await readGroups(fixture.nixLog)).toEqual([updatePinsCall("--list")]);
+    expect(await readGroups(fixture.nixLog)).toEqual([updatePinsCall()]);
     expect(await readGroups(fixture.nixEnvironmentLog)).toEqual([[fixture.flakeRoot]]);
-  });
-
-  test("maps all inputs and all pins to the update-pins kind selectors", async () => {
-    const result = await runNrs(["--update", "--inputs", "all", "--pins", "all", "--dry-run"]);
-
-    expect(result.exitCode).toBe(0);
-    expect(await readGroups(fixture.nixLog)).toEqual([updatePinsCall("--inputs", "--packages", "--dry-run")]);
     expect(await readGroups(fixture.nhLog)).toEqual([]);
   });
 
-  test("maps named inputs and pins to --only and forwards --include-held", async () => {
-    const result = await runNrs(["--update", "--inputs", "nixpkgs", "--pins", "codex", "--include-held"]);
+  test("forwards update-pins options verbatim", async () => {
+    const result = await runNrs(["update", "--only", "codex,nixpkgs", "--skip", "t3code", "--check"]);
 
     expect(result.exitCode).toBe(0);
     expect(await readGroups(fixture.nixLog)).toEqual([
-      updatePinsCall("--only", "nixpkgs", "--only", "codex", "--include-held"),
+      updatePinsCall("--only", "codex,nixpkgs", "--skip", "t3code", "--check"),
     ]);
   });
 
-  test("validates missing selectors, duplicates, lists, and incompatible options", async () => {
-    const cases = [
-      { args: ["--update"], error: "requires --inputs and/or --pins" },
-      { args: ["--update", "--inputs", "a,b"], error: "one input name" },
-      { args: ["--update", "--inputs"], error: "requires all or one input name" },
-      { args: ["--update", "--pins", "codex", "--pins", "other"], error: "--pins may only be used once" },
-      { args: ["--list-updates", "--dry-run"], error: "cannot be combined" },
-      { args: ["--inputs", "all"], error: "require --update" },
-      { args: ["--include-held"], error: "require --update" },
-      { args: ["--update", "--inputs", "nixpkgs", "--ask"], error: "cannot be combined with switch or nh" },
-      { args: ["--update", "--inputs", "nixpkgs", "--", "--dry-run"], error: "cannot be combined with switch or nh" },
-    ];
+  test("switches after a successful update with --switch", async () => {
+    const result = await runNrs(["update", "--switch", "--only", "codex"]);
 
-    for (const { args, error } of cases) {
-      const result = await runNrs(args);
+    expect(result.exitCode).toBe(0);
+    expect(await readGroups(fixture.nixLog)).toEqual([updatePinsCall("--only", "codex")]);
+    expect(await readGroups(fixture.nhLog)).toEqual([["os", "switch"]]);
+  });
+
+  test("does not switch after a failed or dry-run update", async () => {
+    const dryRun = await runNrs(["update", "--switch", "--dry-run"]);
+    expect(dryRun.exitCode).toBe(0);
+    expect(await readGroups(fixture.nixLog)).toEqual([updatePinsCall("--dry-run")]);
+    expect(await readGroups(fixture.nhLog)).toEqual([]);
+
+    await writeFile(join(fixture.root, "nix-fails"), "");
+    const failed = await runNrs(["update", "--switch"]);
+    expect(failed.exitCode).not.toBe(0);
+    expect(await readGroups(fixture.nhLog)).toEqual([]);
+  });
+
+  test("rejects the old update flags before they reach nh", async () => {
+    for (const flag of ["--update", "--list-updates", "--inputs", "--pins"]) {
+      const result = await runNrs([flag, "all"]);
       expect(result.exitCode).toBe(2);
-      expect(result.stderr).toContain(error);
-      expect(await readGroups(fixture.nixLog)).toEqual([]);
+      expect(result.stderr).toContain("nrs update");
       expect(await readGroups(fixture.nhLog)).toEqual([]);
+      expect(await readGroups(fixture.nixLog)).toEqual([]);
     }
   });
 
-  test("rejects removed T3 Code patch overrides before calling nh", async () => {
-    const result = await runNrs(["--no-t3-usage", "--dry-run", "--ask"]);
+  test("switches with nh options and a local Tokitoki checkout", async () => {
+    const checkout = join(fixture.root, "tokitoki");
+    await mkdir(checkout);
 
-    expect(result.exitCode).toBe(2);
-    expect(result.stderr).toContain("T3 Code patch overrides were removed");
-    expect(await readGroups(fixture.nhLog)).toEqual([]);
-    expect(await readGroups(fixture.nixLog)).toEqual([]);
-  });
-
-  test("uses --dry-run as an nh option when no update mode is selected", async () => {
-    const result = await runNrs(["--dry-run", "--ask"]);
+    const result = await runNrs(["--tokitoki", checkout, "--ask"]);
 
     expect(result.exitCode).toBe(0);
-    expect(await readGroups(fixture.nhLog)).toEqual([["os", "switch", "--dry-run", "--ask"]]);
+    expect(await readGroups(fixture.nhLog)).toEqual([
+      ["os", "switch", "--ask", "--override-input", "tokitoki", `path:${checkout}`],
+    ]);
   });
 });

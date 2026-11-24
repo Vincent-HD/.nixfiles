@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Switch this machine from the nixfiles flake, or explicitly manage its pinned inputs.
+# Switch this machine from the nixfiles flake, or update its pins through update-pins.
 # Plain `nrs` keeps the pinned inputs.
 
 set -euo pipefail
@@ -8,21 +8,15 @@ set -euo pipefail
 usage() {
   cat <<'EOF'
 Usage:
-  nrs [switch options] [nh options]
-  nrs --list-updates
-  nrs --update [--inputs <all|name>] [--pins <all|name>] [--dry-run] [--include-held]
+  nrs [--tokitoki [path]] [nh options]   Switch this machine with the pinned inputs.
+  nrs update [--switch] [update-pins options]
+                                         Update every flake input and pinned package
+                                         (`nix run .#update-pins`); --switch rebuilds
+                                         afterwards when every update succeeded.
+  nrs update --help                      List the update-pins options (--only, --skip,
+                                         --check, --list, --dry-run, --validate, ...).
 
-With no update option, switch this machine. With no switch options, uses the
-pinned flake inputs.
-
-Pin updates run `nix run .#update-pins` in the local flake named by NH_FLAKE
-(or ~/.nixfiles); update-pins owns selection, holds, and drift checks.
-  --list-updates      List flake inputs, packages, and holds.
-  --update            Select an update operation instead of switching the system.
-  --inputs <all|name> Update every unheld flake input or one named input.
-  --pins <all|name>   Update every unheld flake package or one named package.
-  --dry-run           Print the update commands without running them.
-  --include-held      Allow a held input or package named with --inputs or --pins.
+The flake is the local directory named by NH_FLAKE (default: ~/.nixfiles).
 
 Tokitoki:
   --tokitoki [path]   Use a local checkout instead of the pinned input.
@@ -32,60 +26,72 @@ Other arguments are passed to nh, for example --dry or --ask.
 EOF
 }
 
-tokitoki=""
-nh_args=()
-update_mode=0
-list_updates=0
-input_selector=""
-input_selector_set=0
-pin_selector=""
-pin_selector_set=0
-dry_run=0
-include_held=0
-nh_separator_seen=0
-
 fail() {
   printf 'nrs: %s\n' "$1" >&2
   exit 2
 }
 
+flake_root() {
+  local flake_ref="${NH_FLAKE:-$HOME/.nixfiles}"
+  case "$flake_ref" in
+    path:*) flake_ref="${flake_ref#path:}" ;;
+    *://* | github:* | git+* | flake:*) fail "NH_FLAKE must name a local flake directory for nrs update" ;;
+  esac
+  [[ "$flake_ref" != *\?* && "$flake_ref" != *\#* ]] || fail "NH_FLAKE must be a plain local directory path"
+  [[ -d "$flake_ref" ]] || fail "flake directory not found: $flake_ref"
+  (cd "$flake_ref" && pwd -P) || fail "cannot resolve flake directory: $flake_ref"
+}
+
+switch_system() {
+  if [[ "$(uname -s)" == Darwin ]]; then
+    exec nh darwin switch "$@"
+  fi
+  exec nh os switch "$@"
+}
+
+run_update() {
+  local switch_after=0
+  local dry_run=0
+  local -a update_pins_args=()
+  local argument
+  for argument in "$@"; do
+    case "$argument" in
+      --switch) switch_after=1 ;;
+      --dry-run)
+        dry_run=1
+        update_pins_args+=("$argument")
+        ;;
+      *) update_pins_args+=("$argument") ;;
+    esac
+  done
+
+  local root
+  root="$(flake_root)"
+  printf 'nrs: update-pins in %s\n' "$root"
+  UPDATE_PINS_REPO_ROOT="$root" nix run --no-write-lock-file "$root#update-pins" -- "${update_pins_args[@]}"
+
+  if [[ "$switch_after" == 1 && "$dry_run" == 0 ]]; then
+    switch_system
+  fi
+}
+
+if [[ "${1:-}" == update ]]; then
+  shift
+  run_update "$@"
+  exit 0
+fi
+
+tokitoki=""
+nh_args=()
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -h | --help)
       usage
       exit 0
       ;;
-    --list-updates)
-      list_updates=1
-      shift
-      ;;
-    --update)
-      [[ "$update_mode" == 0 ]] || fail "--update may only be used once"
-      update_mode=1
-      shift
-      ;;
-    --inputs)
-      [[ "$input_selector_set" == 0 ]] || fail "--inputs may only be used once"
-      [[ $# -ge 2 && -n "$2" && "$2" != -- && "$2" != -* ]] || fail "--inputs requires all or one input name"
-      input_selector="$2"
-      input_selector_set=1
-      shift 2
-      ;;
-    --pins)
-      [[ "$pin_selector_set" == 0 ]] || fail "--pins may only be used once"
-      [[ $# -ge 2 && -n "$2" && "$2" != -- && "$2" != -* ]] || fail "--pins requires all or one package name"
-      pin_selector="$2"
-      pin_selector_set=1
-      shift 2
-      ;;
-    --include-held)
-      include_held=1
-      shift
-      ;;
-    --dry-run)
-      dry_run=1
-      nh_args+=(--dry-run)
-      shift
+    # nh has its own --update flag, so stop the old nrs spelling before it reaches nh.
+    --update | --list-updates | --inputs | --pins)
+      fail "$1 was replaced by 'nrs update [update-pins options]'; see 'nrs update --help'"
       ;;
     --tokitoki)
       shift
@@ -95,11 +101,7 @@ while [[ $# -gt 0 ]]; do
         shift
       fi
       ;;
-    --no-z-code | --no-t3 | --no-t3-usage | --no-t3-jj | --no-t3-temporary)
-      fail "T3 Code patch overrides were removed; Linux and macOS use the pinned Z Code fork"
-      ;;
     --)
-      nh_separator_seen=1
       shift
       nh_args+=("$@")
       break
@@ -111,96 +113,10 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-flake_root=""
-
-resolve_flake_root() {
-  local flake_ref="${NH_FLAKE:-$HOME/.nixfiles}"
-  case "$flake_ref" in
-    path:*) flake_ref="${flake_ref#path:}" ;;
-    *://* | github:* | git+* | flake:*) fail "NH_FLAKE must name a local flake directory for nrs update commands" ;;
-  esac
-  [[ "$flake_ref" != *\?* && "$flake_ref" != *\#* ]] || fail "NH_FLAKE must be a plain local directory path"
-  [[ -d "$flake_ref" ]] || fail "flake directory not found: $flake_ref"
-  flake_root="$(cd "$flake_ref" && pwd -P)" || fail "cannot resolve flake directory: $flake_ref"
-}
-
-print_command() {
-  printf 'nrs: command'
-  printf ' %q' "$@"
-  printf '\n'
-}
-
-run_update_pins() {
-  resolve_flake_root
-  print_command env "UPDATE_PINS_REPO_ROOT=$flake_root" nix run --no-write-lock-file "$flake_root#update-pins" -- "$@"
-  UPDATE_PINS_REPO_ROOT="$flake_root" nix run --no-write-lock-file "$flake_root#update-pins" -- "$@"
-}
-
-run_updates() {
-  local -a update_pins_args=()
-  case "$input_selector_set:$input_selector" in
-    1:all) update_pins_args+=(--inputs) ;;
-    1:*) update_pins_args+=(--only "$input_selector") ;;
-  esac
-  case "$pin_selector_set:$pin_selector" in
-    1:all) update_pins_args+=(--packages) ;;
-    1:*) update_pins_args+=(--only "$pin_selector") ;;
-  esac
-  [[ "$include_held" == 0 ]] || update_pins_args+=(--include-held)
-  [[ "$dry_run" == 0 ]] || update_pins_args+=(--dry-run)
-  run_update_pins "${update_pins_args[@]}"
-}
-
-if [[ "$list_updates" == 1 && "$update_mode" == 1 ]]; then
-  fail "--list-updates and --update cannot be combined"
-fi
-
-if [[ "$list_updates" == 1 ]]; then
-  [[ "$input_selector_set" == 0 && "$pin_selector_set" == 0 && "$include_held" == 0 && "$dry_run" == 0 ]] \
-    || fail "--list-updates cannot be combined with update options"
-  [[ ${#nh_args[@]} -eq 0 && -z "$tokitoki" ]] \
-    || fail "--list-updates cannot be combined with switch options"
-  run_update_pins --list
-  exit $?
-fi
-
-if [[ "$update_mode" == 1 ]]; then
-  [[ "$input_selector_set" == 1 || "$pin_selector_set" == 1 ]] || fail "--update requires --inputs and/or --pins"
-  [[ "$input_selector_set" == 0 || "$input_selector" == all || "$input_selector" != *,* ]] \
-    || fail "--inputs accepts all or one input name, not a comma-separated list"
-  [[ "$pin_selector_set" == 0 || "$pin_selector" == all || "$pin_selector" != *,* ]] \
-    || fail "--pins accepts all or one package name, not a comma-separated list"
-  [[ "$nh_separator_seen" == 0 ]] || fail "update options cannot be combined with switch or nh options"
-  for other_arg in "${nh_args[@]}"; do
-    [[ "$other_arg" == --dry-run ]] || fail "update options cannot be combined with switch or nh options"
-  done
-  [[ -z "$tokitoki" ]] \
-    || fail "update options cannot be combined with switch or nh options"
-  run_updates
-  exit $?
-fi
-
-[[ "$input_selector_set" == 0 && "$pin_selector_set" == 0 && "$include_held" == 0 ]] \
-  || fail "--inputs, --pins and --include-held require --update"
-
 if [[ -n "$tokitoki" ]]; then
-  if [[ ! -e "$tokitoki" ]]; then
-    echo "nrs: Tokitoki checkout not found: $tokitoki" >&2
-    exit 1
-  fi
+  [[ -e "$tokitoki" ]] || fail "Tokitoki checkout not found: $tokitoki"
+  printf 'nrs: tokitoki %s\n' "$tokitoki"
   nh_args+=(--override-input tokitoki "path:$tokitoki")
 fi
 
-notes=()
-[[ -n "$tokitoki" ]] && notes+=("tokitoki $tokitoki")
-if [[ ${#notes[@]} -gt 0 ]]; then
-  printf 'nrs:'
-  printf ' %s' "${notes[@]}"
-  printf '\n'
-fi
-
-if [[ "$(uname -s)" == Darwin ]]; then
-  exec nh darwin switch "${nh_args[@]}"
-else
-  exec nh os switch "${nh_args[@]}"
-fi
+switch_system "${nh_args[@]}"

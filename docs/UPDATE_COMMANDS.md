@@ -21,8 +21,14 @@ nix run .#update-pins -- --validate fast     # linux + darwin eval after the upd
 nix run .#update-pins -- --validate full     # build this host's system after the updates
 ```
 
-`nrs --update --inputs <all|name> --pins <all|name> [--dry-run] [--include-held]` and
-`nrs --list-updates` forward to the same runner from any directory (they use `NH_FLAKE`).
+From any directory, `nrs update [options]` runs the same command in `NH_FLAKE` (default
+`~/.nixfiles`) with the options above, and `nrs update --switch` rebuilds this machine after
+every update succeeded:
+
+```bash
+nrs update --switch        # update everything, then switch
+nrs update --only codex    # any update-pins option
+```
 
 The runner does not build packages: each host validates its own configuration with
 `--validate full` or a normal rebuild.
