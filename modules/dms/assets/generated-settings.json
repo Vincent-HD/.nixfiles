@@ -5,9 +5,11 @@
       "centerWidgets": [
         "focusedWindow"
       ],
+      "dot": false,
       "enabled": true,
       "id": "default",
       "innerPadding": 4,
+      "island": true,
       "leftWidgets": [
         {
           "enabled": true,
@@ -51,7 +53,14 @@
           "showVpnIcon": false
         },
         "serviceHub",
-        "workspaceSwitcher",
+        {
+          "enabled": true,
+          "id": "workspaceSwitcher",
+          "showOccupiedWorkspacesOnly": true,
+          "showWorkspaceApps": true,
+          "workspaceIndicatorCompact": true,
+          "workspaceIndicatorStyle": "cards"
+        },
         {
           "enabled": true,
           "id": "tokitoki"
@@ -92,11 +101,12 @@
         "all"
       ],
       "showOnLastDisplay": true,
-      "widgetPadding": 8
+      "widgetPadding": 7
     }
   ],
   "barElevationEnabled": false,
   "blurEnabled": true,
+  "blurLayerOutlineOpacity": 0.12,
   "builtInPluginSettings": {
     "dms_clipboard_search": {
       "trigger": "cb"
@@ -114,59 +124,110 @@
   "clockFormat": "HH:mm",
   "controlCenterWidgets": [
     {
+      "col": 0,
       "enabled": true,
+      "h": 1,
       "id": "volumeSlider",
+      "row": 0,
+      "w": 4,
       "width": 50
     },
     {
+      "col": 4,
       "enabled": true,
+      "h": 1,
       "id": "inputVolumeSlider",
+      "row": 0,
+      "w": 4,
       "width": 50
     },
     {
+      "col": 0,
       "enabled": true,
+      "h": 1,
       "id": "wifi",
+      "row": 1,
+      "w": 4,
       "width": 50
     },
     {
+      "col": 4,
       "enabled": true,
+      "h": 1,
       "id": "idleInhibitor",
+      "row": 1,
+      "w": 4,
       "width": 50
     },
     {
+      "col": 0,
       "enabled": true,
+      "h": 1,
       "id": "bluetooth",
+      "row": 2,
+      "w": 4,
       "width": 50
     },
     {
+      "col": 4,
       "enabled": true,
+      "h": 1,
       "id": "audioOutput",
+      "row": 2,
+      "w": 4,
       "width": 50
     },
     {
+      "col": 0,
       "enabled": true,
+      "h": 1,
       "id": "audioInput",
+      "row": 3,
+      "w": 4,
       "width": 50
     },
     {
+      "col": 4,
       "enabled": true,
+      "h": 1,
       "id": "nightMode",
+      "row": 3,
+      "w": 4,
       "width": 50
     },
     {
+      "col": 0,
       "enabled": true,
+      "h": 1,
       "id": "darkMode",
+      "row": 4,
+      "w": 4,
       "width": 50
     },
     {
+      "col": 4,
       "enabled": true,
+      "h": 1,
       "id": "builtin_tailscale",
+      "row": 4,
+      "w": 4,
       "width": 50
     },
     {
+      "col": 0,
       "enabled": true,
       "h": 1,
       "id": "edit",
+      "row": 5,
+      "small": true,
+      "w": 1
+    },
+    {
+      "col": 7,
+      "enabled": true,
+      "h": 1,
+      "id": "settings",
+      "row": 5,
       "small": true,
       "w": 1
     }
@@ -174,6 +235,8 @@
   "currentThemeCategory": "registry",
   "currentThemeName": "custom",
   "customThemeFile": "~/.config/dms/themes/crimsonVoltage/theme.json",
+  "density": "compact",
+  "interfaceStyle": "classic",
   "niriLayoutBorderSize": 2,
   "registryThemeVariants": {
     "catppuccin": {
