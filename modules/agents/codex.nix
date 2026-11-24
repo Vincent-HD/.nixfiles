@@ -93,7 +93,12 @@ in
       # darwin.agentCodex; reference it directly to avoid a second CLI installation.
       codexExec =
         if pkgs.stdenv.hostPlatform.isLinux then
-          pkgs.lib.getExe (pkgs.callPackage ../../packages/codex { })
+          pkgs.lib.getExe (
+            pkgs.callPackage ../../packages/codex {
+              # Only referenced by passthru.updateScript.
+              packageUpdater = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.package-updater;
+            }
+          )
         else
           "/opt/homebrew/bin/codex";
 

@@ -4,8 +4,7 @@
   fetchurl,
   appimageTools,
   undmg,
-  bun,
-  updateScriptZod,
+  packageUpdater,
 }:
 
 let
@@ -14,7 +13,7 @@ let
 
   # Nightly GitHub prereleases: the Linux AppImage name is unversioned, while the
   # macOS DMGs follow T3-Code-<version>-<arch>.dmg. The tag path pins each asset.
-  sources = {
+  artifacts = {
     "x86_64-linux" = {
       asset = "T3-Code-Nightly-x86_64.AppImage";
       hash = "sha256-/AKr0RL833PPYENbog65FoRkjNICOxpK6kulmGHzZv4=";
@@ -28,12 +27,15 @@ let
       hash = "sha256-UOL8CAUGQ/yzwCQRtbfC2yCpITo221cnAUtKo90674k=";
     };
   };
-  source = sources.${stdenvNoCC.hostPlatform.system};
-
-  src = fetchurl {
-    url = "https://github.com/pingdotgg/t3code/releases/download/v${version}/${source.asset}";
-    hash = source.hash;
-  };
+  # Every platform's fetch, so one host can refresh all hashes.
+  sources = lib.mapAttrs (
+    _system: artifact:
+    fetchurl {
+      url = "https://github.com/pingdotgg/t3code/releases/download/v${version}/${artifact.asset}";
+      hash = artifact.hash;
+    }
+  ) artifacts;
+  src = sources.${stdenvNoCC.hostPlatform.system};
 
   meta = {
     description = "Nightly desktop GUI for AI coding agents";
@@ -45,11 +47,17 @@ let
   };
 
   passthru = {
-    updateScript = [
-      (lib.getExe bun)
-      "${../..}/packages/t3code/update.ts"
-      "${updateScriptZod}/index.js"
-    ];
+    sources = sources;
+    # Only nightly prereleases are published.
+    updateScript = packageUpdater.script {
+      attr = "t3code";
+      file = ./default.nix;
+      nixUpdateArgs = [
+        "--use-github-releases"
+        "--version=unstable"
+        "--version-regex=^v(.*-nightly\\..*)$"
+      ];
+    };
   };
 in
 if stdenvNoCC.hostPlatform.isLinux then

@@ -6,6 +6,7 @@
   makeWrapper,
   ripgrep,
   bubblewrap,
+  packageUpdater,
 }:
 
 stdenv.mkDerivation (finalAttrs: {
@@ -50,6 +51,13 @@ stdenv.mkDerivation (finalAttrs: {
       --fish <($out/bin/codex completion fish) \
       --zsh <($out/bin/codex completion zsh)
   '';
+
+  # The GitHub releases list is too large for nix-update's 100-item page; read the newest stable tag.
+  passthru.updateScript = packageUpdater.script {
+    attr = "codex";
+    file = ./default.nix;
+    latestVersion = "github-api 'repos/openai/codex/releases?per_page=30' | jq -r '[.[] | select(.prerelease | not) | .tag_name | select(startswith(\"rust-v\"))][0] | ltrimstr(\"rust-v\")'";
+  };
 
   meta = {
     description = "Lightweight coding agent that runs in your terminal";

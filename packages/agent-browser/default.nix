@@ -1,13 +1,13 @@
 {
-  bun,
   fetchurl,
   lib,
   stdenvNoCC,
-  updateScriptZod,
+  packageUpdater,
 }:
 
 let
-  sources = {
+  # Release binary suffix and hash for each supported platform.
+  artifacts = {
     "aarch64-darwin" = {
       suffix = "darwin-arm64";
       hash = "sha256-t2Lmv7b1xUX150mv36I8eAzOWGvf+NT8+OYfnavh2cY=";
@@ -21,16 +21,12 @@ let
       hash = "sha256-03xyLXQkBV1/NSxL41qUJJ49xxKQZRbYLyZQ/OZ4nFQ=";
     };
   };
-  source = sources.${stdenvNoCC.hostPlatform.system};
 in
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "agent-browser";
   version = "0.44.0";
 
-  src = fetchurl {
-    url = "https://github.com/vercel-labs/agent-browser/releases/download/v${finalAttrs.version}/agent-browser-${source.suffix}";
-    hash = source.hash;
-  };
+  src = finalAttrs.passthru.sources.${stdenvNoCC.hostPlatform.system};
 
   dontUnpack = true;
   dontBuild = true;
@@ -41,11 +37,21 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     runHook postInstall
   '';
 
-  passthru.updateScript = [
-    (lib.getExe bun)
-    "${../..}/packages/agent-browser/update.ts"
-    "${updateScriptZod}/index.js"
-  ];
+  passthru = {
+    # Every platform's fetch, so one host can refresh all hashes.
+    sources = lib.mapAttrs (
+      _system: artifact:
+      fetchurl {
+        url = "https://github.com/vercel-labs/agent-browser/releases/download/v${finalAttrs.version}/agent-browser-${artifact.suffix}";
+        hash = artifact.hash;
+      }
+    ) artifacts;
+    updateScript = packageUpdater.script {
+      attr = "agent-browser";
+      file = ./default.nix;
+      nixUpdateArgs = [ "--use-github-releases" ];
+    };
+  };
 
   meta = {
     description = "Fast native browser automation CLI for AI agents";
@@ -53,6 +59,6 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     changelog = "https://github.com/vercel-labs/agent-browser/releases/tag/v${finalAttrs.version}";
     license = lib.licenses.asl20;
     mainProgram = "agent-browser";
-    platforms = builtins.attrNames sources;
+    platforms = builtins.attrNames artifacts;
   };
 })

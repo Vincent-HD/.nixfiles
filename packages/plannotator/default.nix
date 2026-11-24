@@ -4,49 +4,37 @@
   fetchurl,
   fetchFromGitHub,
   makeWrapper,
-  bun,
   git,
   xdg-utils,
-  updateScriptZod,
+  packageUpdater,
 }:
 
 let
-  sources = {
+  # Release binary name and hash for each supported platform.
+  artifacts = {
     "x86_64-linux" = {
-      artifact = "plannotator-linux-x64";
+      name = "plannotator-linux-x64";
       hash = "sha256-9AIcjEvDkPODFs8eVFM9KW/Wo68DP7KfDr9WD/W/sZk=";
     };
     "aarch64-linux" = {
-      artifact = "plannotator-linux-arm64";
+      name = "plannotator-linux-arm64";
       hash = "sha256-jDmA++cRHZoNajmCu24lhHZWZrw2p039crisvNyNnAw=";
     };
     "x86_64-darwin" = {
-      artifact = "plannotator-darwin-x64";
+      name = "plannotator-darwin-x64";
       hash = "sha256-HpEzMic+7yVnx8LtM192hOEMZ7rXb9fNyhmjyiBRAC0=";
     };
     "aarch64-darwin" = {
-      artifact = "plannotator-darwin-arm64";
+      name = "plannotator-darwin-arm64";
       hash = "sha256-8j7EtPlhWHTM0jtdHnPQPl1Z+XxK1t0JgI3UNnxySUw=";
     };
   };
-  source = sources.${stdenvNoCC.hostPlatform.system};
 in
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "plannotator";
   version = "0.29.3";
 
-  src = fetchurl {
-    url = "https://github.com/backnotprop/plannotator/releases/download/v${finalAttrs.version}/${source.artifact}";
-    hash = source.hash;
-  };
-
-  # Keep the upstream shared Agent Skills aligned with the packaged binary.
-  coreSkillsSource = fetchFromGitHub {
-    owner = "backnotprop";
-    repo = "plannotator";
-    rev = "v${finalAttrs.version}";
-    hash = "sha256-5aL4Gcexgxlh2wXvrVb2Dh4vuHDC793z1NNduUdW9aY=";
-  };
+  src = finalAttrs.passthru.sources.${stdenvNoCC.hostPlatform.system};
 
   nativeBuildInputs = [ makeWrapper ];
 
@@ -58,7 +46,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
 
     install -Dm755 "$src" "$out/bin/plannotator"
     mkdir -p "$out/share/plannotator"
-    cp -r "${finalAttrs.coreSkillsSource}/apps/skills/core" "$out/share/plannotator/skills"
+    cp -r "${finalAttrs.passthru.sources.core-skills}/apps/skills/core" "$out/share/plannotator/skills"
 
     wrapProgram "$out/bin/plannotator" \
       --prefix PATH : ${
@@ -68,11 +56,30 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     runHook postInstall
   '';
 
-  passthru.updateScript = [
-    (lib.getExe bun)
-    "${../..}/packages/plannotator/update.ts"
-    "${updateScriptZod}/index.js"
-  ];
+  passthru = {
+    # Every platform's fetch, plus the upstream shared Agent Skills at the same tag.
+    sources =
+      lib.mapAttrs (
+        _system: artifact:
+        fetchurl {
+          url = "https://github.com/backnotprop/plannotator/releases/download/v${finalAttrs.version}/${artifact.name}";
+          hash = artifact.hash;
+        }
+      ) artifacts
+      // {
+        core-skills = fetchFromGitHub {
+          owner = "backnotprop";
+          repo = "plannotator";
+          rev = "v${finalAttrs.version}";
+          hash = "sha256-5aL4Gcexgxlh2wXvrVb2Dh4vuHDC793z1NNduUdW9aY=";
+        };
+      };
+    updateScript = packageUpdater.script {
+      attr = "plannotator";
+      file = ./default.nix;
+      nixUpdateArgs = [ "--use-github-releases" ];
+    };
+  };
 
   meta = {
     description = "Browser-based plan, code, and document review for coding agents";
@@ -83,6 +90,6 @@ stdenvNoCC.mkDerivation (finalAttrs: {
       lib.licenses.asl20
     ];
     mainProgram = "plannotator";
-    platforms = builtins.attrNames sources;
+    platforms = builtins.attrNames artifacts;
   };
 })

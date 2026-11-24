@@ -1,11 +1,11 @@
 {
   lib,
   buildNpmPackage,
-  bun,
   fetchFromGitHub,
   fetchurl,
   makeWrapper,
   nodejs_24,
+  packageUpdater,
 }:
 
 buildNpmPackage (finalAttrs: {
@@ -24,9 +24,17 @@ buildNpmPackage (finalAttrs: {
     hash = "sha256-NwLg4QIaabmf5YiGsE+N9PNx3TuW6RZV+Yyj1/anr1Y=";
   };
 
-  npmArtifact = fetchurl {
-    url = "https://registry.npmjs.org/codeburn/-/codeburn-${finalAttrs.version}.tgz";
-    hash = "sha512-fl9u2m2n8n+cY6FheIY/jthw4GeuUtM38NfX3KR3Ljj2X7GFcUCfCGeRrnIaaM+aqmMLOw70Uy2BGnzoQgQlPQ==";
+  passthru = {
+    sources.npm-artifact = fetchurl {
+      url = "https://registry.npmjs.org/codeburn/-/codeburn-${finalAttrs.version}.tgz";
+      hash = "sha512-fl9u2m2n8n+cY6FheIY/jthw4GeuUtM38NfX3KR3Ljj2X7GFcUCfCGeRrnIaaM+aqmMLOw70Uy2BGnzoQgQlPQ==";
+    };
+    # The npm `latest` tag names the release; nix-update also refreshes npmDepsHash.
+    updateScript = packageUpdater.script {
+      attr = "codeburn";
+      file = ./default.nix;
+      latestVersion = "curl -fsS https://registry.npmjs.org/codeburn/latest | jq -r .version";
+    };
   };
 
   npmDepsHash = "sha256-F/d/xn3COOdM0lpog66bo7xJT4GBwZbHKsyrKuKCdgY=";
@@ -38,7 +46,7 @@ buildNpmPackage (finalAttrs: {
 
     packageDirectory="$out/lib/node_modules/codeburn"
     mkdir -p "$packageDirectory"
-    tar -xzf "${finalAttrs.npmArtifact}" --strip-components=1 -C "$packageDirectory"
+    tar -xzf "${finalAttrs.passthru.sources.npm-artifact}" --strip-components=1 -C "$packageDirectory"
     cp -r node_modules "$packageDirectory/node_modules"
 
     makeWrapper ${lib.getExe nodejs_24} "$out/bin/codeburn" \
@@ -46,11 +54,6 @@ buildNpmPackage (finalAttrs: {
 
     runHook postInstall
   '';
-
-  passthru.updateScript = [
-    (lib.getExe bun)
-    ./update.ts
-  ];
 
   meta = {
     description = "Local-first CLI and MCP server for analyzing AI coding-agent spend";

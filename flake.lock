@@ -627,6 +627,26 @@
         "type": "github"
       }
     },
+    "nix-update": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1795354221,
+        "narHash": "sha256-TCOhUWb53V3nrJRD3JuADly1U9fNi0Z79QMcjhbefHg=",
+        "owner": "Mic92",
+        "repo": "nix-update",
+        "rev": "cfd5a600f21407748daa7b38cd5e370d868ce10e",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Mic92",
+        "repo": "nix-update",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1795234589,
@@ -821,6 +841,7 @@
         "nix-darwin": "nix-darwin",
         "nix-gaming": "nix-gaming",
         "nix-index-database": "nix-index-database",
+        "nix-update": "nix-update",
         "nixpkgs": "nixpkgs_3",
         "nixpkgs-darwin": "nixpkgs-darwin",
         "noctalia": "noctalia",

@@ -5,6 +5,7 @@
   libnotify,
   quickshell,
   xdg-utils,
+  packageUpdater,
 }:
 buildGoModule (finalAttrs: {
   pname = "dankmail";
@@ -61,6 +62,12 @@ buildGoModule (finalAttrs: {
     cp -R "${finalAttrs.src}/dms-plugin/." \
       "$out/share/DankMaterialShell/plugins/dankmailUnread/"
   '';
+
+  passthru.updateScript = packageUpdater.script {
+    attr = "dankmail";
+    file = ./default.nix;
+    nixUpdateArgs = [ "--use-github-releases" ];
+  };
 
   meta = {
     description = "Keyboard-driven local-first email triage for Linux";

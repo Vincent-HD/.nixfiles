@@ -24,6 +24,7 @@
   wayland,
   xz,
   zlib,
+  packageUpdater,
 }:
 stdenv.mkDerivation (finalAttrs: {
   pname = "droidcam-client";
@@ -96,6 +97,16 @@ stdenv.mkDerivation (finalAttrs: {
       --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath [ libGL ]}:$out/libexec/droidcam-obs-client/bin/64bit" \
       "''${qtWrapperArgs[@]}"
   '';
+
+  # Client releases are tagged droidcam-<version>.
+  passthru.updateScript = packageUpdater.script {
+    attr = "droidcam-client";
+    file = ./default.nix;
+    nixUpdateArgs = [
+      "--use-github-releases"
+      "--version-regex=droidcam-(.*)"
+    ];
+  };
 
   meta = {
     description = "DroidCam desktop client with camera preview and controls";

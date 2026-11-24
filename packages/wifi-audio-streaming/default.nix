@@ -1,14 +1,18 @@
 {
   appimageTools ? null,
-  bun,
   fetchurl,
   lib,
   stdenvNoCC,
-  updateScriptZod,
+  packageUpdater,
 }:
 
 let
-  sources = {
+  # Release tags drop the patch component (v1.2) while asset names pad it (1.2.0).
+  version = "1.2";
+  assetVersion = lib.versions.pad 3 version;
+
+  # Release asset suffix and hash for each supported platform.
+  artifacts = {
     "x86_64-linux" = {
       suffix = "-linux-x86_64.AppImage";
       hash = "sha256-T1CkDdHWLjInuRxsKzE0TfQSphAEvl5R1z3UAVh6TcY=";
@@ -18,33 +22,37 @@ let
       hash = "sha256-3s40Q1SK6Uie8kZmQNfeuk59RpaZoqkepyGnhlH1lDI=";
     };
   };
-  source = sources.${stdenvNoCC.hostPlatform.system};
+  # Every platform's fetch, so one host can refresh all hashes.
+  sources = lib.mapAttrs (
+    _system: artifact:
+    fetchurl {
+      url = "https://github.com/marcomorosi06/WiFiAudioStreaming-Desktop/releases/download/v${version}/WiFi-Audio-Streaming-${assetVersion}${artifact.suffix}";
+      hash = artifact.hash;
+    }
+  ) artifacts;
 
-  finalAttrs = rec {
+  finalAttrs = {
     pname = "wifi-audio-streaming";
-    version = "1.2.0";
-    releaseTag = "v1.2";
+    version = version;
 
-    src = fetchurl {
-      url = "https://github.com/marcomorosi06/WiFiAudioStreaming-Desktop/releases/download/${finalAttrs.releaseTag}/WiFi-Audio-Streaming-${finalAttrs.version}${source.suffix}";
-      hash = source.hash;
-    };
+    src = sources.${stdenvNoCC.hostPlatform.system};
 
     passthru = {
-      updateScript = [
-        (lib.getExe bun)
-        "${../..}/packages/wifi-audio-streaming/update.ts"
-        "${updateScriptZod}/index.js"
-      ];
+      sources = sources;
+      updateScript = packageUpdater.script {
+        attr = "wifi-audio-streaming";
+        file = ./default.nix;
+        nixUpdateArgs = [ "--use-github-releases" ];
+      };
     };
 
     meta = {
       description = "Stream audio between devices over a local network";
       homepage = "https://github.com/marcomorosi06/WiFiAudioStreaming-Desktop";
-      changelog = "https://github.com/marcomorosi06/WiFiAudioStreaming-Desktop/releases/tag/${finalAttrs.releaseTag}";
+      changelog = "https://github.com/marcomorosi06/WiFiAudioStreaming-Desktop/releases/tag/v${version}";
       license = lib.licenses.eupl12;
       mainProgram = "wifi-audio-streaming";
-      platforms = builtins.attrNames sources;
+      platforms = builtins.attrNames artifacts;
     };
   };
 in

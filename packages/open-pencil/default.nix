@@ -14,14 +14,13 @@
   gtk3,
   libsoup_3,
   webkitgtk_4_1,
-  bun,
-  updateScriptZod,
+  packageUpdater,
 }:
 let
-  # Tauri release artifacts from github.com/open-pencil/open-pencil.
-  sources = {
+  # Tauri release asset and hash for each supported platform.
+  artifacts = version: {
     "x86_64-linux" = {
-      asset = "OpenPencil_0.17.0_amd64.deb";
+      asset = "OpenPencil_${version}_amd64.deb";
       hash = "sha256-fuxRsdxJUZWrTCp4N4TetZfQXI10zUZK860wa0TIXI0=";
     };
     "aarch64-darwin" = {
@@ -33,7 +32,6 @@ let
       hash = "sha256-fFcKocIOZ/93vF0NRmnGUa0vLPUNHP7/wkmvIr4XvQk=";
     };
   };
-  source = sources.${stdenv.hostPlatform.system};
 
   # The deb registers these types without defining them; add globs so .fig and .pen resolve.
   mimeDefinitions = ./open-pencil-mime.xml;
@@ -42,10 +40,7 @@ stdenv.mkDerivation (finalAttrs: {
   pname = "open-pencil";
   version = "0.17.0";
 
-  src = fetchurl {
-    url = "https://github.com/open-pencil/open-pencil/releases/download/v${finalAttrs.version}/${source.asset}";
-    hash = source.hash;
-  };
+  src = finalAttrs.passthru.sources.${stdenv.hostPlatform.system};
 
   nativeBuildInputs = lib.optionals stdenv.hostPlatform.isLinux [
     autoPatchelfHook
@@ -105,11 +100,21 @@ stdenv.mkDerivation (finalAttrs: {
   passthru = {
     bundleIdentifier = "net.dannote.open-pencil";
     desktopFile = "OpenPencil.desktop";
-    updateScript = [
-      (lib.getExe bun)
-      "${../..}/packages/open-pencil/update.ts"
-      "${updateScriptZod}/index.js"
-    ];
+    # Every platform's fetch, so one host can refresh all hashes.
+    sources = lib.mapAttrs (
+      _system: artifact:
+      fetchurl {
+        url = "https://github.com/open-pencil/open-pencil/releases/download/v${finalAttrs.version}/${artifact.asset}";
+        hash = artifact.hash;
+      }
+    ) (artifacts finalAttrs.version);
+    # The MCP server closure is pinned to the same release (see post-update.ts).
+    updateScript = packageUpdater.script {
+      attr = "open-pencil";
+      file = ./default.nix;
+      nixUpdateArgs = [ "--use-github-releases" ];
+      postUpdate = ./post-update.ts;
+    };
   };
 
   meta = {
@@ -118,7 +123,7 @@ stdenv.mkDerivation (finalAttrs: {
     changelog = "https://github.com/open-pencil/open-pencil/releases/tag/v${finalAttrs.version}";
     license = lib.licenses.mit;
     mainProgram = "open-pencil";
-    platforms = builtins.attrNames sources;
+    platforms = builtins.attrNames finalAttrs.passthru.sources;
     sourceProvenance = [ lib.sourceTypes.binaryNativeCode ];
   };
 })

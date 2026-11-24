@@ -1,24 +1,12 @@
 {
   lib,
-  curl,
   fetchurl,
-  jq,
   makeWrapper,
-  nix-update,
   nodejs_24,
   stdenvNoCC,
-  writeShellScript,
+  packageUpdater,
 }:
 
-let
-  # Resolve the current npm release, then let nix-update rewrite the version
-  # and fixed-output hash in this package.
-  updateScript = writeShellScript "update-portless" ''
-    set -euo pipefail
-    version="$(${lib.getExe curl} --fail --silent --show-error https://registry.npmjs.org/portless/latest | ${lib.getExe jq} -er '.version')"
-    exec ${lib.getExe nix-update} --flake portless --version "$version"
-  '';
-in
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "portless";
   version = "0.18.1";
@@ -48,7 +36,12 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     runHook postInstall
   '';
 
-  passthru.updateScript = [ updateScript ];
+  # The npm `latest` tag names the release.
+  passthru.updateScript = packageUpdater.script {
+    attr = "portless";
+    file = ./default.nix;
+    latestVersion = "curl -fsS https://registry.npmjs.org/portless/latest | jq -r .version";
+  };
 
   meta = {
     description = "Replace port numbers with stable, named local URLs";

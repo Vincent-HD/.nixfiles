@@ -1,3 +1,4 @@
+{ inputs, ... }:
 {
   # Manage Equibop and its Equicord plugin settings in Home Manager on both hosts.
   config.flake.modules.homeManager.equibop =
@@ -18,7 +19,10 @@
         '';
         meta.mainProgram = "equibop";
       };
-      equicordPrebuilt = pkgs.callPackage ../packages/equicord-prebuilt { };
+      equicordPrebuilt = pkgs.callPackage ../packages/equicord-prebuilt {
+        # Only referenced by passthru.updateScript.
+        packageUpdater = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.package-updater;
+      };
       equibopDataDir =
         if pkgs.stdenv.hostPlatform.isDarwin then
           "${config.home.homeDirectory}/Library/Application Support/equibop"

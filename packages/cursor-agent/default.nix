@@ -1,13 +1,13 @@
 {
   lib,
-  bun,
   fetchurl,
   stdenvNoCC,
-  updateScriptZod,
+  packageUpdater,
 }:
 
 let
-  sources = {
+  # Cursor's download path segments and archive hash for each supported platform.
+  artifacts = {
     "x86_64-linux" = {
       platform = "linux";
       architecture = "x64";
@@ -29,17 +29,13 @@ let
       hash = "sha256-kvOeRIIYiXU4vYAc2wHWkQarN6hqrz3A5rVRWcebdeI=";
     };
   };
-  source = sources.${stdenvNoCC.hostPlatform.system};
 in
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "cursor-agent";
   version = "2026.11.22-e9042b2";
 
   # Cursor publishes one self-contained Agent CLI archive per OS/architecture.
-  src = fetchurl {
-    url = "https://downloads.cursor.com/lab/${finalAttrs.version}/${source.platform}/${source.architecture}/agent-cli-package.tar.gz";
-    hash = source.hash;
-  };
+  src = finalAttrs.passthru.sources.${stdenvNoCC.hostPlatform.system};
 
   sourceRoot = "dist-package";
 
@@ -54,17 +50,28 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     runHook postInstall
   '';
 
-  passthru.updateScript = [
-    (lib.getExe bun)
-    "${../..}/packages/cursor-agent/update.ts"
-    "${updateScriptZod}/index.js"
-  ];
+  passthru = {
+    # Every platform's fetch, so one host can refresh all hashes.
+    sources = lib.mapAttrs (
+      _system: artifact:
+      fetchurl {
+        url = "https://downloads.cursor.com/lab/${finalAttrs.version}/${artifact.platform}/${artifact.architecture}/agent-cli-package.tar.gz";
+        hash = artifact.hash;
+      }
+    ) artifacts;
+    # The official installer script embeds the current release path.
+    updateScript = packageUpdater.script {
+      attr = "cursor-agent";
+      file = ./default.nix;
+      latestVersion = "curl -fsS https://cursor.com/install | sed -nE 's|.*downloads\\.cursor\\.com/lab/([^/]+)/.*|\\1|p' | sed -n 1p";
+    };
+  };
 
   meta = {
     description = "Cursor's AI coding agent for the terminal";
     homepage = "https://cursor.com/docs/cli/overview";
     license = lib.licenses.unfree;
     mainProgram = "agent";
-    platforms = builtins.attrNames sources;
+    platforms = builtins.attrNames artifacts;
   };
 })

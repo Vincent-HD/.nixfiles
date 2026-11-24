@@ -1,10 +1,13 @@
-{ ... }:
+{ inputs, ... }:
 {
   # Home Manager: CurseForge desktop client (upstream AppImage wrapped for NixOS)
   config.flake.modules.homeManager.curseforge =
     { pkgs, ... }:
     let
-      curseforge = pkgs.callPackage ../packages/curseforge { };
+      curseforge = pkgs.callPackage ../packages/curseforge {
+        # Only referenced by passthru.updateScript.
+        packageUpdater = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.package-updater;
+      };
     in
     {
       home.packages = [ curseforge ];
@@ -26,7 +29,7 @@
         ];
         settings = {
           StartupWMClass = "CurseForge";
-          X-AppImage-Version = "${curseforge.version}-${curseforge.passthru.build}";
+          X-AppImage-Version = curseforge.version;
         };
       };
     };

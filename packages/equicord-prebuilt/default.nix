@@ -3,6 +3,7 @@
   fetchurl,
   lib,
   stdenvNoCC,
+  packageUpdater,
 }:
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "equicord-prebuilt";
@@ -21,6 +22,16 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     asar extract "$src" "$out/equibop"
     runHook postInstall
   '';
+
+  # Equicord tags releases by date.
+  passthru.updateScript = packageUpdater.script {
+    attr = "equicord-prebuilt";
+    file = ./default.nix;
+    nixUpdateArgs = [
+      "--use-github-releases"
+      "--version-regex=^(\\d{4}-\\d{2}-\\d{2})$"
+    ];
+  };
 
   meta = {
     description = "Official prebuilt Equicord for Equibop";

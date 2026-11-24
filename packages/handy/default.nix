@@ -1,15 +1,16 @@
 {
   appimageTools ? null,
-  bun,
   fetchurl,
   lib,
   stdenvNoCC,
-  updateScriptZod,
+  packageUpdater,
 }:
 let
-  sources = {
+  version = "0.10.2";
+  # Release asset and hash for each supported platform.
+  artifacts = {
     "x86_64-linux" = {
-      asset = "Handy_0.10.2_amd64.AppImage";
+      asset = "Handy_${version}_amd64.AppImage";
       hash = "sha256-F8XxpKM/nExcI0oITMCq92bzpbYmYuAtcOURYYAKzhc=";
     };
     "aarch64-darwin" = {
@@ -17,25 +18,32 @@ let
       hash = "sha256-aSKZJSLmeSV8QyY7KVDy2YW5yrNbDeI7FzQMRvZ/Yxw=";
     };
   };
-  source = sources.${stdenvNoCC.hostPlatform.system};
-  finalAttrs = rec {
+  # Every platform's fetch, so one host can refresh all hashes.
+  sources = lib.mapAttrs (
+    _system: artifact:
+    fetchurl {
+      url = "https://github.com/cjpais/Handy/releases/download/v${version}/${artifact.asset}";
+      hash = artifact.hash;
+    }
+  ) artifacts;
+  finalAttrs = {
     pname = "handy";
-    version = "0.10.2";
-    src = fetchurl {
-      url = "https://github.com/cjpais/Handy/releases/download/v${version}/${source.asset}";
-      hash = source.hash;
+    version = version;
+    src = sources.${stdenvNoCC.hostPlatform.system};
+    passthru = {
+      sources = sources;
+      updateScript = packageUpdater.script {
+        attr = "handy";
+        file = ./default.nix;
+        nixUpdateArgs = [ "--use-github-releases" ];
+      };
     };
-    passthru.updateScript = [
-      (lib.getExe bun)
-      "${../..}/packages/handy/update.ts"
-      "${updateScriptZod}/index.js"
-    ];
     meta = {
       description = "Offline speech-to-text application";
       homepage = "https://handy.computer";
       license = lib.licenses.mit;
       mainProgram = "handy";
-      platforms = builtins.attrNames sources;
+      platforms = builtins.attrNames artifacts;
     };
   };
   contents =

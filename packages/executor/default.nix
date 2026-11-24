@@ -1,13 +1,13 @@
 {
   lib,
-  bun,
   fetchurl,
   stdenvNoCC,
-  updateScriptZod,
+  packageUpdater,
 }:
 
 let
-  sources = {
+  # npm version suffix and tarball integrity for each supported platform.
+  artifacts = {
     "x86_64-linux" = {
       platform = "linux";
       architecture = "x64";
@@ -29,17 +29,13 @@ let
       hash = "sha512-G2AABJVhsGiyqw1dAD700urT1RJ0MFg09dpVQSn20Nrue5ev91Cd0V32+4cTLufqRF9MNluPMEddhIEPhQoeMQ==";
     };
   };
-  source = sources.${stdenvNoCC.hostPlatform.system};
 in
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "executor";
   version = "1.6.11";
 
   # Executor publishes one self-contained Bun binary for each OS/architecture.
-  src = fetchurl {
-    url = "https://registry.npmjs.org/executor/-/executor-${finalAttrs.version}-${source.platform}-${source.architecture}.tgz";
-    hash = source.hash;
-  };
+  src = finalAttrs.passthru.sources.${stdenvNoCC.hostPlatform.system};
 
   sourceRoot = "package";
   dontBuild = true;
@@ -53,17 +49,28 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     runHook postInstall
   '';
 
-  passthru.updateScript = [
-    (lib.getExe bun)
-    "${../..}/packages/executor/update.ts"
-    "${updateScriptZod}/index.js"
-  ];
+  passthru = {
+    # Every platform's fetch, so one host can refresh all hashes.
+    sources = lib.mapAttrs (
+      _system: artifact:
+      fetchurl {
+        url = "https://registry.npmjs.org/executor/-/executor-${finalAttrs.version}-${artifact.platform}-${artifact.architecture}.tgz";
+        hash = artifact.hash;
+      }
+    ) artifacts;
+    # Platform builds are published as suffixed npm versions; `latest` names the release.
+    updateScript = packageUpdater.script {
+      attr = "executor";
+      file = ./default.nix;
+      latestVersion = "curl -fsS https://registry.npmjs.org/executor/latest | jq -r .version";
+    };
+  };
 
   meta = {
     description = "Local integration layer and MCP proxy for AI agents";
     homepage = "https://executor.sh";
     license = lib.licenses.mit;
     mainProgram = "executor";
-    platforms = builtins.attrNames sources;
+    platforms = builtins.attrNames artifacts;
   };
 })

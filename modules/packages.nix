@@ -17,8 +17,14 @@
           cudaSupport = true;
         };
       };
-      updateScriptZod = pkgs.callPackage ../packages/update-script-zod { };
-      craftAppNames = builtins.attrNames (lib.importJSON ../packages/craft-apps/sources.json);
+      # Shared nix-update wrapper behind every pinned package's passthru.updateScript.
+      packageUpdater = pkgs.callPackage ../packages/package-updater {
+        nix-update = inputs.nix-update.packages.${pkgs.stdenv.hostPlatform.system}.nix-update;
+      };
+      # One pin file per ArtCraft app under packages/craft-apps/apps.
+      craftAppNames = map (lib.removeSuffix ".nix") (
+        builtins.attrNames (builtins.readDir ../packages/craft-apps/apps)
+      );
 
       # Reuse the exact GitHub snapshot for both the source output and Linux package.
       zCodeSource = inputs.z-code;
@@ -77,70 +83,90 @@
     {
       packages = {
         agent-browser = pkgs.callPackage ../packages/agent-browser {
-          updateScriptZod = updateScriptZod;
+          packageUpdater = packageUpdater;
         };
-        arch-ops-server = pkgs.callPackage ../packages/arch-ops-server { };
-        codeburn = pkgs.callPackage ../packages/codeburn { };
-        equicord-prebuilt = pkgs.callPackage ../packages/equicord-prebuilt { };
+        arch-ops-server = pkgs.callPackage ../packages/arch-ops-server {
+          packageUpdater = packageUpdater;
+        };
+        codeburn = pkgs.callPackage ../packages/codeburn {
+          packageUpdater = packageUpdater;
+        };
+        equicord-prebuilt = pkgs.callPackage ../packages/equicord-prebuilt {
+          packageUpdater = packageUpdater;
+        };
         cursor-agent = unfreePkgs.callPackage ../packages/cursor-agent {
-          updateScriptZod = updateScriptZod;
+          packageUpdater = packageUpdater;
         };
         executor = pkgs.callPackage ../packages/executor {
-          updateScriptZod = updateScriptZod;
+          packageUpdater = packageUpdater;
         };
         handy = pkgs.callPackage ../packages/handy {
-          updateScriptZod = updateScriptZod;
+          packageUpdater = packageUpdater;
         };
         jj-ryu = pkgs.callPackage ../packages/jj-ryu {
-          updateScriptZod = updateScriptZod;
+          packageUpdater = packageUpdater;
         };
         lightjj = pkgs.callPackage ../packages/lightjj {
-          updateScriptZod = updateScriptZod;
+          packageUpdater = packageUpdater;
         };
         opencodev2 = pkgs.callPackage ../packages/opencodev2 {
-          updateScriptZod = updateScriptZod;
+          packageUpdater = packageUpdater;
         };
         t3code = pkgs.callPackage ../packages/t3code {
-          updateScriptZod = updateScriptZod;
+          packageUpdater = packageUpdater;
         };
         vtask = pkgs.callPackage ../packages/vtask { };
         wifi-audio-streaming = pkgs.callPackage ../packages/wifi-audio-streaming {
-          updateScriptZod = updateScriptZod;
+          packageUpdater = packageUpdater;
         };
-        portless = pkgs.callPackage ../packages/portless { };
+        portless = pkgs.callPackage ../packages/portless {
+          packageUpdater = packageUpdater;
+        };
         plannotator = pkgs.callPackage ../packages/plannotator {
-          updateScriptZod = updateScriptZod;
+          packageUpdater = packageUpdater;
         };
-        update-script-zod = updateScriptZod;
+        package-updater = packageUpdater;
         bitwarden-secret-tools = bwSecretTools;
         open-pencil = pkgs.callPackage ../packages/open-pencil {
-          updateScriptZod = updateScriptZod;
+          packageUpdater = packageUpdater;
         };
         open-pencil-mcp = pkgs.callPackage ../packages/open-pencil/mcp { };
       }
-      # ArtCraft desktop apps share one builder and one pin file.
+      # ArtCraft desktop apps share one builder with one pin file per app.
       // lib.genAttrs craftAppNames (
         appName:
         pkgs.callPackage ../packages/craft-apps {
           appName = appName;
-          updateScriptZod = updateScriptZod;
+          packageUpdater = packageUpdater;
         }
       )
       // lib.optionalAttrs pkgs.stdenv.hostPlatform.isLinux {
         dms-prebuilt = pkgs.callPackage ../packages/dms-prebuilt {
           dmsFlake = inputs.dms;
-          updateScriptZod = updateScriptZod;
+          packageUpdater = packageUpdater;
         };
-        codex = pkgs.callPackage ../packages/codex { };
+        codex = pkgs.callPackage ../packages/codex {
+          packageUpdater = packageUpdater;
+        };
         cpuid-fault-emulation = pkgs.callPackage ../packages/cpuid-fault-emulation { };
-        curseforge = unfreePkgs.callPackage ../packages/curseforge { };
-        crosspipe = pkgs.callPackage ../packages/crosspipe { };
+        curseforge = unfreePkgs.callPackage ../packages/curseforge {
+          packageUpdater = packageUpdater;
+        };
+        crosspipe = pkgs.callPackage ../packages/crosspipe {
+          packageUpdater = packageUpdater;
+        };
         # Bundle the daemon, Quickshell interface, launcher, and optional DMS widget.
-        dankmail = pkgs.callPackage ../packages/dankmail { };
-        droidcam-client = pkgs.callPackage ../packages/droidcam-client { };
-        gamescope-lanczos = pkgs.callPackage ../packages/gamescope-lanczos { };
+        dankmail = pkgs.callPackage ../packages/dankmail {
+          packageUpdater = packageUpdater;
+        };
+        droidcam-client = pkgs.callPackage ../packages/droidcam-client {
+          packageUpdater = packageUpdater;
+        };
+        gamescope-lanczos = pkgs.callPackage ../packages/gamescope-lanczos {
+          packageUpdater = packageUpdater;
+        };
         lsfg-vk = unfreePkgs.callPackage ../packages/lsfg-vk {
-          updateScriptZod = updateScriptZod;
+          packageUpdater = packageUpdater;
         };
         persist-dms = mkBunRunner "persist-dms" ../scripts/persist-dms.ts;
         gpu-burn = cudaPkgs.gpu-burn;
@@ -180,11 +206,6 @@
           name = "persist-dms";
           description = "Persist non-default DankMaterialShell settings";
           script = ../scripts/persist-dms.ts;
-        };
-        update-curseforge = mkBunApp {
-          name = "update-curseforge";
-          description = "Update the pinned CurseForge AppImage";
-          script = ../packages/curseforge/update.ts;
         };
       };
     };

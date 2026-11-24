@@ -11,6 +11,7 @@
   libgee,
   pipewire,
   libxml2,
+  packageUpdater,
 }:
 
 stdenv.mkDerivation (finalAttrs: {
@@ -43,6 +44,13 @@ stdenv.mkDerivation (finalAttrs: {
   ];
 
   strictDeps = true;
+
+  # Upstream has no releases; track main through exact commits.
+  passthru.updateScript = packageUpdater.script {
+    attr = "crosspipe";
+    file = ./default.nix;
+    nixUpdateArgs = [ "--version=branch=main" ];
+  };
 
   meta = {
     description = "PipeWire graph GTK4/Libadwaita GUI with PR 11 auto-layout changes";

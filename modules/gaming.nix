@@ -1,4 +1,4 @@
-{ ... }:
+{ inputs, ... }:
 {
   config.flake.modules.nixos.gaming =
     { pkgs, config, ... }:
@@ -104,12 +104,17 @@
       };
 
       # Use the pinned fork for both the compositor and its optional Vulkan WSI layer.
-      gamescopeLanczos = pkgs.callPackage ../packages/gamescope-lanczos { };
+      # Only referenced by passthru.updateScript.
+      packageUpdater = inputs.self.packages.${pkgs.stdenv.hostPlatform.system}.package-updater;
+      gamescopeLanczos = pkgs.callPackage ../packages/gamescope-lanczos {
+        packageUpdater = packageUpdater;
+      };
       gamescopeLanczosWsi = gamescopeLanczos.override {
         enableExecutable = false;
         enableWsi = true;
       };
       gamescopeLanczosWsi32 = pkgs.pkgsi686Linux.callPackage ../packages/gamescope-lanczos {
+        packageUpdater = packageUpdater;
         enableExecutable = false;
         enableWsi = true;
       };

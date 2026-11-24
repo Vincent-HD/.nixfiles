@@ -7,8 +7,7 @@
   qt6,
   libglvnd,
   pkgsi686Linux,
-  bun,
-  updateScriptZod,
+  packageUpdater,
 }:
 stdenv.mkDerivation (finalAttrs: {
   pname = "lsfg-vk";
@@ -50,11 +49,12 @@ stdenv.mkDerivation (finalAttrs: {
     } "$out/lib/liblsfg-vk-layer.x86.so"
     runHook postInstall
   '';
-  passthru.updateScript = [
-    (lib.getExe bun)
-    "${../..}/packages/lsfg-vk/update.ts"
-    "${updateScriptZod}/index.js"
-  ];
+  # The build index marks the newest stable archive as "Latest release".
+  passthru.updateScript = packageUpdater.script {
+    attr = "lsfg-vk";
+    file = ./default.nix;
+    latestVersion = "curl -fsS https://builds.lsfg-vk.dev/ | sed -nE 's/.*href=\"lsfg-vk-([0-9]+\\.[0-9]+\\.[0-9]+)\\.tar\\.xz\">&gt;&gt; Latest release.*/\\1/p' | sed -n 1p";
+  };
   meta = {
     description = "Lossless Scaling frame generation Vulkan layer, CLI, and Qt interface";
     homepage = "https://lsfg-vk.dev/";

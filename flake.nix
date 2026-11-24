@@ -12,6 +12,13 @@
 
     import-tree.url = "github:vic/import-tree";
 
+    # Upstream nix-update drives every pinned package update (packages/package-updater);
+    # nixpkgs' release can lag behind flake-evaluation fixes.
+    nix-update = {
+      url = "github:Mic92/nix-update";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     # Remote Agent Skills remain reproducible through flake.lock; agentSkills
     # links only the explicitly selected upstream skill directories.
     context7-skills = {

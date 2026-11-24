@@ -1,7 +1,6 @@
 {
   lib,
   stdenvNoCC,
-  bun,
   fetchurl,
   makeWrapper,
   jujutsu,
@@ -9,30 +8,27 @@
   gh,
   xdg-utils,
   openssh,
-  updateScriptZod,
+  packageUpdater,
 }:
 
 let
-  sources = {
+  # Release artifact name and hash for each supported platform.
+  artifacts = {
     "aarch64-darwin" = {
-      artifact = "lightjj-macos-arm64";
+      name = "lightjj-macos-arm64";
       hash = "sha256-EejSS1x95/8AnSKrzNVR8mGAl8Vi65HSAXpGbVYUXvs=";
     };
     "x86_64-linux" = {
-      artifact = "lightjj-linux-x86_64";
+      name = "lightjj-linux-x86_64";
       hash = "sha256-lL92ES31t5qw3z47T0KtypfxPIt651RI3ykyI1QOyIg=";
     };
   };
-  source = sources.${stdenvNoCC.hostPlatform.system};
 in
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "lightjj";
   version = "1.42.0";
 
-  src = fetchurl {
-    url = "https://github.com/chronologos/lightjj/releases/download/v${finalAttrs.version}/${source.artifact}";
-    hash = source.hash;
-  };
+  src = finalAttrs.passthru.sources.${stdenvNoCC.hostPlatform.system};
 
   nativeBuildInputs = [ makeWrapper ];
 
@@ -53,17 +49,27 @@ stdenvNoCC.mkDerivation (finalAttrs: {
       }
   '';
 
-  passthru.updateScript = [
-    (lib.getExe bun)
-    "${../..}/packages/lightjj/update.ts"
-    "${updateScriptZod}/index.js"
-  ];
+  passthru = {
+    # Every platform's fetch, so one host can refresh all hashes.
+    sources = lib.mapAttrs (
+      _system: artifact:
+      fetchurl {
+        url = "https://github.com/chronologos/lightjj/releases/download/v${finalAttrs.version}/${artifact.name}";
+        hash = artifact.hash;
+      }
+    ) artifacts;
+    updateScript = packageUpdater.script {
+      attr = "lightjj";
+      file = ./default.nix;
+      nixUpdateArgs = [ "--use-github-releases" ];
+    };
+  };
 
   meta = {
     description = "Fast browser UI for Jujutsu version control";
     homepage = "https://github.com/chronologos/lightjj";
     license = lib.licenses.mit;
     mainProgram = "lightjj";
-    platforms = builtins.attrNames sources;
+    platforms = builtins.attrNames artifacts;
   };
 })

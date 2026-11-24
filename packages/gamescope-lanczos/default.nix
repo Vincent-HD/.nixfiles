@@ -49,26 +49,11 @@
   luajit,
   catch2_3,
   makeBinaryWrapper,
-  writeShellScript,
-  bun,
-  gitMinimal,
-  nix-prefetch-git,
+  packageUpdater,
   enableExecutable ? true,
   enableWsi ? false,
 }:
 let
-  # Resolve the moving fork branch and recursively prefetch its submodules for nix-update.
-  updateScript = writeShellScript "update-gamescope-lanczos" ''
-    export PATH="${
-      lib.makeBinPath [
-        bun
-        gitMinimal
-        nix-prefetch-git
-      ]
-    }:$PATH"
-    exec ${bun}/bin/bun ${./update.ts} "$@"
-  '';
-
   # Keep the shader collection exposed by the nixpkgs Gamescope package.
   frogShaders = fetchFromGitHub {
     owner = "misyltoad";
@@ -79,7 +64,7 @@ let
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = "gamescope-lanczos";
-  version = "3.16.25-unstable-2026-08-16";
+  version = "0.2.0-unstable-2026-08-16";
 
   src = fetchFromGitHub {
     owner = "ThomasEricB";
@@ -218,6 +203,10 @@ stdenv.mkDerivation (finalAttrs: {
     platforms = lib.platforms.linux;
   };
 
-  # Let the repository updater refresh the moving fork without changing build inputs or patches.
-  passthru.updateScript = [ updateScript ];
+  # Track the fork's master branch; nix-update re-hashes the recursive submodule checkout.
+  passthru.updateScript = packageUpdater.script {
+    attr = "gamescope-lanczos";
+    file = ./default.nix;
+    nixUpdateArgs = [ "--version=branch=master" ];
+  };
 })

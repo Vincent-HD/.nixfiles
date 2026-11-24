@@ -19,13 +19,13 @@
   libxrender,
   vulkan-loader,
   wayland,
-  bun,
-  updateScriptZod,
+  packageUpdater,
 }:
 let
-  # One pin file for every ArtCraft app; each app is its own GitHub repository
+  # One pin file per ArtCraft app; each app is its own GitHub repository
   # (github.com/storytold/<app>) with identically named release artifacts.
-  pins = (lib.importJSON ./sources.json).${appName};
+  pinFile = ./apps + "/${appName}.nix";
+  pins = import pinFile;
 
   # Map Nix systems to the upstream artifact suffix; macOS ships one universal DMG.
   artifacts = {
@@ -33,7 +33,6 @@ let
     "aarch64-darwin" = "macos-universal.dmg";
     "x86_64-darwin" = "macos-universal.dmg";
   };
-  artifact = artifacts.${stdenv.hostPlatform.system};
 
   # Libraries the winit/wgpu GUI dlopens at runtime instead of linking.
   runtimeLibraries = [
@@ -55,10 +54,7 @@ stdenv.mkDerivation (finalAttrs: {
   pname = appName;
   version = pins.version;
 
-  src = fetchurl {
-    url = "https://github.com/storytold/${appName}/releases/download/v${finalAttrs.version}/${appName}-${finalAttrs.version}-${artifact}";
-    hash = pins.hashes.${artifact};
-  };
+  src = finalAttrs.passthru.sources.${stdenv.hostPlatform.system};
 
   nativeBuildInputs =
     if stdenv.hostPlatform.isLinux then
@@ -75,7 +71,8 @@ stdenv.mkDerivation (finalAttrs: {
     alsa-lib
   ];
 
-  sourceRoot = if stdenv.hostPlatform.isLinux then "${appName}-${finalAttrs.version}-linux-x86_64" else ".";
+  sourceRoot =
+    if stdenv.hostPlatform.isLinux then "${appName}-${finalAttrs.version}-linux-x86_64" else ".";
 
   # The HFS+ DMG uses a block layout undmg cannot read, so unpack it with 7-Zip.
   unpackCmd = lib.optionalString stdenv.hostPlatform.isDarwin ''
@@ -119,12 +116,19 @@ stdenv.mkDerivation (finalAttrs: {
     displayName = pins.displayName;
     bundleIdentifier = "ai.storyteller.${appName}";
     desktopFile = "ai.storyteller.${appName}.desktop";
-    updateScript = [
-      (lib.getExe bun)
-      "${../..}/packages/craft-apps/update.ts"
-      "${updateScriptZod}/index.js"
-      appName
-    ];
+    # Every platform's fetch; both macOS systems share the universal DMG.
+    sources = lib.mapAttrs (
+      _system: artifact:
+      fetchurl {
+        url = "https://github.com/storytold/${appName}/releases/download/v${finalAttrs.version}/${appName}-${finalAttrs.version}-${artifact}";
+        hash = pins.hashes.${artifact};
+      }
+    ) artifacts;
+    updateScript = packageUpdater.script {
+      attr = appName;
+      file = pinFile;
+      nixUpdateArgs = [ "--use-github-releases" ];
+    };
   };
 
   meta = {

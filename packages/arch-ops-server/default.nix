@@ -1,24 +1,10 @@
 {
   lib,
-  curl,
   fetchPypi,
-  jq,
-  nix-update,
   python3Packages,
-  writeShellScript,
+  packageUpdater,
 }:
 
-let
-  # Resolve the current PyPI version, then let nix-update rewrite the wheel URL
-  # version and fixed-output hash in this flake package.
-  updateScript = writeShellScript "update-arch-ops-server" ''
-    set -euo pipefail
-    version="$(
-      ${lib.getExe curl} --fail --silent --show-error https://pypi.org/pypi/arch-ops-server/json | ${lib.getExe jq} -er '.info.version'
-    )"
-    exec ${lib.getExe nix-update} --flake arch-ops-server --version "$version"
-  '';
-in
 python3Packages.buildPythonApplication (finalAttrs: {
   pname = "arch-ops-server";
   version = "3.4.0";
@@ -50,7 +36,12 @@ python3Packages.buildPythonApplication (finalAttrs: {
   pythonImportsCheck = [ "arch_ops_server" ];
   doCheck = false;
 
-  passthru.updateScript = [ updateScript ];
+  # PyPI names the current release of the universal wheel.
+  passthru.updateScript = packageUpdater.script {
+    attr = "arch-ops-server";
+    file = ./default.nix;
+    latestVersion = "curl -fsS https://pypi.org/pypi/arch-ops-server/json | jq -r .info.version";
+  };
 
   meta = {
     description = "MCP server for the Arch Linux ecosystem";
