@@ -24,6 +24,7 @@ in
       nixos.windowsMounts
       nixos.fonts
       nixos.sunshine
+      nixos.spotifast
       nixos.gaming
       nixos.lsfgVk
       nixos.gamingOptimization
@@ -35,6 +36,12 @@ in
       # ── Home Manager integration ─────────────────────────
       inputs.home-manager.nixosModules.home-manager
       {
+        # Restrict Spotify Connect discovery and pairing to the wired home network.
+        custom.spotifast.lan = {
+          interface = "enp4s0";
+          ipv4Subnet = "192.168.1.0/24";
+        };
+
         home-manager.useGlobalPkgs = true;
         home-manager.useUserPackages = true;
         # When HM tries to overwrite a file it did not create (created by 3rd party software)

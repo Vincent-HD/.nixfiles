@@ -1565,11 +1565,11 @@ Purpose: press a key in the `wev` window and inspect the received XKB keysym, su
 
 ```bash
 systemctl is-active <service>.service
-ss -ltnup | rg '<port>|<process-name>'
+sudo ss -H -lntupe | rg '<port>|<process-name>'
 ip -br addr
 ```
 
-Purpose: confirm that a NixOS-managed network service is running, identify its listening addresses and ports, and verify which host interfaces are available for client access.
+Purpose: confirm that a NixOS-managed network service is running, identify its listening addresses and ports, and verify which host interfaces are available for client access. Extended socket output includes the socket UID. Run without sudo when process ownership is unnecessary.
 
 ### Compare booted and current NixOS generations
 

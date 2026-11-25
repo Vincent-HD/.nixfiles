@@ -42,7 +42,7 @@ modules/
   open-pencil.nix                      # OpenPencil design editor + MCP server and ACP agent adapters
   libreoffice.nix                      # LibreOffice (Qt6 build + render profiles on Linux, cask on macOS); default for spreadsheets
   kdenlive.nix                         # Kdenlive video editor (HM on Linux, cask on macOS)
-  spotifast.nix                        # Spotifast (HM)
+  spotifast/spotifast.nix              # Spotifast (HM) and Soloist LAN firewall rules (NixOS)
   bitwarden.nix                        # Bitwarden Desktop (HM)
   printing.nix                         # CUPS printing (NixOS)
   windows-mounts.nix                   # Windows / WSL mounts custom module (NixOS)
