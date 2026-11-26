@@ -151,7 +151,7 @@
 
     # Keep Z Code on the exact reviewed fork commit; its Nix package reuses this flake's pkgs.
     z-code = {
-      url = "github:Vincent-HD/zcode/6b16b5c9bf015f734328046e5996d7716ac82be7";
+      url = "github:Vincent-HD/zcode/5350ca151a5a828577a13081619cb8da68e398d7";
       flake = false;
     };
   };
