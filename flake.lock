@@ -848,6 +848,7 @@
         "quick-capture": "quick-capture",
         "screen-capture-toolbar": "screen-capture-toolbar",
         "tokitoki": "tokitoki",
+        "tuyau": "tuyau",
         "z-code": "z-code"
       }
     },
@@ -940,6 +941,26 @@
       "original": {
         "owner": "numtide",
         "repo": "treefmt-nix",
+        "type": "github"
+      }
+    },
+    "tuyau": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1795702128,
+        "narHash": "sha256-6kuE0DGMgyrrsPr8IFbrtSXA2fXtOfOLmbZoepkpvYM=",
+        "owner": "Vincent-HD",
+        "repo": "tuyau",
+        "rev": "fd20978369991395afb6a3d9de4c61e6c03e7287",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Vincent-HD",
+        "repo": "tuyau",
         "type": "github"
       }
     },

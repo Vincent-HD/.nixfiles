@@ -154,6 +154,13 @@
       url = "github:Vincent-HD/zcode/5350ca151a5a828577a13081619cb8da68e398d7";
       flake = false;
     };
+
+    # tuyau: declarative PipeWire patchbay. Provides the graph editor, the CLI, and the Home
+    # Manager module that runs `tuyau watch` to keep saved links and virtual devices applied.
+    tuyau = {
+      url = "github:Vincent-HD/tuyau";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =

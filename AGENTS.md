@@ -33,6 +33,7 @@ modules/
   noctalia/noctalia.nix                # Inactive legacy Noctalia v4 alternative
   graphics.nix                         # NVIDIA GPU (NixOS)
   sound.nix                            # PipeWire audio (NixOS)
+  tuyau.nix                            # tuyau PipeWire patchbay + `tuyau watch` user service (HM)
   coding/                              # Editors, Git, Jujutsu, and Nix tooling
   command-line/                        # Shared Zsh configuration and CLI tools
   packages.nix                         # Standalone package and app outputs

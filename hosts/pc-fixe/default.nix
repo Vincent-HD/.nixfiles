@@ -91,6 +91,7 @@ in
             hm.androidPhone
             hm.wifiAudioStreaming
             hm.ghostty
+            hm.tuyau
           ];
 
           home.packages = [ inputs.self.packages.x86_64-linux.crosspipe ];
