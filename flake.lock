@@ -951,11 +951,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1795789645,
-        "narHash": "sha256-oYgLWZbFNbSjypVWBGAIQRgvadEwEK0gbi460OGlxhk=",
+        "lastModified": 1795793819,
+        "narHash": "sha256-OQDZNbEK3kzfHEKgxgNhAKfGuK9N7NvjUTqLR54t3eI=",
         "owner": "Vincent-HD",
         "repo": "tuyau",
-        "rev": "92100255ceccaac298e875cd35b4cfe5fce52869",
+        "rev": "fa60dba49b68499e68d30e9b19baa845c653deff",
         "type": "github"
       },
       "original": {

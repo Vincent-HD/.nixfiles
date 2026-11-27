@@ -165,6 +165,10 @@
         lsfg-vk = unfreePkgs.callPackage ../packages/lsfg-vk {
           packageUpdater = packageUpdater;
         };
+        # Prebuilt tuyau release binaries, so the Rust workspace is never compiled locally.
+        tuyau = pkgs.callPackage ../packages/tuyau {
+          packageUpdater = packageUpdater;
+        };
         persist-dms = mkBunRunner "persist-dms" ../scripts/persist-dms.ts;
         gpu-burn = cudaPkgs.gpu-burn;
       }
