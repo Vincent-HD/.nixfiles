@@ -9,6 +9,10 @@
     {
       home.packages = [ pkgs.gh ];
 
+      # gh finds extensions in its data dir, not on PATH. Linking the packaged gh-stack there keeps
+      # it Nix-managed without letting Home Manager take over gh's own config.yml.
+      xdg.dataFile."gh/extensions/gh-stack".source = "${pkgs.gh-stack}/bin";
+
       # `lib.generators.toGitINI` cannot express both `[color] branch = auto`
       # and `[color "branch"]` in one attrset, so raw color subsections live in
       # `includes`.
